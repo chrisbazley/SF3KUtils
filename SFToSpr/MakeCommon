@@ -1,0 +1,3 @@
+ObjectList = SFTInit SaveSky SFgfxconv Utils SaveDir Scan SFTIconbar SFTMenu \
+             SaveSprites PreQuit SavePlanets SaveMapTiles SFTSaveBox \
+             QuickView ParseArgs

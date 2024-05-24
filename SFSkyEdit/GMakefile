@@ -1,0 +1,58 @@
+# Project:   SFSkyEdit
+
+# Make cannot understand rules which contain RISC OS path names such as /C:Macros.h as prerequisites, so strip them from the dynamic dependencies
+StripBadPre = sed -r 's@/[A-Za-z]+:[^ ]*@@g' < $*T.d
+DeleteTempDep = delete d.$*T
+
+# Toolflags:
+CCCommonFlags =  -c -IC: -mlibscl -mthrowback -Wall -Wextra -Wsign-compare -pedantic -std=c99 -MMD -MP -MF $*T.d
+CCFlags = $(CCCommonFlags) -DNDEBUG -O3
+CCDebugFlags = $(CCCommonFlags) -g -DDEBUG_OUTPUT -DFORTIFY
+LinkCommonFlags = -LC: -mlibscl
+LinkFlags = $(LinkCommonFlags) $(addprefix -l,$(ReleaseLibs))
+LinkDebugFlags = $(LinkCommonFlags) $(addprefix -l,$(DebugLibs))
+ASFlags = -throwback -NoCache -depend !Depend -apcs 3/32
+ASDebugFlags = -G $(ASFlags)
+LibFileFlags = -rcs $@
+
+include MakeCommon
+
+DebugList = $(addsuffix .debug,$(ObjectList))
+ReleaseList = $(addsuffix .o,$(ObjectList))
+LibList = C:o.toolboxlib C:o.eventlib C:o.wimplib
+DebugLibs = Fortify CBDebug CBUtildbg GKeydbg Streamdbg CBOSdbg SF3Kdbg CBdbg SFSkyEd
+ReleaseLibs = Flex CBUtil GKey Stream CBOS SF3K CB
+DebugObjects = Main.debug $(DebugList)
+
+# Final targets:
+all: !RunImage !RunImageD Tests
+
+!RunImage: Main.o $(ReleaseList)
+	gcc -o $@ $(LinkFlags) Main.o $(ReleaseList)
+
+libSFSkyEd.a: $(DebugList)
+	ar $(LibFileFlags) $(DebugList)
+
+!RunImageD: Main.debug libSFSkyEd.a
+	gcc -o $@ $(LinkDebugFlags) Main.debug
+
+# User-editable dependencies:
+.SUFFIXES: .o .c .debug .s
+.c.debug:
+	gcc $(CCDebugFlags) -o $@ $<
+	$(StripBadPre) > $*D.d
+	$(DeleteTempDep)
+.c.o:
+	gcc $(CCFlags) -o $@ $<
+	$(StripBadPre) > $*.d
+	$(DeleteTempDep)
+.s.o:; asasm $(ASFlags) -o $@ $<
+.s.debug:; asasm $(ASDebugFlags) -o $@ $<
+
+# Static dependencies:
+
+# Dynamic dependencies:
+# These files are generated during compilation to track C header #includes.
+# It's not an error if they don't exist.
+-include $(addsuffix .d,$(ObjectList))
+-include $(addsuffix D.d,$(ObjectList))

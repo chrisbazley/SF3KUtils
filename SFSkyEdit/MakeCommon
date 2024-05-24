@@ -1,0 +1,4 @@
+ObjectList = Picker SkyIO EditWin SFSInit ParseArgs SFSIconbar Utils \
+             SFSSaveBox DCS_dialogue SFSFileInfo Menus Layout Render \
+             Sky Editor Export Interpolate Insert PreQuit Preview \
+             PrevUMenu SavePrev ScalePrev Goto OptsMenu

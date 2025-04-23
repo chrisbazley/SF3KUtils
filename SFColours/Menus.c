@@ -30,7 +30,7 @@
 #include "menu.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "Macros.h"
 #include "Pal256.h"
 #include "Debug.h"

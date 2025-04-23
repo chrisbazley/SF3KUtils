@@ -31,7 +31,7 @@
 #include "wimp.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "Debug.h"

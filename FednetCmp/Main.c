@@ -26,7 +26,7 @@
 #include "event.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "Macros.h"
 #include "Scheduler.h"
 #include "Debug.h"

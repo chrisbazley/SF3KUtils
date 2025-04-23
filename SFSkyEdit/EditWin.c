@@ -40,7 +40,7 @@
 
 /* My library files */
 #include "LinkedList.h"
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "ViewsMenu.h"

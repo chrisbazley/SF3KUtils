@@ -31,11 +31,11 @@
 #include "gadgets.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "Pal256.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Debug.h"
 #include "GadgetUtil.h"
 

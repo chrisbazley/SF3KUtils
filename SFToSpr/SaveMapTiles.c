@@ -34,7 +34,7 @@
 #include "flex.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "FilePerc.h"
@@ -46,7 +46,7 @@
 #include "ReaderFlex.h"
 
 /* Local headers */
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Utils.h"
 #include "SFgfxconv.h"
 #include "SaveMapTiles.h"

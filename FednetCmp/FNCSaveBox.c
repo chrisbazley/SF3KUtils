@@ -28,14 +28,14 @@
 #include "wimplib.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "ViewsMenu.h"
 #include "StrExtra.h"
 #include "PathTail.h"
 #include "Debug.h"
-#include "Deiconise.h"
+#include "DeIconise.h"
 #include "UserData.h"
 #include "EventExtra.h"
 

@@ -36,11 +36,11 @@
 #include "swis.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "Macros.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "ViewsMenu.h"
 #include "Scheduler.h"
 #include "InputFocus.h"

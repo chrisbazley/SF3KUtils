@@ -33,7 +33,7 @@
 #include "Hourglass.h"
 #include "Err.h"
 #include "Debug.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Macros.h"
 #include "msgtrans.h"
 #include "ReaderFlex.h"

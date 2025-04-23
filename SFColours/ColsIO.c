@@ -39,7 +39,7 @@
 
 /* My library files */
 #include "FileUtils.h"
-#include "FopenCount.h"
+#include "FOpenCount.h"
 #include "ReaderGKey.h"
 #include "ReaderRaw.h"
 #include "ReaderNull.h"
@@ -51,7 +51,7 @@
 #include "Saver2.h"
 #include "Drag.h"
 #include "Entity2.h"
-#include "err.h"
+#include "Err.h"
 #include "Debug.h"
 #include "WimpExtra.h"
 #include "msgtrans.h"

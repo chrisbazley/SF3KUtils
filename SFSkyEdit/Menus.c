@@ -29,10 +29,10 @@
 #include "menu.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "Macros.h"
 #include "Pal256.h"
-#include "debug.h"
+#include "Debug.h"
 #include "SFFormats.h"
 
 /* Local headers */

@@ -28,13 +28,13 @@
 
 /* My library files */
 #include "Debug.h"
-#include "err.h"
+#include "Err.h"
 #include "Macros.h"
 #include "msgtrans.h"
 #include "SFFormats.h"
 #include "WriterRaw.h"
 #include "ReaderGKey.h"
-#include "FopenCount.h"
+#include "FOpenCount.h"
 #include "FileUtils.h"
 #include "Hourglass.h"
 

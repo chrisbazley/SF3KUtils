@@ -38,7 +38,7 @@
 
 /* My library files */
 #include "SFFormats.h"
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "ViewsMenu.h"
 #include "Macros.h"

@@ -32,7 +32,7 @@
 /* My library files */
 #include "OSFile.h"
 #include "Debug.h"
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "FileUtils.h"
 #include "Macros.h"

@@ -38,11 +38,11 @@
 #include "Macros.h"
 #include "Debug.h"
 #include "FileUtils.h"
-#include "err.h"
+#include "Err.h"
 #include "userdata.h"
 #include "gkeycomp.h"
 #include "gkeydecomp.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "OSFile.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"
@@ -51,7 +51,7 @@
 #include "FOpenCount.h"
 #include "ViewsMenu.h"
 #include "msgtrans.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "FileRWInt.h"
 
 /* Local header files */

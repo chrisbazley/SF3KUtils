@@ -38,10 +38,10 @@
 #include "flex.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "SprFormats.h"
 #include "SpriteArea.h"
 #include "NoBudge.h"

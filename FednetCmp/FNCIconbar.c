@@ -33,9 +33,9 @@
 #include "wimplib.h"
 
 /* My library files */
-#include "FopenCount.h"
-#include "strextra.h"
-#include "err.h"
+#include "FOpenCount.h"
+#include "StrExtra.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "Loader3.h"
@@ -49,7 +49,7 @@
 #include "SaveFile.h"
 #include "SaveComp.h"
 #include "SaveDir.h"
-#include "FNCSavebox.h"
+#include "FNCSaveBox.h"
 #include "FNCIconbar.h"
 
 static ObjectId Iconbar_id = NULL_ObjectId;

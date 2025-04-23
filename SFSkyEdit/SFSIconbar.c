@@ -33,17 +33,17 @@
 #include "wimplib.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "Loader3.h"
-#include "SFformats.h" /* get Fednet filetype */
+#include "SFFormats.h" /* get Fednet filetype */
 #include "Debug.h"
 #include "WimpExtra.h"
 #include "FileUtils.h"
 #include "UserData.h"
 #include "ReaderRaw.h"
-#include "FopenCount.h"
+#include "FOpenCount.h"
 #include "FileTypes.h"
 
 /* Local headers */

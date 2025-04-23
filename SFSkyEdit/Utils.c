@@ -34,7 +34,7 @@
 #include "gadgets.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "Macros.h"
 #include "Debug.h"
 #include "DeIconise.h"

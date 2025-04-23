@@ -28,7 +28,7 @@
 
 /* My library files */
 #include "Macros.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Debug.h"
 #include "Reader.h"
 #include "Writer.h"

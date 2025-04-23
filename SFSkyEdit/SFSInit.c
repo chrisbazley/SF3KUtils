@@ -34,9 +34,9 @@
 #include "swis.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "Macros.h"
 #include "ViewsMenu.h"
 #include "Goto.h"

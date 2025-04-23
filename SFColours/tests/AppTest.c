@@ -38,11 +38,11 @@
 /* My library files */
 #include "Macros.h"
 #include "Debug.h"
-#include "err.h"
+#include "Err.h"
 #include "userdata.h"
 #include "gkeycomp.h"
 #include "gkeydecomp.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "OSFile.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"

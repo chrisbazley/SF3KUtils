@@ -14,7 +14,7 @@
 
 #include "Reader.h"
 #include "Writer.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 
 #include "ColMap.h"
 #include "ExpColFile.h"

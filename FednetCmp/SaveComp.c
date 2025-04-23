@@ -33,10 +33,10 @@
 #include "flex.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Debug.h"
 #include "Reader.h"
 

@@ -32,10 +32,10 @@
 #include "flex.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "SprFormats.h"
 #include "FilePerc.h"
 #include "PathTail.h"
@@ -43,7 +43,7 @@
 #include "Debug.h"
 #include "ReaderFlex.h"
 #include "WriterNull.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "ReaderGKey.h"
 
 /* Local headers */

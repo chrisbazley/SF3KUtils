@@ -34,9 +34,9 @@
 #include "swis.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "Macros.h"
 #include "Debug.h"
 #include "ViewsMenu.h"
@@ -45,7 +45,7 @@
 #include "Saver2.h"
 #include "Drag.h"
 #include "Loader3.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Entity2.h"
 #include "PalEntry.h"
 #include "ClrTrans.h"

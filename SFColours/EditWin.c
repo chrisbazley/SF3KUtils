@@ -39,11 +39,11 @@
 
 /* My library files */
 #include "LinkedList.h"
-#include "err.h"
+#include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
 #include "ViewsMenu.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "Pal256.h"
 #include "Scheduler.h"
 #include "DateStamp.h"
@@ -57,7 +57,7 @@
 #include "Drag.h"
 #include "UserData.h"
 #include "Deiconise.h"
-#include "hourglass.h"
+#include "Hourglass.h"
 #include "EventExtra.h"
 
 /* Local headers */

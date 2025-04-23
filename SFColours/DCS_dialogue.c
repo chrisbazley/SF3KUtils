@@ -29,7 +29,7 @@
 
 /* My library files */
 #include "Macros.h"
-#include "err.h"
+#include "Err.h"
 #include "InputFocus.h"
 
 /* Local headers */

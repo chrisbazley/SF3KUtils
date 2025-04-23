@@ -28,12 +28,12 @@
 #include "wimplib.h"
 
 /* My library files */
-#include "err.h"
+#include "Err.h"
 #include "Debug.h"
 #include "Macros.h"
 #include "OSVDU.h"
 #include "PalEntry.h"
-#include "SFformats.h"
+#include "SFFormats.h"
 #include "WimpExtra.h"
 
 /* Local headers */

@@ -7,7 +7,7 @@
 #ifndef SFSRender_h
 #define SFSRender_h
 
-#include "SFformats.h"
+#include "SFFormats.h"
 
 /* Final argument is the offset to the first word to be plotted! (4 bytes
    before the end of the lowest scan line to be filled from right to left) */

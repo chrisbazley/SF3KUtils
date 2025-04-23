@@ -20,6 +20,9 @@
 
 /* ISO library files */
 #include "stdlib.h"
+#ifdef FORTIFY
+#include <string.h>
+#endif
 
 /* RISC OS library files */
 #include "wimp.h"

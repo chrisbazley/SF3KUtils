@@ -65,6 +65,7 @@
 #include "ClrTrans.h"
 #include "LinkedList.h"
 #include "Hourglass.h"
+#include "FileTypes.h"
 
 /* Local headers */
 #include "SFCInit.h"

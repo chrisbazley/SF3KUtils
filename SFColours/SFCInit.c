@@ -31,7 +31,6 @@
 #include "event.h"
 #include "wimplib.h"
 #include "flex.h"
-#include "swis.h"
 
 /* My library files */
 #include "Err.h"

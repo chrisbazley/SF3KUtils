@@ -31,7 +31,7 @@
 #include "Tests.h"
 #include "Editor.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 enum {
   DefaultPixelColour = 0,

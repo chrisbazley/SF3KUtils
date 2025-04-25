@@ -35,7 +35,7 @@
 #include "StrExtra.h"
 #include "PathTail.h"
 #include "Debug.h"
-#include "Deiconise.h"
+#include "DeIconise.h"
 #include "UserData.h"
 #include "EventExtra.h"
 

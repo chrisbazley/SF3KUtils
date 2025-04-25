@@ -63,7 +63,7 @@
 #include "OurEvents.h"
 #include "Utils.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.SFColoursTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"

@@ -25,7 +25,6 @@
 #include <time.h>
 
 /* RISC OS library files */
-#include "swis.h"
 #include "event.h"
 #include "toolbox.h"
 #include "saveas.h"
@@ -36,9 +35,9 @@
 #include "Debug.h"
 #include "FileUtils.h"
 #include "Err.h"
-#include "userdata.h"
-#include "gkeycomp.h"
-#include "gkeydecomp.h"
+#include "UserData.h"
+#include "GKeyComp.h"
+#include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
 #include "PseudoWimp.h"
@@ -54,7 +53,7 @@
 #include "FNCInit.h"
 #include "FNCSaveBox.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.FednetCmpTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"

@@ -29,7 +29,6 @@
 #include <assert.h>
 
 /* RISC OS library files */
-#include "swis.h"
 #include "wimp.h"
 #include "toolbox.h"
 #include "event.h"
@@ -56,7 +55,7 @@
 #include "OSVDU.h"
 #include "Drag.h"
 #include "UserData.h"
-#include "Deiconise.h"
+#include "DeIconise.h"
 #include "Hourglass.h"
 #include "EventExtra.h"
 
@@ -65,7 +64,7 @@
 #include "ExpColFile.h"
 #include "SFCFileInfo.h"
 #include "Utils.h"
-#include "SFCSavebox.h"
+#include "SFCSaveBox.h"
 #include "DCS_dialogue.h"
 #include "Menus.h"
 #include "SFCInit.h"

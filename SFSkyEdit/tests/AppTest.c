@@ -53,7 +53,7 @@
 #include "SFSInit.h"
 #include "OurEvents.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.SFSkyEditTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"

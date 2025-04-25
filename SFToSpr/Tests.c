@@ -57,7 +57,7 @@
 /* Local header files */
 #include "SFTInit.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.SFtoSprTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"
@@ -3130,7 +3130,7 @@ static void fortify_check(void)
 
 static void fortify_output(char const *text)
 {
-  DEBUGF("%s", text);
+  DEBUGF(text);
   if (strstr(text, "Fortify"))
   {
     assert(!fortify_detected);

@@ -32,7 +32,7 @@
 #include "Tests.h"
 #include "Colmap.h"
 
-#include "FORTIFY.h"
+#include "Fortify.h"
 
 enum
 {

@@ -58,7 +58,7 @@ static void fortify_check(void)
 
 static void fortify_output(const char *text)
 {
-  DEBUGF(text);
+  DEBUGF("%s", text);
   if (strstr(text, "Fortify"))
   {
     assert(!fortify_detected);

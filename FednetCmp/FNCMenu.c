@@ -37,6 +37,10 @@
 #include "FNCMenu.h"
 #include "FNCIconbar.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Menu component IDs */
 enum
 {

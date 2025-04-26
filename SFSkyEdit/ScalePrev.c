@@ -35,6 +35,11 @@
 #include "ScalePrev.h"
 #include "Preview.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 ObjectId ScalePrev_sharedid = NULL_ObjectId;
 
 /* ----------------------------------------------------------------------- */
@@ -109,7 +114,7 @@ void ScalePrev_initialise(ObjectId id)
   for (size_t i = 0; i < ARRAY_SIZE(tbox_handlers); i++)
   {
     EF(event_register_toolbox_handler(id, tbox_handlers[i].event_code,
-                                      tbox_handlers[i].handler, NULL));
+                                      tbox_handlers[i].handler, (void *)NULL));
   }
 
   ScalePrev_sharedid = id;

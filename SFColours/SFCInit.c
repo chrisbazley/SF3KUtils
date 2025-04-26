@@ -65,6 +65,11 @@
 #include "ColsIO.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {
@@ -447,12 +452,12 @@ void initialise(void)
   static IdBlock id_block;
   int toolbox_events = 0, task_handle;
 
-  const _kernel_oserror *e = toolbox_initialise(
+  _Optional const _kernel_oserror *e = toolbox_initialise(
     0, KnownWimpVersion, wimp_messages, &toolbox_events, "<"APP_NAME"Res$Dir>",
     &mfd, &id_block, &wimp_version, &task_handle, NULL);
 
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   static char taskname[MaxTaskNameLen + 1];
   e = messagetrans_lookup(&mfd,
@@ -462,11 +467,11 @@ void initialise(void)
                           NULL,
                           0);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   e = err_initialise(taskname, wimp_version >= MinWimpVersion, &mfd);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   /*
    * initialise the flex library
@@ -492,13 +497,13 @@ void initialise(void)
     EF(event_register_toolbox_handler(-1,
                                       tb_handlers[i].event_code,
                                       tb_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
   for (size_t i = 0; i < ARRAY_SIZE(msg_handlers); i++)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
                                       msg_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 
   /*
@@ -529,7 +534,7 @@ void initialise(void)
   EF(colourtrans_read_palette(0, &source, palette, sizeof(palette), NULL));
 
   /* Read variables for current screen mode */
-  mode_change_msg(NULL, NULL);
+  mode_change_msg(&(WimpMessage){0}, &(int){0});
 
   hourglass_off();
 }

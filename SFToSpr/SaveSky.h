@@ -13,8 +13,8 @@
 #include "SFTSaveBox.h"
 #include "SFgfxconv.h"
 
-SFTSaveBox *SaveSky_create(char const *save_path, int x, bool data_saved,
+_Optional SFTSaveBox *SaveSky_create(char const *save_path, int x, bool data_saved,
   flex_ptr sprites, SkySpritesContext const *context,
-  SFTSaveBoxDeletedFn *deleted_cb);
+  _Optional SFTSaveBoxDeletedFn *deleted_cb);
 
 #endif

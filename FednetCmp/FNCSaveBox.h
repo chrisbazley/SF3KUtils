@@ -24,13 +24,13 @@ typedef struct FNCSaveBox
 }
 FNCSaveBox;
 
-FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *savebox,
+_Optional FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *savebox,
   char const *input_path, bool data_saved, int file_type,
   char *template_name, char const *menu_token, int x,
   FNCSaveBoxDeletedFn *deleted_cb);
 
 void FNCSaveBox_finalise(FNCSaveBox *savebox);
-void FNCSaveBox_destroy(FNCSaveBox *savebox);
+void FNCSaveBox_destroy(_Optional FNCSaveBox *savebox);
 void FNCSaveBox_show(const FNCSaveBox *savebox);
 
 #endif

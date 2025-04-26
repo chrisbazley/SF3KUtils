@@ -60,6 +60,10 @@
 #include "FNCMenu.h"
 #include "OurEvents.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -147,13 +151,14 @@ static int data_open_msg(WimpMessage *const message, void *const handle)
                            0,
                            NULL)))
   {
-    char *canonical_file_path;
+    _Optional char *canonical_file_path = NULL;
     if (!E(canonicalise(&canonical_file_path,
                         NULL,
                         NULL,
-                        message->data.data_open.path_name)))
+                        message->data.data_open.path_name)) &&
+        canonical_file_path)
     {
-      Scan_create(canonical_file_path, canonical_file_path, false, 0);
+      Scan_create(&*canonical_file_path, &*canonical_file_path, false, 0);
       free(canonical_file_path);
     }
   }
@@ -175,7 +180,7 @@ static int misc_tb_event(int const event_code, ToolboxEvent *const event,
   {
     case EventCode_Quit:
       if (!PreQuit_queryunsaved(0))
-        quit_msg(NULL, NULL);
+        quit_msg(&(WimpMessage){0}, &(int){0});
       break;
 
     case EventCode_Help:
@@ -366,7 +371,7 @@ void initialise(void)
    */
   static IdBlock id_block;
   static MessagesFD mfd;
-  const _kernel_oserror *e = toolbox_initialise(0,
+  _Optional const _kernel_oserror *e = toolbox_initialise(0,
                          KnownWimpVersion,
                          wimp_messages,
                          &toolbox_events,
@@ -377,7 +382,7 @@ void initialise(void)
                          0,
                          0);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   static char taskname[MaxTaskNameLen + 1];
   e = messagetrans_lookup(&mfd,
@@ -387,11 +392,11 @@ void initialise(void)
                           NULL,
                           0);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   e = err_initialise(taskname, wimp_version >= MinWimpVersion, &mfd);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   /*
    * initialise the flex library
@@ -417,13 +422,13 @@ void initialise(void)
     EF(event_register_toolbox_handler(-1,
                                       tb_handlers[i].event_code,
                                       tb_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
   for (size_t i = 0; i < ARRAY_SIZE(msg_handlers); i++)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
                                       msg_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 
   /*

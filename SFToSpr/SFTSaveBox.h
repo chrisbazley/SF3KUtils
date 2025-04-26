@@ -25,9 +25,9 @@ typedef struct SFTSaveBox
 }
 SFTSaveBox;
 
-SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path, bool data_saved, int file_type, char *template_name, const char *menu_token, int x, SFTSaveBoxDeletedFn *deleted_cb);
+_Optional SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path, bool data_saved, int file_type, char *template_name, const char *menu_token, int x, SFTSaveBoxDeletedFn *deleted_cb);
 void SFTSaveBox_finalise(SFTSaveBox *savebox);
-void SFTSaveBox_destroy(SFTSaveBox *savebox);
+void SFTSaveBox_destroy(_Optional SFTSaveBox *savebox);
 void SFTSaveBox_show(const SFTSaveBox *savebox);
 
 #endif

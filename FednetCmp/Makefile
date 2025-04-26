@@ -1,42 +1,47 @@
 # Project:   FednetCmp
 
+# Tools
+CC = clang
+Link = gcc
+
 
 # Toolflags:
-CCCommonFlags = -c -depend !Depend -IC: -throwback -apcs 3/32/fpe2/swst/fp/nofpr -memaccess -L22-S22-L41
-CCflags = $(CCCommonFlags) -DNDEBUG -Otime 
-CCDebugFlags = $(CCCommonFlags) -g -DDEBUG_OUTPUT -DFORTIFY
-Linkflags = -aif
-LinkDebugFlags = $(Linkflags) -d
-Squeezeflags = -v
+CCCommonFlags = -DUSE_OPTIONAL -c -Wall -Wextra -Wsign-compare -pedantic -std=c99 -MMD -MP
+CCFlags = $(CCCommonFlags) -DNDEBUG -O3 -MF $*.d
+CCDebugFlags = $(CCCommonFlags) -g -DDEBUG_OUTPUT -DFORTIFY -MF $*D.d
+LinkCommonFlags = -o $@
+LinkFlags = $(LinkCommonFlags) $(addprefix -l,$(ReleaseLibs))
+LinkDebugFlags = $(LinkCommonFlags) $(addprefix -l,$(DebugLibs))
 
 include MakeCommon
 
-DebugList = $(addprefix debug.,$(ObjectList))
-ReleaseList = $(addprefix o.,$(ObjectList))
-LibList = C:o.toolboxlib C:o.eventlib C:o.wimplib
-DebugLibs = C:debug.CBLib C:debug.CBOSLib C:debug.StreamLib C:debug.CBUtilLib C:debug.GKeyLib C:o.CBDebugLib $(LibList) Fortify:o.fortify C:o.stubs
-ReleaseLibs = C:o.flexlib C:o.CBLib C:o.CBOSLib C:o.StreamLib C:o.CBUtilLib C:o.GKeyLib $(LibList) C:o.stubsG
-TestObjects = @.debug.Tests $(DebugList) $(DebugLibs)
-DebugObjects = @.debug.Main $(DebugList) $(DebugLibs)
-ReleaseObjects = @.o.Main $(ReleaseList) $(ReleaseLibs)
+DebugList = $(addsuffix .debug,$(ObjectList))
+ReleaseList = $(addsuffix .o,$(ObjectList))
+LibList = toolbox event wimp
+DebugLibs = CBLibdbg CBOSLibdbg Streamdbg CBUtildbg GKeydbg CBDebug $(LibList)
+ReleaseLibs = flex CBLib CBOS Stream CBUtil GKey $(LibList)
+TestObjects = Tests.debug $(DebugList) $(DebugLibs)
+DebugObjects = Main.debug $(DebugList) $(DebugLibs)
+ReleaseObjects = Main.o $(ReleaseList) $(ReleaseLibs)
 
 # Final targets:
-all: @.!RunImage @.!RunImageD Tests
+all:   RunImageD Tests
 
-@.!RunImage: $(ReleaseObjects)
-        link $(linkflags) -o $@ $(ReleaseObjects)
-        Squeeze $(Squeezeflags) -o $@ @.!RunImage
+#RunImage: $(ReleaseObjects)
+#	$(Link)  $(ReleaseObjects) $(linkflags)
 
-@.!RunImageD: $(DebugObjects)
-        link $(LinkDebugFlags) -o $@ $(DebugObjects)
+RunImageD: $(DebugObjects)
+	$(Link) $(DebugObjects) $(LinkDebugFlags)
 
-@.Tests: $(TestObjects)
-        link $(LinkDebugFlags) -o $@ $(TestObjects)
+Tests: $(TestObjects)
+	$(Link) $(TestObjects) $(LinkDebugFlags)
 
 # User-editable dependencies:
 .SUFFIXES: .o .c .debug
-.c.debug:; cc $(CCDebugFlags) -o $@ $<
-.c.o:; cc $(CCFlags) -o $@ $<
+.c.debug:
+	$(CC) $(CCDebugFlags) -o $@ $<
+.c.o:
+	$(CC) $(CCFlags) -o $@ $<
 
 # Static dependencies:
 

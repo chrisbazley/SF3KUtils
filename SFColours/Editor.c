@@ -18,6 +18,11 @@
 #include "Editor.h"
 #include "ColMap.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 enum
 {
   NPixelColours = 256,
@@ -38,7 +43,7 @@ typedef struct EditRecord {
 } EditRecord;
 
 static bool set_and_redraw(EditColMap *const edit_colmap, int const pos,
-  int const colour, EditRecord *const rec)
+  int const colour, _Optional EditRecord *const rec)
 
 {
   assert(edit_colmap != NULL);
@@ -84,14 +89,14 @@ static inline bool get_is_selected(Editor const *const editor, int const pos)
   return editor->selected[offset] & mask;
 }
 
-static LinkedListItem *get_redo_item(EditColMap *const edit_colmap)
+static _Optional LinkedListItem *get_redo_item(EditColMap *const edit_colmap)
 {
   assert(edit_colmap != NULL);
 
-  LinkedListItem *redo_item = NULL;
+  _Optional LinkedListItem *redo_item = NULL;
   if (edit_colmap->next_undo)
   {
-    redo_item = linkedlist_get_next(edit_colmap->next_undo);
+    redo_item = linkedlist_get_next(&*edit_colmap->next_undo);
   }
   else
   {
@@ -111,22 +116,22 @@ static bool destroy_record(LinkedList *const list, LinkedListItem *const item,
   return false; /* continue */
 }
 
-static EditRecord *make_record(EditColMap *const edit_colmap, int const size)
+static _Optional EditRecord *make_record(EditColMap *const edit_colmap, int const size)
 {
   assert(edit_colmap != NULL);
 
-  EditRecord *const rec = malloc(sizeof(*rec) + (sizeof(rec->subrec[0]) * size));
+  _Optional EditRecord *const rec = malloc(sizeof(*rec) + (sizeof(rec->subrec[0]) * size));
   if (rec)
   {
     *rec = (EditRecord){.size = 0};
 
-    LinkedListItem *const redo_item = get_redo_item(edit_colmap);
-    LinkedListItem *next = NULL;
+    _Optional LinkedListItem *const redo_item = get_redo_item(edit_colmap);
+    _Optional LinkedListItem *next = NULL;
 
-    for (LinkedListItem *item = redo_item; item != NULL; item = next)
+    for (_Optional LinkedListItem *item = redo_item; item != NULL; item = next)
     {
-      next = linkedlist_get_next(item);
-      destroy_record(&edit_colmap->undo_list, item, NULL);
+      next = linkedlist_get_next(&*item);
+      destroy_record(&edit_colmap->undo_list, &*item, edit_colmap);
     }
 
     linkedlist_insert(&edit_colmap->undo_list, edit_colmap->next_undo,
@@ -144,7 +149,7 @@ static EditRecord *make_record(EditColMap *const edit_colmap, int const size)
 }
 
 ColMapState edit_colmap_init(EditColMap *const edit_colmap,
-  Reader *const reader, int const size,
+  _Optional Reader *const reader, int const size,
   void (*redraw_entry_cb)(EditColMap *, int))
 {
   assert(edit_colmap != NULL);
@@ -152,7 +157,7 @@ ColMapState edit_colmap_init(EditColMap *const edit_colmap,
 
   if (reader)
   {
-    state = colmap_read_file(&edit_colmap->colmap, reader);
+    state = colmap_read_file(&edit_colmap->colmap, &*reader);
   }
   else
   {
@@ -160,7 +165,7 @@ ColMapState edit_colmap_init(EditColMap *const edit_colmap,
   }
 
   edit_colmap->redraw_entry_cb = redraw_entry_cb ?
-    redraw_entry_cb : dummy_redraw;
+    &*redraw_entry_cb : dummy_redraw;
 
   linkedlist_init(&edit_colmap->undo_list);
   edit_colmap->next_undo = NULL;
@@ -171,7 +176,7 @@ ColMapState edit_colmap_init(EditColMap *const edit_colmap,
 void edit_colmap_destroy(EditColMap *const edit_colmap)
 {
   assert(edit_colmap != NULL);
-  (void)linkedlist_for_each(&edit_colmap->undo_list, destroy_record, NULL);
+  (void)linkedlist_for_each(&edit_colmap->undo_list, destroy_record, edit_colmap);
 }
 
 ColMap *edit_colmap_get_colmap(EditColMap *const edit_colmap)
@@ -239,7 +244,7 @@ bool editor_redo(Editor const *const editor)
 
   EditColMap *const edit_colmap = editor->edit_colmap;
   assert(edit_colmap != NULL);
-  LinkedListItem *const redo_item = get_redo_item(edit_colmap);
+  _Optional LinkedListItem *const redo_item = get_redo_item(edit_colmap);
   assert(redo_item != NULL);
   EditRecord *const redo = CONTAINER_OF(redo_item, EditRecord, link);
   edit_colmap->next_undo = redo_item;
@@ -279,7 +284,7 @@ static void dummy_redraw_sel(Editor *editor, int pos)
 }
 
 void editor_init(Editor *const editor, EditColMap *const edit_colmap,
-  void (*redraw_select_cb)(Editor *, int))
+  _Optional EditorRedrawSelectFn *redraw_select_cb)
 {
   assert(editor != NULL);
   assert(edit_colmap != NULL);
@@ -289,7 +294,7 @@ void editor_init(Editor *const editor, EditColMap *const edit_colmap,
   memset(editor->selected, 0, sizeof(editor->selected));
 
   editor->redraw_select_cb = redraw_select_cb ?
-    redraw_select_cb : dummy_redraw_sel;
+    &*redraw_select_cb : dummy_redraw_sel;
 }
 
 ColMap *editor_get_colmap(Editor const *const editor)
@@ -465,7 +470,7 @@ EditResult editor_set_plain(Editor *const editor, int const colour)
   assert(editor != NULL);
 
   int const num_to_set = editor->num_selected;
-  EditRecord *const rec = make_record(editor->edit_colmap, num_to_set);
+  _Optional EditRecord *const rec = make_record(editor->edit_colmap, num_to_set);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -485,7 +490,7 @@ EditResult editor_set_plain(Editor *const editor, int const colour)
       continue;
     }
 
-    if (set_and_redraw(editor->edit_colmap, pos, colour, rec))
+    if (set_and_redraw(editor->edit_colmap, pos, colour, &*rec))
     {
       changed = EditResult_Changed;
     }
@@ -500,7 +505,7 @@ EditResult editor_interpolate(Editor *const editor,
   assert(editor != NULL);
   int const num_selected = editor->num_selected;
 
-  EditRecord *const rec = make_record(editor->edit_colmap,
+  _Optional EditRecord *const rec = make_record(editor->edit_colmap,
     num_selected >= 2 ? num_selected - 2 : 0);
 
   if (!rec)
@@ -580,7 +585,7 @@ EditResult editor_interpolate(Editor *const editor,
       palette, NPixelColours, (int)(red_component + 0.5f),
       (int)(green_component + 0.5f), (int)(blue_component + 0.5f));
 
-    if (set_and_redraw(editor->edit_colmap, pos, nearest_colour, rec))
+    if (set_and_redraw(editor->edit_colmap, pos, nearest_colour, &*rec))
     {
       changed = EditResult_Changed;
     }
@@ -599,7 +604,7 @@ EditResult editor_set_array(Editor *const editor, int const *const colours,
   *is_valid = true;
 
   int const num_to_set = LOWEST(editor->num_selected, ncol);
-  EditRecord *const rec = make_record(editor->edit_colmap, num_to_set);
+  _Optional EditRecord *const rec = make_record(editor->edit_colmap, num_to_set);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -627,7 +632,7 @@ EditResult editor_set_array(Editor *const editor, int const *const colours,
       *is_valid = false;
     }
 
-    if (set_and_redraw(editor->edit_colmap, pos, colour, rec))
+    if (set_and_redraw(editor->edit_colmap, pos, colour, &*rec))
     {
       changed = EditResult_Changed;
     }

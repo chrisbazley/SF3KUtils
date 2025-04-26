@@ -36,6 +36,11 @@
 #include "Editor.h"
 #include "Sky.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 enum {
   BadPixelColour = 0, /* black */
   ExtendPixelColour = 0,
@@ -271,14 +276,14 @@ static bool destroy_record(LinkedList *const list, LinkedListItem *const item,
   return false; /* continue */
 }
 
-static LinkedListItem *get_redo_item(EditSky *const edit_sky)
+static _Optional LinkedListItem *get_redo_item(EditSky *const edit_sky)
 {
   assert(edit_sky != NULL);
 
-  LinkedListItem *redo_item = NULL;
+  _Optional LinkedListItem *redo_item = NULL;
   if (edit_sky->next_undo)
   {
-    redo_item = linkedlist_get_next(edit_sky->next_undo);
+    redo_item = linkedlist_get_next(&*edit_sky->next_undo);
   }
   else
   {
@@ -292,13 +297,13 @@ static void add_undo_item(EditSky *const edit_sky, LinkedListItem *const new_ite
   assert(edit_sky != NULL);
   assert(new_item != NULL);
 
-  LinkedListItem *const redo_item = get_redo_item(edit_sky);
-  LinkedListItem *next = NULL;
+  _Optional LinkedListItem *const redo_item = get_redo_item(edit_sky);
+  _Optional LinkedListItem *next = NULL;
 
-  for (LinkedListItem *item = redo_item; item != NULL; item = next)
+  for (_Optional LinkedListItem *item = redo_item; item != NULL; item = next)
   {
-    next = linkedlist_get_next(item);
-    destroy_record(&edit_sky->undo_list, item, NULL);
+    next = linkedlist_get_next(&*item);
+    destroy_record(&edit_sky->undo_list, &*item, edit_sky);
   }
 
   linkedlist_insert(&edit_sky->undo_list, edit_sky->next_undo, new_item);
@@ -307,11 +312,11 @@ static void add_undo_item(EditSky *const edit_sky, LinkedListItem *const new_ite
   edit_sky->next_undo = new_item;
 }
 
-static EditRecord *make_undo_values(EditSky *const edit_sky,
+static _Optional EditRecord *make_undo_values(EditSky *const edit_sky,
   EditRecordType const type)
 {
   assert(edit_sky != NULL);
-  EditRecord *const rec = malloc(sizeof(*rec));
+  _Optional EditRecord *const rec = malloc(sizeof(*rec));
   if (rec != NULL)
   {
     *rec = (EditRecord){.type = type};
@@ -324,7 +329,7 @@ static EditRecord *make_undo_values(EditSky *const edit_sky,
   return rec;
 }
 
-static EditRecord *make_undo_edit(EditSky *const edit_sky,
+static _Optional EditRecord *make_undo_edit(EditSky *const edit_sky,
   EditRecordType const type, int const dst_start, int const dst_end,
   int const src_start, EditFill const fill)
 {
@@ -351,8 +356,8 @@ static EditRecord *make_undo_edit(EditSky *const edit_sky,
   {
     fresh_size = trim_src_size;
   }
-  EditRecord *const rec = malloc(sizeof(*rec) + lost_size + fresh_size +
-                                 budge_size);
+  _Optional EditRecord *const rec = malloc(sizeof(*rec) + lost_size + fresh_size +
+                                           budge_size);
   if (rec != NULL)
   {
     *rec = (EditRecord){
@@ -364,10 +369,10 @@ static EditRecord *make_undo_edit(EditSky *const edit_sky,
           .new_dst_end = dst_start + trim_src_size,
           .src_start = src_start,
           .fill = fill,
-          .fresh = rec->store,
-          .lost = rec->store + fresh_size,
+          .fresh = &*rec->store,
+          .lost = &*rec->store + fresh_size,
           .lsize = lost_size,
-          .budge_lost = rec->store + fresh_size + lost_size,
+          .budge_lost = &*rec->store + fresh_size + lost_size,
         },
       },
     };
@@ -381,7 +386,7 @@ static EditRecord *make_undo_edit(EditSky *const edit_sky,
   return rec;
 }
 
-static inline EditRecord *make_undo_move(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_move(EditSky *const edit_sky,
   int const dst_start, int const dst_end,
   int const src_start, int const src_end)
 {
@@ -389,7 +394,7 @@ static inline EditRecord *make_undo_move(EditSky *const edit_sky,
     dst_start, dst_end, src_start, (EditFill){.len = src_end - src_start});
 }
 
-static inline EditRecord *make_undo_copy(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_copy(EditSky *const edit_sky,
   int const dst_start, int const dst_end,
   int const src_start, int const src_end)
 {
@@ -399,42 +404,42 @@ static inline EditRecord *make_undo_copy(EditSky *const edit_sky,
     dst_start, dst_end, 0, (EditFill){.len = src_end - src_start});
 }
 
-static inline EditRecord *make_undo_insert_array(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_insert_array(EditSky *const edit_sky,
   int const start, int const end, int new_size)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertArray, start, end, 0,
     (EditFill){.len = new_size});
 }
 
-static inline EditRecord *make_undo_insert_plain(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_insert_plain(EditSky *const edit_sky,
   int const start, int const end, int new_size, int const start_colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertPlain, start, end, 0,
     (EditFill){.len = new_size, .start = start_colour});
 }
 
-static inline EditRecord *make_undo_insert_gradient(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_insert_gradient(EditSky *const edit_sky,
   int const start, int const end, EditFill const fill)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertGradient, start, end, 0,
     fill);
 }
 
-static inline EditRecord *make_undo_smooth(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_smooth(EditSky *const edit_sky,
   int const start, int const end)
 {
   return make_undo_edit(edit_sky, EditRecordType_Smooth, start, end, 0,
     (EditFill){.len = end - start});
 }
 
-static inline EditRecord *make_undo_set_plain(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_set_plain(EditSky *const edit_sky,
   int const start, int const end, int const colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_SetPlain, start, end, 0,
     (EditFill){.len = end - start, .start = colour});
 }
 
-static inline EditRecord *make_undo_interpolate(EditSky *const edit_sky,
+static inline _Optional EditRecord *make_undo_interpolate(EditSky *const edit_sky,
   int const start, int const end, int const start_colour,
   int const end_colour)
 {
@@ -447,7 +452,7 @@ static inline EditRecord *make_undo_interpolate(EditSky *const edit_sky,
 }
 
 static bool s_set_colour(Sky *const sky, int const pos, int const rep,
-  unsigned char *const lost)
+  _Optional unsigned char *const lost)
 {
   assert(sky != NULL);
   assert(pos >= 0);
@@ -471,7 +476,7 @@ static bool s_set_colour(Sky *const sky, int const pos, int const rep,
 }
 
 static bool s_write_plain(Sky *const sky, int const start, int const end,
-  int const colour, unsigned char *const lost, int const lsize)
+  int const colour, _Optional unsigned char *const lost, int const lsize)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -489,7 +494,7 @@ static bool s_write_plain(Sky *const sky, int const start, int const end,
   for (int pos = start; pos < end; pos++)
   {
     int const idx = pos - start;
-    if (s_set_colour(sky, pos, colour, (idx < lsize) ? (lost + idx) : NULL))
+    if (s_set_colour(sky, pos, colour, (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
     }
@@ -554,7 +559,7 @@ static bool s_set_array(Sky *const sky, int const start, int const end,
 }
 
 static bool s_copy_between(Sky *const dst, int const start, int const end,
-  Sky const *const src, unsigned char *const lost, int const lsize)
+  Sky const *const src, _Optional unsigned char *const lost, int const lsize)
 {
   assert(src != NULL);
   assert(dst != NULL);
@@ -573,7 +578,7 @@ static bool s_copy_between(Sky *const dst, int const start, int const end,
   {
     int const idx = pos - start;
     int const rep = sky_get_colour(src, idx);
-    if (s_set_colour(dst, pos, rep, (idx < lsize) ? (lost + idx) : NULL))
+    if (s_set_colour(dst, pos, rep, (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
     }
@@ -600,7 +605,8 @@ static void s_get_barray(Sky const *const sky, int const start, int const end,
 }
 
 static bool s_set_barray(Sky *const sky, int const start, int const end,
-   unsigned char const *const src, unsigned char *const lost, int const lsize)
+   unsigned char const *const src, _Optional unsigned char *const lost,
+   int const lsize)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -618,7 +624,7 @@ static bool s_set_barray(Sky *const sky, int const start, int const end,
   for (int pos = start; pos < end; pos++)
   {
     int const idx = pos - start;
-    if (s_set_colour(sky, pos, src[idx], (idx < lsize) ? (lost + idx) : NULL))
+    if (s_set_colour(sky, pos, src[idx], (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
     }
@@ -627,7 +633,7 @@ static bool s_set_barray(Sky *const sky, int const start, int const end,
 }
 
 static bool s_budge_down(Sky *const sky, int const start,
-  int const end, unsigned char *const lost)
+  int const end, _Optional unsigned char *const lost)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -671,7 +677,7 @@ static bool s_budge_down(Sky *const sky, int const start,
 }
 
 static bool s_budge_up(Sky *const sky, int const start,
-  int const end, unsigned char *const lost)
+  int const end, _Optional unsigned char *const lost)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -690,7 +696,7 @@ static bool s_budge_up(Sky *const sky, int const start,
      These aren't all overwritten in the loop below if EOF-end < size. */
   if (lost)
   {
-    s_get_barray(sky, NColourBands - size, NColourBands, lost);
+    s_get_barray(sky, NColourBands - size, NColourBands, &*lost);
   }
 
   /* Copy colour bands upward to make room */
@@ -712,7 +718,7 @@ static bool s_budge_up(Sky *const sky, int const start,
 }
 
 static bool s_budge(Sky *const sky,
-  int const old_end, int const new_end, unsigned char *lost)
+  int const old_end, int const new_end, _Optional unsigned char *lost)
 {
   assert(sky != NULL);
   assert(old_end >= 0);
@@ -883,9 +889,9 @@ static void all_update_indices(Editor const *const editor, int const start,
     /* Update every other editor to take account of 'ndel' colour bands
        replaced with 'nadd' colour bands at position 'pos'. The editor
        being used is updated separately to minimize redraws. */
-    for (LinkedListItem *item = linkedlist_get_head(&edit_sky->editors);
+    for (_Optional LinkedListItem *item = linkedlist_get_head(&edit_sky->editors);
          item != NULL;
-         item = linkedlist_get_next(item))
+         item = linkedlist_get_next(&*item))
     {
       Editor *const editor_item = CONTAINER_OF(item, Editor, node);
       if (editor != editor_item)
@@ -897,7 +903,7 @@ static void all_update_indices(Editor const *const editor, int const start,
 }
 
 static bool delete_range(Editor *const editor, int const start,
-  int const end, unsigned char *const lost)
+  int const end, _Optional unsigned char *const lost)
 {
   bool const changed = s_budge_down(&editor->edit_sky->sky, start, end, lost);
   all_update_indices(editor, start, end, start);
@@ -905,8 +911,8 @@ static bool delete_range(Editor *const editor, int const start,
 }
 
 static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
-  int const start, int const end, const EditFill fill, unsigned char *const lost,
-  int const lsize)
+  int const start, int const end, const EditFill fill,
+  _Optional unsigned char *const lost, int const lsize)
 {
   /* Write gradient fill between specified colours */
   assert(sky != NULL);
@@ -937,7 +943,7 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
     {
       int const idx = effective_start - start;
       if (s_set_colour(sky, effective_start, fill.start,
-        (idx < lsize) ? (lost + idx): NULL))
+        (lost && idx < lsize) ? (&*lost + idx): NULL))
       {
         changed = true;
       }
@@ -958,7 +964,7 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
     {
       int const idx = effective_end - start;
       if (s_set_colour(sky, effective_end, fill.end,
-        (idx < lsize) ? (lost + idx): NULL))
+        (lost && idx < lsize) ? (&*lost + idx): NULL))
       {
         changed = true;
       }
@@ -1029,7 +1035,7 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
 
     int const idx = pos - start;
     if (s_set_colour(sky, pos, near,
-      (idx < lsize) ? (lost + idx) : NULL))
+      (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
     }
@@ -1319,7 +1325,7 @@ static bool redo_insert(Editor *const editor, EditRecord const *const rec,
   return changed;
 }
 
-static bool redo_move(Editor *const editor, EditRecord const *const rec)
+static bool redo_move(Editor *const editor, EditRecord const *const rec, PaletteEntry const palette[])
 {
   assert(editor != NULL);
   assert(rec != NULL);
@@ -1330,7 +1336,7 @@ static bool redo_move(Editor *const editor, EditRecord const *const rec)
 
   bool changed = delete_range(editor, rec->data.edit.src_start, src_end, NULL);
 
-  if (redo_insert(editor, rec, NULL))
+  if (redo_insert(editor, rec, palette))
   {
     changed = true;
   }
@@ -1339,7 +1345,7 @@ static bool redo_move(Editor *const editor, EditRecord const *const rec)
 }
 
 static bool set_stars_height(EditSky *const edit_sky,
-  int const stars_height, EditRecord *const rec)
+  int const stars_height, _Optional EditRecord *const rec)
 {
   assert(edit_sky);
   int const old = sky_get_stars_height(&edit_sky->sky);
@@ -1357,7 +1363,7 @@ static bool set_stars_height(EditSky *const edit_sky,
 }
 
 static bool set_render_offset(EditSky *const edit_sky,
-  int const render_offset, EditRecord *const rec)
+  int const render_offset, _Optional EditRecord *const rec)
 {
   assert(edit_sky);
   int const old = sky_get_render_offset(&edit_sky->sky);
@@ -1392,16 +1398,16 @@ static void dummy_redraw_value(EditSky *const edit_sky)
   assert(edit_sky != NULL);
 }
 
-SkyState edit_sky_init(EditSky *const edit_sky, Reader *const reader,
-  void (*const redraw_bands_cb)(EditSky *, int, int),
-  void (*const redraw_render_offset_cb)(EditSky *),
-  void (*const redraw_stars_height_cb)(EditSky *))
+SkyState edit_sky_init(EditSky *const edit_sky, _Optional Reader *const reader,
+  _Optional EditSkyRedrawBandsFn *redraw_bands_cb,
+  _Optional EditSkyRedrawRenderOffsetFn *redraw_render_offset_cb,
+  _Optional EditSkyRedrawStarsHeightFn *redraw_stars_height_cb)
 {
   assert(edit_sky != NULL);
   SkyState state = SkyState_OK;
   if (reader)
   {
-    state = sky_read_file(&edit_sky->sky, reader);
+    state = sky_read_file(&edit_sky->sky, &*reader);
   }
   else
   {
@@ -1410,13 +1416,13 @@ SkyState edit_sky_init(EditSky *const edit_sky, Reader *const reader,
   linkedlist_init(&edit_sky->editors);
 
   edit_sky->redraw_bands_cb = redraw_bands_cb ?
-    redraw_bands_cb : dummy_redraw_range;
+    &*redraw_bands_cb : dummy_redraw_range;
 
   edit_sky->redraw_render_offset_cb = redraw_render_offset_cb ?
-    redraw_render_offset_cb : dummy_redraw_value;
+    &*redraw_render_offset_cb : dummy_redraw_value;
 
   edit_sky->redraw_stars_height_cb = redraw_stars_height_cb ?
-    redraw_stars_height_cb : dummy_redraw_value;
+    &*redraw_stars_height_cb : dummy_redraw_value;
 
   linkedlist_init(&edit_sky->undo_list);
   edit_sky->next_undo = NULL;
@@ -1427,7 +1433,7 @@ SkyState edit_sky_init(EditSky *const edit_sky, Reader *const reader,
 void edit_sky_destroy(EditSky *const edit_sky)
 {
   assert(edit_sky != NULL);
-  (void)linkedlist_for_each(&edit_sky->undo_list, destroy_record, NULL);
+  (void)linkedlist_for_each(&edit_sky->undo_list, destroy_record, edit_sky);
 }
 
 Sky *edit_sky_get_sky(EditSky *const edit_sky)
@@ -1547,7 +1553,7 @@ bool editor_redo(Editor *const editor, PaletteEntry const palette[])
 
   EditSky *const edit_sky = editor->edit_sky;
   assert(edit_sky != NULL);
-  LinkedListItem *const redo_item = get_redo_item(edit_sky);
+  _Optional LinkedListItem *const redo_item = get_redo_item(edit_sky);
   assert(redo_item != NULL);
   EditRecord *const rec = CONTAINER_OF(redo_item, EditRecord, link);
   edit_sky->next_undo = redo_item;
@@ -1595,7 +1601,7 @@ bool editor_redo(Editor *const editor, PaletteEntry const palette[])
     }
     break;
   case EditRecordType_Move:
-    changed = redo_move(editor, rec);
+    changed = redo_move(editor, rec, palette);
     if (changed)
     {
       redraw_move(edit_sky, rec);
@@ -1655,7 +1661,7 @@ EditResult edit_sky_set_render_offset(EditSky *const edit_sky,
   }
   DEBUGF("Setting render offset %d\n", render_offset);
 
-  EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_SetRenderOffset);
+  _Optional EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_SetRenderOffset);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -1709,7 +1715,7 @@ EditResult edit_sky_add_render_offset(EditSky *const edit_sky, int offset)
   stars_height -= offset;
   DEBUGF("Setting stars height %d\n", stars_height);
 
-  EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_AddRenderOffset);
+  _Optional EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_AddRenderOffset);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -1747,7 +1753,7 @@ EditResult edit_sky_set_stars_height(EditSky *const edit_sky,
   }
   DEBUGF("Setting stars height %d\n", stars_height);
 
-  EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_SetStarsHeight);
+  _Optional EditRecord *const rec = make_undo_values(edit_sky, EditRecordType_SetStarsHeight);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -1781,14 +1787,14 @@ static void dummy_redraw_select(Editor *const editor,
 }
 
 void editor_init(Editor *const editor, EditSky *const edit_sky,
-  void (*const redraw_select_cb)(Editor *, int, int, int, int))
+  _Optional EditorRedrawSelectFn *redraw_select_cb)
 {
   assert(editor != NULL);
   assert(edit_sky != NULL);
 
   editor->edit_sky = edit_sky;
   editor->redraw_select_cb = redraw_select_cb ?
-                             redraw_select_cb : dummy_redraw_select;
+                             &*redraw_select_cb : dummy_redraw_select;
   editor->start = 0; /* caret starts at bottom */
   editor->end = 0;
 
@@ -1816,7 +1822,7 @@ bool editor_has_selection(Editor const *editor)
 }
 
 void editor_get_selection_range(Editor const *editor,
-  int *const sel_low, int *const sel_high)
+  _Optional int *const sel_low, _Optional int *const sel_high)
 {
   assert(editor != NULL);
   int const sel_start = editor->start,
@@ -1929,7 +1935,7 @@ EditResult editor_smooth(Editor *const editor, PaletteEntry const palette[])
     start, end, (void *)editor);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditRecord *const rec = make_undo_smooth(edit_sky, start, end);
+  _Optional EditRecord *const rec = make_undo_smooth(edit_sky, start, end);
   if (!rec)
   {
     return EditResult_NoMem;
@@ -1952,7 +1958,7 @@ EditResult editor_set_plain(Editor *const editor, int colour)
   DEBUGF("Replacing %d..%d in editor %p with colour %d\n",
     sel_low, sel_high, (void *)editor, colour);
 
-  EditRecord *const rec = make_undo_set_plain(editor->edit_sky,
+  _Optional EditRecord *const rec = make_undo_set_plain(editor->edit_sky,
     sel_low, sel_high, colour);
   if (!rec)
   {
@@ -1984,7 +1990,7 @@ EditResult editor_interpolate(Editor *const editor,
     sel_low, sel_high, (void *)editor, start_col, end_col);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditRecord *const rec = make_undo_interpolate(edit_sky,
+  _Optional EditRecord *const rec = make_undo_interpolate(edit_sky,
     sel_low, sel_high, start_col, end_col);
   if (!rec)
   {
@@ -2020,7 +2026,7 @@ EditResult editor_insert_array(Editor *const editor, int const src_size,
          dst_start, dst_end, (void *)editor, (void *)src, src_size);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditRecord *const rec = make_undo_insert_array(edit_sky,
+  _Optional EditRecord *const rec = make_undo_insert_array(edit_sky,
     dst_start, dst_end, src_size);
 
   if (!rec)
@@ -2028,7 +2034,7 @@ EditResult editor_insert_array(Editor *const editor, int const src_size,
     return EditResult_NoMem;
   }
 
-  bool changed = prepare_import(editor, rec);
+  bool changed = prepare_import(editor, &*rec);
 
   if (s_set_array(&edit_sky->sky, dst_start, rec->data.edit.new_dst_end,
     src, rec->data.edit.lost, rec->data.edit.lsize, is_valid))
@@ -2041,12 +2047,12 @@ EditResult editor_insert_array(Editor *const editor, int const src_size,
 
   if (changed)
   {
-    redraw_changed(edit_sky, rec);
+    redraw_changed(edit_sky, &*rec);
   }
 
   /* Select the inserted data "so that the user can immediately cut
      it again should this be desired". */
-  select_inserted(editor, rec);
+  select_inserted(editor, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
@@ -2063,7 +2069,7 @@ EditResult editor_insert_sky(Editor *const editor, Sky const *const src)
         dst_start, dst_end, (void *)editor, (void *)src);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditRecord *const rec = make_undo_insert_array(edit_sky,
+  _Optional EditRecord *const rec = make_undo_insert_array(edit_sky,
     dst_start, dst_end, NColourBands);
 
   if (!rec)
@@ -2075,7 +2081,7 @@ EditResult editor_insert_sky(Editor *const editor, Sky const *const src)
   assert(trunc_src_size <= NColourBands);
   s_get_barray(src, 0, trunc_src_size, rec->data.edit.fresh);
 
-  bool changed = prepare_import(editor, rec);
+  bool changed = prepare_import(editor, &*rec);
 
   if (s_copy_between(&edit_sky->sky, dst_start,
     rec->data.edit.new_dst_end, src, rec->data.edit.lost, rec->data.edit.lsize))
@@ -2085,12 +2091,12 @@ EditResult editor_insert_sky(Editor *const editor, Sky const *const src)
 
   if (changed)
   {
-    redraw_changed(edit_sky, rec);
+    redraw_changed(edit_sky, &*rec);
   }
 
   /* Select the inserted data "so that the user can immediately cut
      it again should this be desired". */
-  select_inserted(editor, rec);
+  select_inserted(editor, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
@@ -2107,7 +2113,7 @@ EditResult editor_insert_plain(Editor *const editor, int const number, int col)
     dst_start, dst_end, (void *)editor, col, number);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditRecord *const rec = make_undo_insert_plain(edit_sky,
+  _Optional EditRecord *const rec = make_undo_insert_plain(edit_sky,
     dst_start, dst_end, number, col);
 
   if (!rec)
@@ -2115,7 +2121,7 @@ EditResult editor_insert_plain(Editor *const editor, int const number, int col)
     return EditResult_NoMem;
   }
 
-  bool changed = prepare_import(editor, rec);
+  bool changed = prepare_import(editor, &*rec);
 
   if (s_write_plain(&edit_sky->sky, dst_start, rec->data.edit.new_dst_end,
     col, rec->data.edit.lost, rec->data.edit.lsize))
@@ -2125,11 +2131,11 @@ EditResult editor_insert_plain(Editor *const editor, int const number, int col)
 
   if (changed)
   {
-    redraw_changed(edit_sky, rec);
+    redraw_changed(edit_sky, &*rec);
   }
 
   /* Move caret above the inserted data to make it easy to append */
-  caret_after_insert(editor, rec);
+  caret_after_insert(editor, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
@@ -2154,7 +2160,7 @@ EditResult editor_insert_gradient(Editor *const editor,
                          .end = end_col,
                          .inc_start = inc_start,
                          .inc_end = inc_end};
-  EditRecord *const rec = make_undo_insert_gradient(edit_sky,
+  _Optional EditRecord *const rec = make_undo_insert_gradient(edit_sky,
     dst_start, dst_end, fill);
 
   if (!rec)
@@ -2162,7 +2168,7 @@ EditResult editor_insert_gradient(Editor *const editor,
     return EditResult_NoMem;
   }
 
-  bool changed = prepare_import(editor, rec);
+  bool changed = prepare_import(editor, &*rec);
 
   if (s_interpolate(&edit_sky->sky, palette, dst_start,
       rec->data.edit.new_dst_end, fill,
@@ -2173,11 +2179,11 @@ EditResult editor_insert_gradient(Editor *const editor,
 
   if (changed)
   {
-    redraw_changed(edit_sky, rec);
+    redraw_changed(edit_sky, &*rec);
   }
 
   /* Move caret above the inserted data to make it easy to append */
-  caret_after_insert(editor, rec);
+  caret_after_insert(editor, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
@@ -2211,7 +2217,7 @@ EditResult editor_copy(Editor *const dst, Editor const *const src)
   DEBUGF("Copy from %d,%d in editor %p to %d,%d in editor %p\n",
     src_start, src_end, (void *)src, dst_start, dst_end, (void *)dst);
 
-  EditRecord *const rec = make_undo_copy(dst->edit_sky, dst_start, dst_end,
+    _Optional EditRecord *const rec = make_undo_copy(dst->edit_sky, dst_start, dst_end,
                                          src_start, src_end);
   if (!rec)
   {
@@ -2226,7 +2232,7 @@ EditResult editor_copy(Editor *const dst, Editor const *const src)
   s_get_barray(&src_sky->sky, src_start, src_start + trunc_src_size,
     rec->data.edit.fresh);
 
-  bool changed = prepare_import(dst, rec);
+  bool changed = prepare_import(dst, &*rec);
 
   if (s_set_barray(&dst_sky->sky, dst_start, rec->data.edit.new_dst_end,
     rec->data.edit.fresh, rec->data.edit.lost, rec->data.edit.lsize))
@@ -2236,12 +2242,12 @@ EditResult editor_copy(Editor *const dst, Editor const *const src)
 
   if (changed)
   {
-    redraw_changed(dst_sky, rec);
+    redraw_changed(dst_sky, &*rec);
   }
 
   /* Select the inserted data "so that the user can immediately cut
      it again should this be desired". */
-  select_inserted(dst, rec);
+  select_inserted(dst, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
@@ -2274,7 +2280,7 @@ EditResult editor_move(Editor *const dst, Editor const *const src)
   int const n_dst_end = budge_index(dst_end, src_start, -src_size);
 
   EditSky *const edit_sky = dst->edit_sky;
-  EditRecord *const rec = make_undo_move(edit_sky,
+  _Optional EditRecord *const rec = make_undo_move(edit_sky,
     n_dst_start, n_dst_end, src_start, src_end);
 
   if (!rec)
@@ -2287,7 +2293,7 @@ EditResult editor_move(Editor *const dst, Editor const *const src)
   bool changed = delete_range(dst, src_start, src_end,
     rec->data.edit.fresh);
 
-  if (prepare_import(dst, rec))
+  if (prepare_import(dst, &*rec))
   {
     changed = true;
   }
@@ -2300,12 +2306,12 @@ EditResult editor_move(Editor *const dst, Editor const *const src)
 
   if (changed)
   {
-    redraw_move(edit_sky, rec);
+    redraw_move(edit_sky, &*rec);
   }
 
   /* Select the inserted data "so that the user can immediately cut
      it again should this be desired". */
-  select_inserted(dst, rec);
+  select_inserted(dst, &*rec);
 
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }

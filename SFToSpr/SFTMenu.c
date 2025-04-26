@@ -37,6 +37,10 @@
 #include "SFTIconbar.h"
 #include "SFgfxconv.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Menu component IDs */
 enum
 {
@@ -97,12 +101,12 @@ void SFTMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_Selection,
                                     menu_selection,
-                                    NULL));
+                                    (void *)NULL));
 
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     about_to_be_shown,
-                                    NULL));
+                                    (void *)NULL));
 
   EF(ViewsMenu_parentcreated(id, ComponentId_Windows));
 }

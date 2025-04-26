@@ -42,6 +42,10 @@
 /* Local headers */
 #include "PreQuit.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -156,7 +160,7 @@ void PreQuit_initialise(ObjectId id)
     EF(event_register_toolbox_handler(id,
                                       tb_handlers[i].event_code,
                                       tb_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 
   /* Use Wimp_MMenusDeleted rather than Quit_DialogueCompleted to work around
@@ -165,7 +169,7 @@ void PreQuit_initialise(ObjectId id)
      !Help supplied with RISC OS 4 is running. */
   EF(quit_get_window_id(0, id, &window_id));
   EF(window_get_wimp_handle(0, window_id, &window_handle));
-  EF(event_register_message_handler(Wimp_MMenusDeleted, menus_deleted, NULL));
+  EF(event_register_message_handler(Wimp_MMenusDeleted, menus_deleted, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */

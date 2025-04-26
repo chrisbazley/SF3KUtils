@@ -40,6 +40,11 @@
 #include "Layout.h"
 #include "Editor.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 #define WIMP_FORE_COLOUR (0)
 #define SHOW_INDEX_NOT_COLNUM (0)
 
@@ -204,7 +209,7 @@ void layout_get_selection_bbox(int const start_row, int const end_row,
 /* ----------------------------------------------------------------------- */
 
 void layout_redraw_bbox(int const xmin, int const ymax, BBox *const bbox,
-  Editor const *const editor, Editor const *const ghost,
+  Editor const *const editor, _Optional Editor const *const ghost,
   const PaletteEntry palette[], bool const draw_caret)
 {
   assert(bbox != NULL);
@@ -337,9 +342,9 @@ void layout_redraw_bbox(int const xmin, int const ymax, BBox *const bbox,
   }
 
   /* Plot ghost caret */
-  if (ghost && !editor_has_selection(ghost))
+  if (ghost && !editor_has_selection(&*ghost))
   {
-    int const insert_pos = editor_get_caret_pos(ghost);
+    int const insert_pos = editor_get_caret_pos(&*ghost);
     if (insert_pos >= min_row && insert_pos <= max_row)
     {
       plot_caret(xmin, ymax, insert_pos, WimpColour_LightGreen);

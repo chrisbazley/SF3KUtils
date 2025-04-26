@@ -65,6 +65,10 @@
 #include "Utils.h"
 #include "Scan.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -111,7 +115,7 @@ typedef struct
 {
   UserData list_node;
   ObjectId window_id; /* dialogue window */
-  DirIterator *iterator; /* NULL if processing a single file */
+  _Optional DirIterator *iterator; /* NULL if processing a single file */
   ScanStatus phase; /* what is going on */
   unsigned int num_checked;
   unsigned int num_output;
@@ -125,7 +129,7 @@ typedef struct
   /* preserved data for retry */
   unsigned int retry_num_checked;
   unsigned int retry_num_output;
-  FILE **file_op;
+  FILE *_Optional *file_op;
   char return_action[MaxActionLen + 1];
   StringBuffer load_path, save_path;
   size_t make_path_offset; /* avoids creating directories that should already exist */
@@ -361,24 +365,24 @@ static void display_nout(const ScanData *const scan_data)
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *append_to_string_buffer(
+static _Optional const _kernel_oserror *append_to_string_buffer(
                                StringBuffer *const sb,
                                DirIterator *const it,
                                size_t (*get_string)(const DirIterator *it,
                                                     char *buffer,
                                                     size_t buff_size))
 {
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
   bool retry;
   size_t buff_size = 0;
 
   assert(sb != NULL);
   assert(it != NULL);
-  assert(get_string != NULL);
+  assert(get_string);
 
   do
   {
-    char * const buffer = stringbuffer_prepare_append(sb, &buff_size);
+    _Optional char * const buffer = stringbuffer_prepare_append(sb, &buff_size);
     retry = false;
     if (buffer == NULL)
     {
@@ -386,7 +390,7 @@ static const _kernel_oserror *append_to_string_buffer(
     }
     else
     {
-      const size_t nchars = get_string(it, buffer, buff_size);
+      const size_t nchars = get_string(it, &*buffer, buff_size);
 
       /* Check for truncation of the string */
       if (nchars >= buff_size)
@@ -409,22 +413,23 @@ static const _kernel_oserror *append_to_string_buffer(
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *examine_object(ScanData *const scan_data)
+static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data)
 {
   assert(scan_data != NULL);
   scan_data->retry_num_output = scan_data->num_output;
   scan_data->retry_num_checked = scan_data->num_checked;
 
-  if (diriterator_is_empty(scan_data->iterator))
+  if (!scan_data->iterator || diriterator_is_empty(&*scan_data->iterator))
   {
     scan_data->phase = ScanStatus_Finished;
     return NULL;
   }
+  DirIterator *const iterator = &*scan_data->iterator;
 
   stringbuffer_truncate(&scan_data->load_path, 0);
 
-  const _kernel_oserror *e = append_to_string_buffer(&scan_data->load_path,
-                              scan_data->iterator,
+  _Optional const _kernel_oserror *e = append_to_string_buffer(&scan_data->load_path,
+                              iterator,
                               diriterator_get_object_path_name);
 
   ScanStatus new_phase = ScanStatus_NextObject;
@@ -432,7 +437,7 @@ static const _kernel_oserror *examine_object(ScanData *const scan_data)
   {
     DirIteratorObjectInfo info;
     bool skip = true;
-    switch (diriterator_get_object_info(scan_data->iterator, &info))
+    switch (diriterator_get_object_info(iterator, &info))
     {
       case ObjectType_File:
       case ObjectType_Image: /* (image files are treated as normal files) */
@@ -449,7 +454,7 @@ static const _kernel_oserror *examine_object(ScanData *const scan_data)
           /* Remove the previous sub-path (does nothing if already undone) */
           stringbuffer_undo(&scan_data->save_path);
           e = append_to_string_buffer(&scan_data->save_path,
-                                      scan_data->iterator,
+                                      iterator,
                                       diriterator_get_object_sub_path_name);
         }
 
@@ -485,7 +490,7 @@ static const _kernel_oserror *examine_object(ScanData *const scan_data)
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *scan_load_file(ScanData *const scan_data,
+static _Optional const _kernel_oserror *scan_load_file(ScanData *const scan_data,
   volatile const bool *const time_up)
 {
   assert(scan_data != NULL);
@@ -511,7 +516,7 @@ static const _kernel_oserror *scan_load_file(ScanData *const scan_data,
                    0));
   }
 
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
   if (scan_data->compress)
     e = load_fileM2(path, &scan_data->buffer, time_up, &scan_data->file_op);
   else
@@ -560,7 +565,7 @@ static const _kernel_oserror *scan_load_file(ScanData *const scan_data,
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *scan_save_file(ScanData *const scan_data, volatile const bool *const time_up)
+static _Optional const _kernel_oserror *scan_save_file(ScanData *const scan_data, volatile const bool *const time_up)
 {
   assert(scan_data != NULL);
   assert(time_up != NULL);
@@ -586,7 +591,7 @@ static const _kernel_oserror *scan_save_file(ScanData *const scan_data, volatile
   }
 
   /* Time to save */
-  const _kernel_oserror *e = NULL;
+  _Optional CONST _kernel_oserror *e = NULL;
   if (scan_data->compress)
   {
     e = save_compressedM2(path, &scan_data->buffer, time_up, 0,
@@ -686,7 +691,7 @@ static SchedulerTime do_scan_idle(void *const handle, SchedulerTime new_time,
   volatile const bool *const time_up)
 {
   ScanData *const scan_data = handle;
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
 
   assert(handle != NULL);
   assert(time_up != NULL);
@@ -737,7 +742,7 @@ static SchedulerTime do_scan_idle(void *const handle, SchedulerTime new_time,
         }
         else
         {
-          e = diriterator_advance(scan_data->iterator);
+          e = diriterator_advance(&*scan_data->iterator);
           if (e == NULL)
           {
             scan_data->phase = ScanStatus_ExamineObject;
@@ -812,7 +817,7 @@ static int actionbutton_selected(int const event_code, ToolboxEvent *const event
         if (scan_data->iterator == NULL)
           break;
 
-        if (E(diriterator_reset(scan_data->iterator)))
+        if (E(diriterator_reset(&*scan_data->iterator)))
           break;
 
         if (E(scheduler_register_delay(do_scan_idle, handle, 0, Priority)))
@@ -1002,7 +1007,7 @@ void Scan_create(char *const load_root, char const *const save_root,
   assert(save_root != NULL);
 
   /* Allocate memory for batch operation */
-  ScanData * const scan_data = malloc(sizeof(*scan_data));
+  _Optional ScanData * const scan_data = malloc(sizeof(*scan_data));
   if (scan_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -1014,7 +1019,6 @@ void Scan_create(char *const load_root, char const *const save_root,
     .phase = ScanStatus_Error,
     .num_checked = 0,
     .num_output = 0,
-    .buffer = NULL,
     .compress = compress,
     .comp_type = comp_type,
     .iterator = NULL,
@@ -1034,12 +1038,12 @@ void Scan_create(char *const load_root, char const *const save_root,
 
   if (!E(toolbox_create_object(0, "Scan", &scan_data->window_id)))
   {
-    if (scan_add_to_menu(scan_data, load_root))
+    if (scan_add_to_menu(&*scan_data, load_root))
     {
       do
       {
         if (E(event_register_toolbox_handler(scan_data->window_id,
-                ActionButton_Selected, actionbutton_selected, scan_data)))
+                ActionButton_Selected, actionbutton_selected, &*scan_data)))
         {
           break;
         }
@@ -1050,19 +1054,19 @@ void Scan_create(char *const load_root, char const *const save_root,
           break;
         }
 
-        if (!examine_root(scan_data, load_root))
+        if (!examine_root(&*scan_data, load_root))
         {
           break;
         }
 
         /* Set up the contents of the progress window */
-        scan_set_title(scan_data);
-        update_window(scan_data,
+        scan_set_title(&*scan_data);
+        update_window(&*scan_data,
                       scan_data->phase == ScanStatus_Load ?
                            "ScanTLoad" : "ScanTOpen",
                       load_root);
-        display_nout(scan_data);
-        display_progress(scan_data);
+        display_nout(&*scan_data);
+        display_progress(&*scan_data);
 
         /* Show the window in the default position for the next new document */
         if (E(StackViews_open(scan_data->window_id, NULL_ObjectId, NULL_ComponentId)))
@@ -1071,7 +1075,7 @@ void Scan_create(char *const load_root, char const *const save_root,
         }
 
         /* Register to receive null polls */
-        if (E(scheduler_register_delay(do_scan_idle, scan_data, 0, Priority)))
+        if (E(scheduler_register_delay(do_scan_idle, &*scan_data, 0, Priority)))
         {
           break;
         }

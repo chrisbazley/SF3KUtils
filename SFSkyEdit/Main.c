@@ -22,6 +22,7 @@
 #include "stdlib.h"
 #ifdef FORTIFY
 #include <string.h>
+#include "Fortify.h"
 #endif
 
 /* RISC OS library files */
@@ -36,6 +37,11 @@
 /* Local headers */
 #include "SFSInit.h"
 #include "ParseArgs.h"
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */

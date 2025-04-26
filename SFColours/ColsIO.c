@@ -75,6 +75,11 @@
 #include "Utils.h"
 #include "Menus.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Special value for SWI Wimp_DragBox */
 #undef CancelDrag /* definition in "wimplib.h" is wrong! */
 #define CancelDrag ((WimpDragBox *)-1)
@@ -141,7 +146,7 @@ static int const export_file_types[] =
 
 static LinkedList action_data_list;
 static ExpColFile clipboard;
-static EditWin *drag_claim_view;
+static _Optional EditWin *drag_claim_view;
 static BBox selected_bbox;
 static IOCoords drag_pos; /* relative to source window's wk area */
 static int dragclaim_msg_ref;
@@ -176,7 +181,7 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
   size_t const nchars = reader_fread(str, 1, sizeof(str)-1, reader);
   str[nchars] = '\0';
 
-  char *endp;
+  _Optional char *endp;
   size_t const nvals = csv_parse_string(str, &endp, values, CSVOutputType_Int,
     max);
 
@@ -345,7 +350,7 @@ static bool import_expcolfile(EditWin *const edit_win,
 
 /* ----------------------------------------------------------------------- */
 
-static void destroy_record(IOActionData *action_data)
+static void destroy_record(_Optional IOActionData *action_data)
 {
   /* Destroy record of I/O action and de-link it from the list */
   if (action_data != NULL)
@@ -358,11 +363,11 @@ static void destroy_record(IOActionData *action_data)
 
 /* ----------------------------------------------------------------------- */
 
-static IOActionData *create_record(IOActionCode action,
+static _Optional IOActionData *create_record(IOActionCode action,
   EditWin *const edit_win)
 {
   /* Allocate record for an I/O operation and link it into the list */
-  IOActionData *const action_data = malloc(sizeof(*action_data));
+  _Optional IOActionData *const action_data = malloc(sizeof(*action_data));
   if (action_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -395,10 +400,9 @@ static void probe_complete(int const file_type, void *const client_handle)
 
 /* ----------------------------------------------------------------------- */
 
-static void probe_failed(const _kernel_oserror *const e,
+static void probe_failed(_Optional const _kernel_oserror *const e,
   void *const client_handle)
 {
-  NOT_USED(client_handle);
   NOT_USED(e);
   EditWin_set_paste_enabled(client_handle, false);
 }
@@ -451,7 +455,7 @@ static bool drag_or_paste_read(Reader *const reader, int const estimated_size,
   int const file_type, char const *const filename, void *const client_handle)
 {
   /* This function is called to deliver clipboard contents or dragged data */
-  IOActionData *const action_data = client_handle;
+  _Optional IOActionData *const action_data = client_handle;
   assert(action_data != NULL);
   assert(action_data->action == IOActionCode_PasteClip ||
          action_data->action == IOActionCode_Import);
@@ -502,10 +506,10 @@ static bool drag_or_paste_read(Reader *const reader, int const estimated_size,
 
 /* ----------------------------------------------------------------------- */
 
-static void drag_or_paste_failed(const _kernel_oserror *const e,
+static void drag_or_paste_failed(_Optional const _kernel_oserror *const e,
   void *const client_handle)
 {
-  IOActionData *const action_data = client_handle;
+  _Optional IOActionData *const action_data = client_handle;
   assert(action_data != NULL);
   assert(action_data->action == IOActionCode_PasteClip ||
          action_data->action == IOActionCode_Import);
@@ -606,11 +610,13 @@ static void cb_lost(void *const client_handle)
 static void relinquish_drag(void)
 {
   DEBUGF("View %p relinquishing drag\n", (void *)drag_claim_view);
-  assert(drag_claim_view != NULL);
-
-  EditWin_set_hint(drag_claim_view, NULL_ComponentId);
-  EditWin_stop_auto_scroll(drag_claim_view);
-  drag_claim_view = NULL;
+  if (drag_claim_view != NULL)
+  {
+    EditWin *const to_release = &*drag_claim_view;
+    EditWin_set_hint(to_release, NULL_ComponentId);
+    EditWin_stop_auto_scroll(to_release);
+    drag_claim_view = NULL;
+  }
 }
 
 /* ----------------------------------------------------------------------- */
@@ -754,7 +760,7 @@ static int datasave_msg_handler(WimpMessage *const message, void *const handle)
     return 1;
   }
 
-  IOActionData *const action_data = create_record(IOActionCode_Import,
+  _Optional IOActionData *const action_data = create_record(IOActionCode_Import,
     edit_win);
   if (action_data != NULL)
   {
@@ -767,7 +773,7 @@ static int datasave_msg_handler(WimpMessage *const message, void *const handle)
                             &action_data->coords.y);
 
     if (E(loader3_receive_data(message, drag_or_paste_read,
-            drag_or_paste_failed, action_data)))
+            drag_or_paste_failed, &*action_data)))
     {
       destroy_record(action_data);
     }
@@ -828,7 +834,7 @@ static int dataload_msg_handler(WimpMessage *const message, void *const handle)
      (method used depends on the type of data) */
   bool success = false;
 
-  IOActionData *const action_data = create_record(IOActionCode_Import,
+  _Optional IOActionData *const action_data = create_record(IOActionCode_Import,
     edit_win);
   if (action_data != NULL)
   {
@@ -843,7 +849,7 @@ static int dataload_msg_handler(WimpMessage *const message, void *const handle)
 
     success = loader3_load_file(message->data.data_load.leaf_name,
       message->data.data_load.file_type,
-      drag_or_paste_read, drag_or_paste_failed, action_data);
+      drag_or_paste_read, drag_or_paste_failed, &*action_data);
   }
 
   if (success)
@@ -920,7 +926,7 @@ static void DAO_render(int const cptr, int const pptr, int const sptr, int const
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *drag_box(const DragBoxOp action,
+static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
   bool solid_drags, int const mouse_x, int const mouse_y,
   void *const client_handle)
 {
@@ -1005,7 +1011,7 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
                          (uintptr_t)DAO_render,
                          renderer_args,
                          &drag_box.dragging_box,
-                         NULL));
+                         &(BBox){0}));
       using_dao = true;
     }
     else
@@ -1111,7 +1117,7 @@ static bool sel_write(Writer *const writer, int const file_type,
 
 /* ----------------------------------------------------------------------- */
 
-static void sel_saved(int const file_type, char const *const file_path,
+static void sel_saved(int const file_type, _Optional char const *const file_path,
   int const datasave_ref, void *const client_handle)
 {
   IOActionData *const action_data = client_handle;
@@ -1129,7 +1135,7 @@ static void sel_saved(int const file_type, char const *const file_path,
 
 /* ----------------------------------------------------------------------- */
 
-static void sel_failed(const _kernel_oserror *const error,
+static void sel_failed(_Optional const _kernel_oserror *const error,
   void *const client_handle)
 {
   IOActionData *const action_data = client_handle;
@@ -1156,7 +1162,7 @@ static bool drop_handler_remote(int const window,
   DEBUGF("Drag destination is remote\n");
 
   /* Allocate record for an I/O operation and link it into the list */
-  IOActionData * const action_data = create_record(
+  _Optional IOActionData * const action_data = create_record(
     IOActionCode_Export, source_view);
 
   if (action_data == NULL)
@@ -1183,7 +1189,7 @@ static bool drop_handler_remote(int const window,
   STRCPY_SAFE(msg.data.data_save.leaf_name, msgs_lookup("LeafName"));
 
   if (E(saver2_send_data(claimant_task, &msg, sel_write,
-                         sel_saved, sel_failed, action_data)))
+                         sel_saved, sel_failed, &*action_data)))
   {
     destroy_record(action_data);
     return false;
@@ -1200,7 +1206,8 @@ static bool drop_handler(bool const shift_held, int const window, int const icon
 {
   /* This function is called when a drag has terminated */
   NOT_USED(shift_held);
-  EditWin *const source_view = client_handle, *dest_view;
+  EditWin *const source_view = client_handle;
+  _Optional EditWin *dest_view;
   bool saved = true;
   IOCoords const mouse_pos = {mouse_x, mouse_y};
 
@@ -1222,7 +1229,7 @@ static bool drop_handler(bool const shift_held, int const window, int const icon
 
   if (dest_view != NULL)
   {
-    drop_handler_local(mouse_pos, source_view, dest_view);
+    drop_handler_local(mouse_pos, source_view, &*dest_view);
 
     /* It's more robust to stop the drag now instead of returning false
        and waiting for a final Dragging message. */
@@ -1280,10 +1287,10 @@ static bool load_csv(Reader *const reader, char const *const filename)
   assert(filename != NULL);
 
   bool success = false;
-  ColMapFile *const file = ColMapFile_create(NULL, NULL, false, false);
+  _Optional ColMapFile *const file = ColMapFile_create(NULL, NULL, false, false);
   if (file)
   {
-    EditWin *const edit_win = ColMapFile_get_win(file);
+    EditWin *const edit_win = ColMapFile_get_win(&*file);
     IOCoords origin;
     EditWin_coords_from_index(edit_win, 0, &origin.x, &origin.y);
     success = import_csv(edit_win, reader, origin, filename);
@@ -1345,7 +1352,7 @@ static bool cancel_cb(LinkedList *const list, LinkedListItem *const item, void *
 
 /* ----------------------------------------------------------------------- */
 
-static void load_fail(CONST _kernel_oserror *const error,
+static void load_fail(_Optional CONST _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -1465,7 +1472,7 @@ void IO_initialise(void)
      (should be called last, since it is registered first) */
   EF(event_register_message_handler(Wimp_MDataSave,
                                     datasave_fallback_handler,
-                                    NULL));
+                                    (void *)NULL));
   linkedlist_init(&action_data_list);
 
 
@@ -1473,7 +1480,10 @@ void IO_initialise(void)
   EF(_kernel_setenv(APP_NAME"$DAO","1"));
   if (_kernel_oscli("RMEnsure DragAnObject 0 Set "APP_NAME"$DAO 0") ==
       _kernel_ERROR)
-    err_check_fatal_rep(_kernel_last_oserror());
+  {
+    EF(_kernel_last_oserror());
+    exit(EXIT_FAILURE);
+  }
 
   char readvar_buffer[MaxDAOVarValueLen + 1];
   EF(_kernel_getenv(APP_NAME"$DAO", readvar_buffer, sizeof(readvar_buffer)));
@@ -1502,7 +1512,7 @@ void IO_receive(WimpMessage const *const message)
 
   if (in_file_types(message->data.data_save.file_type, import_file_types))
   {
-    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, NULL));
+    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, (void *)NULL));
   }
   else
   {
@@ -1516,28 +1526,29 @@ void IO_load_file(int const file_type, char const *const load_path)
 {
   assert(load_path != NULL);
   DEBUGF("Request to load file '%s' of type &%X\n", load_path, file_type);
-  char *canonical_path = NULL;
+  _Optional char *canonical_path = NULL;
 
   /* Check whether this file type is supported */
   if (!in_file_types(file_type, import_file_types))
   {
     RPT_ERR("BadFileType");
   }
-  else if (!E(canonicalise(&canonical_path, NULL, NULL, load_path)))
+  else if (!E(canonicalise(&canonical_path, NULL, NULL, load_path)) &&
+           canonical_path)
   {
     /* Check for whether this file is already being edited */
-    ColMapFile *const file = ColMapFile_find_by_file_name(canonical_path);
+    _Optional ColMapFile *const file = ColMapFile_find_by_file_name(&*canonical_path);
     if (file == NULL)
     {
       bool is_safe = true;
-      (void)loader3_load_file(canonical_path, file_type,
+      (void)loader3_load_file(&*canonical_path, file_type,
                               read_file, load_fail, &is_safe);
     }
     else
     {
       /* Reopen existing editing window at top of stack */
       DEBUGF("This file is already being edited (%p)\n", (void *)file);
-      ColMapFile_show(file);
+      ColMapFile_show(&*file);
     }
     free(canonical_path);
   }
@@ -1630,7 +1641,7 @@ void IO_paste(EditWin *const edit_win)
 {
   /* Record target coordinates for paste
      (centre of first selected logical colour) */
-  IOActionData *const action_data = create_record(
+  _Optional IOActionData *const action_data = create_record(
     IOActionCode_PasteClip, edit_win);
 
   if (action_data != NULL)
@@ -1640,7 +1651,7 @@ void IO_paste(EditWin *const edit_win)
       WimpDataRequestMessage data_request;
       init_data_request(edit_win, &data_request);
       if (!E(entity2_request_data(&data_request, drag_or_paste_read,
-                                  drag_or_paste_failed, action_data)))
+                                  drag_or_paste_failed, &*action_data)))
       {
         return;
       }
@@ -1666,7 +1677,7 @@ bool IO_copy(EditWin *const edit_win)
   /* Claim the global clipboard
      (a side-effect is to free any clipboard data held by us) */
   if (E(entity2_claim(Wimp_MClaimEntity_Clipboard, export_file_types,
-         estimate_cb, cb_write, cb_lost, NULL)))
+         estimate_cb, cb_write, cb_lost, edit_win)))
   {
     return false;
   }
@@ -1689,7 +1700,7 @@ void IO_dragging_msg(const WimpDraggingMessage *const dragging)
   /* If this Dragging message is not for the window that previously claimed
      the drag then stop auto-scrolling. */
   if (drag_claim_view != NULL &&
-      (!EditWin_owns_wimp_handle(drag_claim_view, dragging->window_handle) ||
+      (!EditWin_owns_wimp_handle(&*drag_claim_view, dragging->window_handle) ||
        dragging->icon_handle < WimpIcon_WorkArea))
   {
     relinquish_drag();
@@ -1704,7 +1715,7 @@ bool IO_export_colmap_file(EditWin *const edit_win, char const * const path)
   assert(path != NULL);
 
   bool success = false;
-  FILE *const f = fopen_inc(path, "wb");
+  _Optional FILE *const f = fopen_inc(path, "wb");
   if (!f)
   {
     err_report(DUMMY_ERRNO, msgs_lookup_subn("OpenOutFail", 1, path));
@@ -1712,10 +1723,10 @@ bool IO_export_colmap_file(EditWin *const edit_win, char const * const path)
   else
   {
     Writer raw;
-    writer_raw_init(&raw, f);
+    writer_raw_init(&raw, &*f);
     success = export_colmap(edit_win, path, &raw);
     long int const comp_size = writer_destroy(&raw);
-    int const err = fclose_dec(f);
+    int const err = fclose_dec(&*f);
 
     if ((err || comp_size < 0) && success)
     {

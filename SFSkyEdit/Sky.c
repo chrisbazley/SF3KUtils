@@ -36,6 +36,11 @@
 /* Local headers */
 #include "Sky.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {

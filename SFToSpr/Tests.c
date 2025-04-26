@@ -40,9 +40,9 @@
 #include "Debug.h"
 #include "FileUtils.h"
 #include "Err.h"
-#include "userdata.h"
-#include "gkeycomp.h"
-#include "gkeydecomp.h"
+#include "UserData.h"
+#include "GKeyComp.h"
+#include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
 #include "PseudoWimp.h"
@@ -58,7 +58,13 @@
 /* Local header files */
 #include "SFTInit.h"
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.SFtoSprTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"
@@ -73,7 +79,7 @@
 
 #define assert_no_error(x) \
 do { \
-  const _kernel_oserror * const e = x; \
+  _Optional const _kernel_oserror * const e = x; \
   if (e != NULL) \
   { \
     DEBUGF("Error: 0x%x,%s %s:%d\n", e->errnum, e->errmess, __FILE__, __LINE__); \
@@ -191,6 +197,13 @@ static void copy(const char *src, const char *dst)
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
 }
 
+FILE *test_fopen(char const *file_name, char const *mode)
+{
+  _Optional FILE *f = fopen(file_name, mode);
+  assert(f != NULL);
+  return &*f;
+}
+
 static int make_compressed_file(const char *const file_name, void *const data, const size_t size, const int file_type)
 {
   assert(file_name != NULL);
@@ -199,12 +212,11 @@ static int make_compressed_file(const char *const file_name, void *const data, c
   assert(size > 0);
 
   char out_buffer[CompressionBufferSize];
-  GKeyComp      *comp;
+  _Optional GKeyComp      *comp;
   int estimated_size = sizeof(int32_t);
   GKeyStatus status;
 
-  FILE *const f = fopen(file_name, "wb");
-  assert(f != NULL);
+  FILE *const f = test_fopen(file_name, "wb");
 
   bool const ok = fwrite_int32le(size, f);
   assert(ok);
@@ -217,15 +229,13 @@ static int make_compressed_file(const char *const file_name, void *const data, c
     .in_size = size,
     .out_buffer = out_buffer,
     .out_size = sizeof(out_buffer),
-    .prog_cb = NULL,
-    .cb_arg = NULL,
   };
 
   DEBUG_SET_OUTPUT(DebugOutput_None, "");
   do
   {
     /* Compress the data from the input buffer to the output buffer */
-    status = gkeycomp_compress(comp, &params);
+    status = gkeycomp_compress(&*comp, &params);
 
     /* Is the output buffer full or have we finished? */
     if (status == GKeyStatus_Finished ||
@@ -376,7 +386,7 @@ static void check_compressed_file(const char *const file_name, void *const data,
   assert(size > 0);
 
   uint8_t in_buffer[CompressionBufferSize];
-  GKeyDecomp     *decomp;
+  _Optional GKeyDecomp     *decomp;
   long int len;
   bool in_pending = false;
   GKeyStatus status;
@@ -387,8 +397,7 @@ static void check_compressed_file(const char *const file_name, void *const data,
   DEBUGF("Load address: 0x%x\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 
-  FILE *const f = fopen(file_name, "rb");
-  assert(f != NULL);
+  FILE *const f = test_fopen(file_name, "rb");
 
   bool const ok = fread_int32le(&len, f);
   assert(ok);
@@ -402,8 +411,6 @@ static void check_compressed_file(const char *const file_name, void *const data,
     .in_size = 0,
     .out_buffer = data,
     .out_size = size,
-    .prog_cb = NULL,
-    .cb_arg = NULL,
   };
 
   DEBUG_SET_OUTPUT(DebugOutput_None, "");
@@ -419,7 +426,7 @@ static void check_compressed_file(const char *const file_name, void *const data,
     }
 
     /* Decompress the data from the input buffer to the output buffer */
-    status = gkeydecomp_decompress(decomp, &params);
+    status = gkeydecomp_decompress(&*decomp, &params);
 
     /* If the input buffer is empty and it cannot be (re-)filled then
        there is no more input pending. */
@@ -581,8 +588,7 @@ static int make_uncompressed_file(const char *const file_name, const void *const
   assert(data != NULL);
   assert(size > 0);
 
-  FILE *const f = fopen(file_name, "wb");
-  assert(f != NULL);
+  FILE *const f = test_fopen(file_name, "wb");
 
   size_t const n = fwrite(data, size, 1, f);
   assert(n == 1);
@@ -782,8 +788,7 @@ static size_t check_uncompressed_file(const char *file_name, void *const test_da
   DEBUGF("Load address: 0x%x\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 
-  FILE *const f = fopen(file_name, "rb");
-  assert(f != NULL);
+  FILE *const f = test_fopen(file_name, "rb");
 
   size_t const n = fread(test_data, 1, size, f);
 
@@ -1054,7 +1059,7 @@ static void check_sprites_metadata_file(const char *const file_name)
 
 static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 {
-  _kernel_oserror *e;
+  _Optional _kernel_oserror *e;
 
   assert(block != NULL);
 
@@ -1068,7 +1073,7 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  UserData *window;
+  _Optional UserData *window;
   char buffer[1024];
   _kernel_swi_regs regs;
 
@@ -1112,7 +1117,7 @@ static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
   STRCPY_SAFE(sastfe->filename, TEST_DATA_OUT);
 }
 
-static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, char *address, int no_bytes)
+static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, _Optional char *address, int no_bytes)
 {
   SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)&poll_block->words;
 
@@ -1428,7 +1433,7 @@ static bool check_ram_fetch_msg(int rt_ref, WimpMessage *ram_fetch)
   return false;
 }
 
-static void check_file_save_completed(ObjectId id, const _kernel_oserror *err)
+static void check_file_save_completed(ObjectId id, _Optional const _kernel_oserror *err)
 {
   /* saveas_get_file_save_completed must have been called
      to indicate success or failure */
@@ -1538,7 +1543,7 @@ static void load_persistent(int estimated_size, int file_type)
   unsigned long limit;
   int my_ref = 0;
   OS_File_CatalogueInfo cat;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
 
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -1634,7 +1639,7 @@ static void activate_savebox(ObjectId saveas_id, ComponentId radio, unsigned int
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err = NULL;
+    _Optional const _kernel_oserror *err = NULL;
 
     /* Recording the new file path can allocate memory so no enter-scope here */
     DEBUGF("Test sets allocation limit %lu\n", limit);
@@ -1659,8 +1664,7 @@ static void activate_savebox(ObjectId saveas_id, ComponentId radio, unsigned int
         {
           assert(!(flags & SaveAs_DestinationSafe));
           /* Open a temporary file in which to store the received data. */
-          FILE * const f = fopen(TEST_DATA_OUT, "wb");
-          assert(f != NULL);
+          FILE * const f = test_fopen(TEST_DATA_OUT, "wb");
           int total_bytes = 0;
 
           /* Make sure we don't get all of the data on the first call */
@@ -1907,7 +1911,7 @@ static void test7(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
     my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, &drag_dest, 0);
 
     err_suppress_errors();
@@ -2064,7 +2068,7 @@ static void test14(void)
 
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
 
-    const _kernel_oserror *err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     check_file_save_completed(id, err);
 
     /* A scan dbox should have been created */
@@ -2139,7 +2143,7 @@ static void batch_test(ComponentId radio)
     ObjectId scan_id;
     unsigned int i;
     OS_File_CatalogueInfo cat;
-    const _kernel_oserror *err = NULL;
+    _Optional const _kernel_oserror *err = NULL;
 
     Fortify_EnterScope();
 
@@ -2183,7 +2187,7 @@ static void batch_test(ComponentId radio)
     {
       /* Deliver null events until the scan dbox completes or an error occurs */
       err_suppress_errors();
-      dispatch_event(Wimp_ENull, NULL);
+      dispatch_event(Wimp_ENull, &(WimpPollBlock){0});
       err = err_dump_suppressed();
     }
     DEBUGF("Error or complete\n");
@@ -2369,7 +2373,7 @@ static void cleanup_stalled(void)
 {
   /* Wait for timeout then deliver a null event to clean up the failed load */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
 
   wait();
 
@@ -2378,7 +2382,7 @@ static void cleanup_stalled(void)
     err_suppress_errors();
     Fortify_SetNumAllocationsLimit(limit);
 
-    dispatch_event(Wimp_ENull, NULL);
+    dispatch_event(Wimp_ENull, &(WimpPollBlock){0});
 
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
     err = err_dump_suppressed();
@@ -2389,9 +2393,9 @@ static void cleanup_stalled(void)
   Fortify_LeaveScope();
 }
 
-static const _kernel_oserror *send_data_core(int file_type, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, int your_ref)
+static _Optional const _kernel_oserror *send_data_core(int file_type, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, int your_ref)
 {
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   bool use_file = false;
 
@@ -2430,8 +2434,7 @@ static const _kernel_oserror *send_data_core(int file_type, int estimated_size, 
         {
           /* Allowed to use RAM transfer. */
           char test_data[estimated_size];
-          FILE * const f = fopen(TEST_DATA_IN, "rb");
-          assert(f != NULL);
+          FILE * const f = test_fopen(TEST_DATA_IN, "rb");
           size_t const n = fread(test_data, estimated_size, 1, f);
           assert(n == 1);
           fclose(f);
@@ -2568,7 +2571,7 @@ static void test22(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
@@ -2593,7 +2596,7 @@ static void test23(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
@@ -2612,7 +2615,7 @@ static void test23(void)
 static void test24(void)
 {
   /* Transfer dir from app */
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2631,14 +2634,14 @@ static void test24(void)
   err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
-  assert(!strcmp(err->errmess, msgs_lookup("AppDir")));
+  assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
   assert(pseudo_wimp_get_message_count() == 0);
 }
 
 static void test25(void)
 {
   /* Transfer app from app */
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2656,7 +2659,7 @@ static void test25(void)
   err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
-  assert(!strcmp(err->errmess, msgs_lookup("AppDir")));
+  assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
   assert(pseudo_wimp_get_message_count() == 0);
 }
 
@@ -2664,8 +2667,8 @@ static void do_data_transfer(int file_type, int (*make_file)(const char *filenam
 {
   WimpPollBlock poll_block;
   unsigned long limit;
-  const _kernel_oserror *err;
-  UserData *savebox;
+  _Optional const _kernel_oserror *err;
+  _Optional UserData *savebox;
   ObjectId id;
   const int estimated_size = make_file(TEST_DATA_IN, n, metadata);
 
@@ -2731,7 +2734,7 @@ static void test29(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
@@ -2867,7 +2870,7 @@ static void quit_with_cancel_core(bool desktop_shutdown, bool is_risc_os_3)
   for (unsigned int nwin = 0; nwin <= MaxNumWindows; ++nwin)
   {
     WimpPollBlock poll_block;
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
     unsigned long limit;
     int prequit_ref = 0;
 
@@ -2990,7 +2993,7 @@ static void quit_with_confirm_core(bool desktop_shutdown, bool is_risc_os_3)
   for (unsigned int nwin = 0; nwin <= MaxNumWindows; ++nwin)
   {
     WimpPollBlock poll_block;
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
     unsigned long limit;
     int prequit_ref = 0;
 

@@ -68,6 +68,11 @@
 #include "SavePrev.h"
 #include "ScalePrev.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Toolbar component IDs */
 enum
 {
@@ -165,19 +170,19 @@ struct PreviewData
   bool          no_scale;
   bool          plot_err;
   void         *cached_image; /* flex anchor */
-  void         *export; /* sky file */
+  void         *export; /* flex anchor */
   SkyFile      *file;
   void         *stars;    /* flex anchor */
 };
 
 static bool translate_cols = true;
-static void *col_trans_table = NULL; /* table of colour numbers for drawing
-                                        sprite in desktop (flex anchor) */
-static TrigTable *trig_table = NULL; /* table of (co)sine values */
+static _Optional void *col_trans_table = NULL; /* table of colour numbers for drawing
+                                                  sprite in desktop */
+static _Optional TrigTable *trig_table = NULL; /* table of (co)sine values */
 static bool def_toolbars = true; /* default toolbar show state */
 static int def_scale = Scale_Default; /* default percentage scale */
-static int *persp_table = NULL; /* table of reciprocal values for perspective
-                                   projection (flex anchor) */
+static _Optional int *persp_table = NULL; /* table of reciprocal values for perspective
+                                             projection */
 
 /* ----------------------------------------------------------------------- */
 /*                          Private functions                              */
@@ -195,9 +200,14 @@ static void cam_rotate(Point3D *const p, int const x_angle, int const y_angle)
   int y_in = p->y;
   int const z_in = p->z;
 
+  if (!trig_table) {
+    return;
+  }
+  const TrigTable *const tt = &*trig_table;
+
   /* Apply X rotation */
-  int cos = TrigTable_look_up_cosine(trig_table, x_angle),
-      sin = TrigTable_look_up_sine(trig_table, x_angle);
+  int cos = TrigTable_look_up_cosine(tt, x_angle),
+      sin = TrigTable_look_up_sine(tt, x_angle);
 
   p->x = (x_in * cos) / (SineMultiplier / PostRotateScaler) -
          (y_in * sin) / (SineMultiplier / PostRotateScaler);
@@ -206,8 +216,8 @@ static void cam_rotate(Point3D *const p, int const x_angle, int const y_angle)
          (y_in * cos) / SineMultiplier;
 
   /* Apply Y rotation */
-  cos = TrigTable_look_up_cosine(trig_table, y_angle);
-  sin = TrigTable_look_up_sine(trig_table, y_angle);
+  cos = TrigTable_look_up_cosine(tt, y_angle);
+  sin = TrigTable_look_up_sine(tt, y_angle);
 
   p->y = (y_in * cos) / (SineMultiplier / PostRotateScaler) -
          (z_in * sin) / (SineMultiplier / PostRotateScaler);
@@ -220,8 +230,8 @@ static void cam_rotate(Point3D *const p, int const x_angle, int const y_angle)
 
 /* ----------------------------------------------------------------------- */
 
-static void persp_project(const Point3D *const p, int *const screen_x,
-  int *const screen_y)
+static void persp_project(const Point3D *const p, _Optional int *const screen_x,
+  _Optional int *const screen_y)
 {
   int scr_x, scr_y;
 
@@ -298,7 +308,7 @@ void render_scene(const PreviewData *const preview_data)
 
   /* Final argument is the offset to the first word to be plotted! (4 bytes
      before the end of the lowest scan line to be filled from right to left) */
-  sky_drawsky(preview_data->render_height, preview_data->export, screen,
+  sky_drawsky(preview_data->render_height, &*preview_data->export, screen,
               (Screen_Height * Screen_Width) - 4 + (screen_y * Screen_Width));
 
   SFSky const *const s = (SFSky *)preview_data->export;
@@ -535,7 +545,7 @@ static bool init_tool_bars(PreviewData *const preview_data)
 
 /* Use this function to wrap calls which may return an error, to ensure that
    only the first of each run of multiple consecutive errors is reported. */
-static bool handle_redraw_err(bool *suppress_errors, const _kernel_oserror *e)
+static bool handle_redraw_err(bool *suppress_errors, _Optional const _kernel_oserror *e)
 {
   assert(suppress_errors != NULL);
 
@@ -565,9 +575,9 @@ static bool handle_redraw_err(bool *suppress_errors, const _kernel_oserror *e)
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *generate_col_table(void)
+static _Optional const _kernel_oserror *generate_col_table(void)
 {
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
   int Log2BPP;
   size_t size;
   ColourTransGenerateTableBlock block;
@@ -609,24 +619,23 @@ static const _kernel_oserror *generate_col_table(void)
     DEBUGF("%zu bytes are required for colour translation table\n", size);
 
     /* Allocate a buffer of the required size for the translation table */
-    col_trans_table = malloc(size);
-    if (col_trans_table == NULL)
+    _Optional char * const ct = malloc(size);
+    if (ct == NULL)
     {
       e = msgs_error(DUMMY_ERRNO, "ColTransMem");
     }
     else
     {
       /* Create colour translation table */
-      e = colourtrans_generate_table(0, &block, col_trans_table, size, NULL);
+      e = colourtrans_generate_table(0, &block, &*ct, size, NULL);
       if (e == NULL)
       {
-        DEBUGF("Created colour translation table at %p\n", col_trans_table);
+        DEBUGF("Created colour translation table at %p\n", (void *)ct);
 
         /* Is the translation table really necessary? */
         if (Log2BPP == Screen_Log2BPP && size == NColours)
         {
           size_t i;
-          char * const ct = col_trans_table;
 
           for (i = 0; i < NColours && ct[i] == i; i++)
           {}
@@ -638,10 +647,11 @@ static const _kernel_oserror *generate_col_table(void)
             translate_cols = false;
           }
         }
+	col_trans_table = ct;
       }
       else
       {
-        FREE_SAFE(col_trans_table);
+        free(ct);
       }
     }
   }
@@ -694,13 +704,13 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
       if (!simple_redraw)
       {
         /* Plot redraw cache sprite */
-        ScaleFactors *scale = NULL;
+        _Optional ScaleFactors *scale = NULL;
         if (!preview_data->no_scale)
         {
           scale = &preview_data->scale_factors;
         }
 
-        void *colours = NULL;
+        _Optional void *colours = NULL;
         if (translate_cols)
         {
           assert(col_trans_table != NULL);
@@ -751,7 +761,6 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
   NOT_USED(id_block);
   assert(event != NULL);
   NOT_USED(event_code);
-  NOT_USED(handle);
 
   if (event->mouse_click.buttons == Wimp_MouseButtonSelect ||
       event->mouse_click.buttons == Wimp_MouseButtonAdjust)
@@ -766,7 +775,9 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
       /* Notify the current owner of the caret/selection that we have claimed
          it (e.g. the editing window will redraw its selection in grey) */
       ON_ERR_RPT(entity2_claim(Wimp_MClaimEntity_CaretOrSelection,
-                               NULL, NULL, NULL, NULL, NULL));
+                               NULL, (Entity2EstimateMethod *)NULL,
+                               (Saver2WriteMethod *)NULL,
+                               (Entity2LostMethod *)NULL, handle));
     }
   }
 
@@ -930,6 +941,11 @@ static void generate_stars(StarData *stars)
 {
   assert(stars != NULL);
 
+  if (!trig_table) {
+    return;
+  }
+  const TrigTable *const tt = &*trig_table;
+
   for (int s = 0; s < NStars; s++, stars++)
   {
     static const uint8_t star_colours[] =
@@ -950,7 +966,7 @@ static void generate_stars(StarData *stars)
     /* Get length of the adjacent side of a right-angle triangle with a
        hypotenuse of length SineMultiplier. Assume adjacent is codirectional
        with z axis and use as the elevation of a star. */
-    int z = TrigTable_look_up_cosine(trig_table, angle2);
+    int z = TrigTable_look_up_cosine(tt, angle2);
     if (z > 0)
     {
       z = -z; /* Force point above ground level by sign reversal */
@@ -959,7 +975,7 @@ static void generate_stars(StarData *stars)
 
     /* Get length of opposite side of same triangle. Assume opposite is
        codirectional with y axis and use as horizontal distance to the star. */
-    int y = TrigTable_look_up_sine(trig_table, angle2);
+    int y = TrigTable_look_up_sine(tt, angle2);
     if (y < 0)
     {
       y = -y;
@@ -968,9 +984,9 @@ static void generate_stars(StarData *stars)
     /* Rotate the vector (0, y, z) around the z axis by a random angle, to
        make it three-dimensional. Standard rotation formula is simplified
        because the x coordinate is always 0. */
-    int const x = (y * TrigTable_look_up_cosine(trig_table, angle1)) /
+    int const x = (y * TrigTable_look_up_cosine(tt, angle1)) /
                   SineMultiplier;
-    y = (y * TrigTable_look_up_sine(trig_table, angle1)) / SineMultiplier;
+    y = (y * TrigTable_look_up_sine(tt, angle1)) / SineMultiplier;
 
     stars->pos.x = x * (StarDist / SineMultiplier);
     stars->pos.y = y * (StarDist / SineMultiplier);
@@ -995,8 +1011,8 @@ static void generate_stars(StarData *stars)
 static bool generate_persp(void)
 {
   /* Pre-calculate reciprocals to be used for perspective projection */
-  persp_table = malloc(sizeof(*persp_table) * PerspTableLen);
-  if (persp_table == NULL)
+  _Optional int *const pt = malloc(sizeof(*pt) * PerspTableLen);
+  if (pt == NULL)
   {
     return false; /* failure */
   }
@@ -1006,11 +1022,12 @@ static bool generate_persp(void)
 
   for (unsigned int r = 0; r < PerspTableLen; r++)
   {
-    persp_table[r] = PerspDividend / divisor;
+    pt[r] = PerspDividend / divisor;
     DEBUG_VERBOSEF("%u: %u / %u = %u\n", r, PerspDividend, divisor,
-                   persp_table[r]);
+                   pt[r]);
     divisor += PerspDivisorStep;
   }
+  persp_table = pt;
 
   return true; /* success */
 }
@@ -1194,7 +1211,7 @@ static int misc_tb_event(int const event_code, ToolboxEvent *const event,
     {
       /* Generate a different set of pseudo-random stars */
       nobudge_register(PreExpandHeap);
-      generate_stars(preview_data->stars);
+      generate_stars(&*preview_data->stars);
       nobudge_deregister();
 
       render_scene(preview_data);
@@ -1246,7 +1263,7 @@ void Preview_initialise(void)
 
 /* ----------------------------------------------------------------------- */
 
-PreviewData *Preview_create(SkyFile *const file, char const *const title)
+_Optional PreviewData *Preview_create(SkyFile *const file, char const *const title)
 {
   const size_t sprite_area_size = sizeof(SpriteAreaHeader) +
                                   sizeof(SpriteHeader) +
@@ -1256,7 +1273,7 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
   assert(title != NULL);
 
   /* Create data block for this window */
-  PreviewData *const preview_data = malloc(sizeof(*preview_data));
+  _Optional PreviewData *const preview_data = malloc(sizeof(*preview_data));
   if (preview_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -1268,7 +1285,6 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
     .have_caret = false,
     .plot_err = false,
     .file = file,
-    .export = NULL,
   };
 
   /* Create Window object */
@@ -1280,11 +1296,11 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
     /* Register the handler for custom Toolbox events
        (generated by key shortcuts and menu entries) */
     if (!E(event_register_toolbox_handler(-1, -1, misc_tb_event,
-      preview_data)))
+      &*preview_data)))
     {
       /* Register handler to monitor screen mode or palette changes */
       if (!E(event_register_message_handler(-1, message_handler,
-        preview_data)))
+        &*preview_data)))
       {
         /* Allocate memory for a sprite in which to render the sky
            and for stars data */
@@ -1301,23 +1317,23 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
           }
           else
           {
-            if (init_tool_bars(preview_data))
+            if (init_tool_bars(&*preview_data))
             {
               do
               {
-                if (E(toolbox_set_client_handle(0, window_id, preview_data)))
+                if (E(toolbox_set_client_handle(0, window_id, &*preview_data)))
                 {
                   break;
                 }
 
                 if (E(event_register_wimp_handler(window_id,
-                        Wimp_ERedrawWindow, redraw_window, preview_data)))
+                        Wimp_ERedrawWindow, redraw_window, &*preview_data)))
                 {
                   break;
                 }
 
                 if (E(event_register_wimp_handler(window_id,
-                        Wimp_EMouseClick, mouse_click, preview_data)))
+                        Wimp_EMouseClick, mouse_click, &*preview_data)))
                 {
                   break;
                 }
@@ -1361,12 +1377,12 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
                 nobudge_deregister();
 
                 /* Start at horizontal ground level */
-                set_height(preview_data, Height_Default);
-                set_direction(preview_data, Direction_Default);
-                set_angle(preview_data, Angle_Default);
-                set_scale(preview_data, def_scale);
-                show_or_hide_tb(preview_data, def_toolbars);
-                Preview_set_title(preview_data, title);
+                set_height(&*preview_data, Height_Default);
+                set_direction(&*preview_data, Direction_Default);
+                set_angle(&*preview_data, Angle_Default);
+                set_scale(&*preview_data, def_scale);
+                show_or_hide_tb(&*preview_data, def_toolbars);
+                Preview_set_title(&*preview_data, title);
 
                 return preview_data;
               }
@@ -1374,17 +1390,17 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
 
               /* Clean up in case we managed to register any event
                  handlers */
-              final_tool_bars(preview_data);
+              final_tool_bars(&*preview_data);
             }
             flex_free(&preview_data->cached_image);
           }
           flex_free(&preview_data->stars);
         }
         (void)event_deregister_message_handler(-1, message_handler,
-            preview_data);
+            &*preview_data);
       }
       (void)event_deregister_toolbox_handler(-1, -1, misc_tb_event,
-          preview_data);
+          &*preview_data);
     }
 
     (void)remove_event_handlers_delete(window_id);
@@ -1395,7 +1411,7 @@ PreviewData *Preview_create(SkyFile *const file, char const *const title)
 
 /* ----------------------------------------------------------------------- */
 
-void Preview_destroy(PreviewData *const preview_data)
+void Preview_destroy(_Optional PreviewData *const preview_data)
 {
   if (preview_data == NULL)
   {
@@ -1414,20 +1430,20 @@ void Preview_destroy(PreviewData *const preview_data)
      refuse to hide them. */
   ON_ERR_RPT(wimp_create_menu(CloseMenu,0,0));
 
-  final_tool_bars(preview_data);
+  final_tool_bars(&*preview_data);
 
   /* Deregister the Wimp message handler belonging to this preview
    */
   ON_ERR_RPT(event_deregister_message_handler(-1,
                                               message_handler,
-                                              preview_data));
+                                              &*preview_data));
 
   /* Deregister the handler for custom Toolbox events
      (generated by key shortcuts and menu entries) */
   ON_ERR_RPT(event_deregister_toolbox_handler(-1,
                                               -1,
                                               misc_tb_event,
-                                              preview_data));
+                                              &*preview_data));
 
   /* Free sprite area used for quick rendering */
   if (preview_data->cached_image)
@@ -1517,7 +1533,9 @@ void Preview_show(PreviewData *const preview_data, ObjectId parent_id)
   /* Notify the current owner of the caret/selection that we have claimed it
      (e.g. the editing window will redraw its selection in grey) */
   ON_ERR_RPT_RTN(entity2_claim(Wimp_MClaimEntity_CaretOrSelection,
-                               NULL, NULL, NULL, NULL, NULL));
+                               NULL, (Entity2EstimateMethod *)NULL,
+                               (Saver2WriteMethod *)NULL,
+                               (Entity2LostMethod *)NULL, preview_data));
 
   /* Render sky preview */
   Preview_update(preview_data);

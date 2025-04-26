@@ -46,6 +46,10 @@
 #include "SFTSaveBox.h"
 #include "StringBuff.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -59,7 +63,7 @@ typedef struct
 {
   SFTSaveBox  super;
   ComponentId reset_direction;
-  SFTSaveBoxDeletedFn *deleted_cb;
+  _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
 SaveDir;
 
@@ -74,7 +78,7 @@ static void destroy_savedir(SFTSaveBox *savebox)
   SFTSaveBox_finalise(savebox);
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savedir_data->deleted_cb != NULL)
+  if (savedir_data->deleted_cb)
   {
     savedir_data->deleted_cb(savebox);
   }
@@ -118,7 +122,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveDir *savedir_data = handle;
   unsigned int flags = 0;
-  char *buf = NULL;
+  _Optional char *buf = NULL;
 
   NOT_USED(event_code);
   assert(event != NULL);
@@ -133,13 +137,13 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
                                 &savedir_data->reset_direction)))
       break;
 
-    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)))
+    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)) || !buf)
       break;
 
     /* For the moment we just create the root directory */
     if (stricmp(sastfe->filename, "<Wimp$Scrap>"))
     {
-      const _kernel_oserror * const e = os_file_create_dir(
+      _Optional const _kernel_oserror * const e = os_file_create_dir(
                                             sastfe->filename,
                                             OS_File_CreateDir_DefaultNoOfEntries);
       if (e != NULL)
@@ -164,7 +168,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
                        savedir_data->reset_direction == ComponentId_SF3000ToSprite_Radio);
 
     Scan_create(stringbuffer_get_pointer(&savedir_data->super.super.file_name),
-                buf, images, data);
+                &*buf, images, data);
   }
   while (0);
 
@@ -176,12 +180,13 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-SFTSaveBox *SaveDir_create(char const *input_path, int x, SFTSaveBoxDeletedFn *deleted_cb)
+_Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
+                                     _Optional SFTSaveBoxDeletedFn *deleted_cb)
 {
   assert(input_path != NULL);
   DEBUGF("Creating savedir box for path '%s'\n", input_path);
 
-  SaveDir * const savedir_data = malloc(sizeof(*savedir_data));
+  _Optional SaveDir * const savedir_data = malloc(sizeof(*savedir_data));
   if (savedir_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -202,7 +207,7 @@ SFTSaveBox *SaveDir_create(char const *input_path, int x, SFTSaveBoxDeletedFn *d
       if (E(event_register_toolbox_handler(savedir_data->super.saveas_id,
                                            SaveAs_SaveToFile,
                                            save_to_file,
-                                           savedir_data)))
+                                           &*savedir_data)))
       {
         break;
       }
@@ -219,7 +224,7 @@ SFTSaveBox *SaveDir_create(char const *input_path, int x, SFTSaveBoxDeletedFn *d
       if (E(event_register_toolbox_handler(savedir_data->super.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
-                                           savedir_data)))
+                                           &*savedir_data)))
       {
         break;
       }

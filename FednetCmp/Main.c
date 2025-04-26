@@ -38,6 +38,10 @@
 #include "FNCInit.h"
 #include "ParseArgs.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 

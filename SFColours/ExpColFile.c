@@ -38,6 +38,11 @@
 /* Local headers */
 #include "ExpColFile.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 #define TAG "COLS"
 
 enum
@@ -89,7 +94,7 @@ void ExpColFile_destroy(ExpColFile *const file)
 /* ----------------------------------------------------------------------- */
 
 int ExpColFile_get_colour(ExpColFile const *const file, int const index,
-  int *const x_offset, int *const y_offset)
+  _Optional int *const x_offset, _Optional int *const y_offset)
 {
   DEBUGF("Reading record %d in export file %p\n", index, (void *)file);
   assert(file != NULL);

@@ -39,11 +39,16 @@
 #include "GadgetUtil.h"
 #include "OSFile.h"
 #include "Debug.h"
+#include "FileTypes.h"
 
 /* Local headers */
 #include "Scan.h"
 #include "SaveDir.h"
 #include "FNCSaveBox.h"
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 /* Window component IDs */
 enum
@@ -66,7 +71,7 @@ typedef struct
   FNCSaveBox  super;
   ComponentId reset_direction;
   char        reset_filetype[MaxFileTypeNameLen + 1];
-  FNCSaveBoxDeletedFn *deleted_cb;
+  _Optional FNCSaveBoxDeletedFn *deleted_cb;
 }
 SaveDir;
 
@@ -81,7 +86,7 @@ static void destroy_savedir(FNCSaveBox *const savebox)
   FNCSaveBox_finalise(savebox);
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savedir_data->deleted_cb != NULL)
+  if (savedir_data->deleted_cb)
     savedir_data->deleted_cb(savebox);
 
   free(savedir_data);
@@ -140,7 +145,7 @@ static int actionbutton_selected(int const event_code, ToolboxEvent *const event
         fake_id.self_component = savedir_data->reset_direction;
 
         (void)radiobutton_state_changed(RadioButton_StateChanged,
-                                        NULL,
+                                        &(ToolboxEvent){0},
                                         &fake_id,
                                         handle);
       }
@@ -161,7 +166,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveDir *savedir_data = handle;
   unsigned int flags = 0;
-  char *buf = NULL;
+  _Optional char *buf = NULL;
 
   NOT_USED(event_code);
   assert(event != NULL);
@@ -187,13 +192,14 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
                                  NULL)))
       break;
 
-    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)))
+    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)) ||
+        !buf)
       break;
 
     /* For the moment we just create the root directory */
     if (stricmp(sastfe->filename, "<Wimp$Scrap>"))
     {
-      const _kernel_oserror * const e = os_file_create_dir(
+      _Optional const _kernel_oserror * const e = os_file_create_dir(
                                             sastfe->filename,
                                             OS_File_CreateDir_DefaultNoOfEntries);
       if (e != NULL)
@@ -211,10 +217,13 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
     /* We reckon that we already succeeded if we reach this point */
     flags = SaveAs_SuccessfulSave;
 
-    unsigned int hex_type;
-    sscanf(strchr(savedir_data->reset_filetype, '('), "(&%x)", &hex_type);
+    unsigned int hex_type = FileType_Data;
+    _Optional const char *const bracket = strchr(savedir_data->reset_filetype, '(');
+    if (bracket) {
+      sscanf(&*bracket, "(&%x)", &hex_type);
+    }
     Scan_create(userdata_get_file_name(&savedir_data->super.super),
-                buf,
+                &*buf,
                 savedir_data->reset_direction == ComponentId_Compress_Radio,
                 hex_type);
   }
@@ -235,13 +244,13 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-FNCSaveBox *SaveDir_create(char const *input_path, int const x,
-  FNCSaveBoxDeletedFn *const deleted_cb)
+_Optional FNCSaveBox *SaveDir_create(char const *input_path, int const x,
+  _Optional FNCSaveBoxDeletedFn *const deleted_cb)
 {
   assert(input_path != NULL);
   DEBUGF("Creating savedir box for path '%s'\n", input_path);
 
-  SaveDir * const savedir_data = malloc(sizeof(*savedir_data));
+  _Optional SaveDir * const savedir_data = malloc(sizeof(*savedir_data));
   if (savedir_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -264,7 +273,7 @@ FNCSaveBox *SaveDir_create(char const *input_path, int const x,
       if (E(event_register_toolbox_handler(savedir_data->super.saveas_id,
                                            SaveAs_SaveToFile,
                                            save_to_file,
-                                           savedir_data)))
+                                           &*savedir_data)))
         break;
 
       /* Record initial state of dialogue box */
@@ -288,13 +297,13 @@ FNCSaveBox *SaveDir_create(char const *input_path, int const x,
       if (E(event_register_toolbox_handler(savedir_data->super.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
-                                           savedir_data)))
+                                           &*savedir_data)))
         break;
 
       if (E(event_register_toolbox_handler(savedir_data->super.window_id,
                                            RadioButton_StateChanged,
                                            radiobutton_state_changed,
-                                           savedir_data)))
+                                           &*savedir_data)))
         break;
 
       return &savedir_data->super;

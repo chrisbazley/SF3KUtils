@@ -40,6 +40,10 @@
 #include "QuickView.h"
 #include "SFgfxconv.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 

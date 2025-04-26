@@ -31,7 +31,13 @@
 #include "Tests.h"
 #include "Editor.h"
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 enum {
   DefaultPixelColour = 0,
@@ -560,8 +566,8 @@ static void test2(void)
     redraw_stars_height_cb);
 
   Editor editor, editor2;
-  editor_init(&editor, &edit_sky, NULL);
-  editor_init(&editor2, &edit_sky, NULL);
+  editor_init(&editor, &edit_sky, (EditorRedrawSelectFn *)NULL);
+  editor_init(&editor2, &edit_sky, (EditorRedrawSelectFn *)NULL);
 
   assert(edit_sky_get_sky(&edit_sky) == editor_get_sky(&editor));
   assert(editor_get_sky(&editor) == editor_get_sky(&editor2));
@@ -570,7 +576,7 @@ static void test2(void)
   assert(!editor_can_redo(&editor));
 
   assert(!editor_undo(&editor));
-  assert(!editor_redo(&editor, NULL));
+  assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
   editor_destroy(&editor);
   editor_destroy(&editor2);
@@ -748,7 +754,7 @@ static void test4(void)
     redraw_stars_height_cb);
 
   Editor editor;
-  editor_init(&editor, &edit_sky, NULL);
+  editor_init(&editor, &edit_sky, (EditorRedrawSelectFn *)NULL);
 
   editor_set_caret_pos(&editor, InsertPos);
 
@@ -789,7 +795,7 @@ static void test6(void)
     redraw_stars_height_cb);
 
   Editor editor;
-  editor_init(&editor, &edit_sky, NULL);
+  editor_init(&editor, &edit_sky, (EditorRedrawSelectFn *)NULL);
 
   assert(editor_set_selection_end(&editor, SelectEnd));
 
@@ -829,7 +835,7 @@ static void test8(void)
     redraw_stars_height_cb);
 
   Editor editor;
-  editor_init(&editor, &edit_sky, NULL);
+  editor_init(&editor, &edit_sky, (EditorRedrawSelectFn *)NULL);
   assert(editor_set_selection_end(&editor, SelectEnd));
   assert(editor_set_plain(&editor, Colour) == EditResult_Changed);
 
@@ -1089,7 +1095,7 @@ static void test14(void)
   editor_set_caret_pos(&editor, InsertPos);
 
   assert(set_plain(&editor, Colour) == EditResult_Unchanged);
-  check_nop(&editor, NULL, InsertPos);
+  check_nop(&editor, (PaletteEntry [NumColours]){0}, InsertPos);
 
   editor_destroy(&editor);
   edit_sky_destroy(&edit_sky);
@@ -1125,7 +1131,7 @@ static void test15(void)
     check_select(&editor, cpos, send);
 
     assert(editor_set_plain(&editor, Colour) == EditResult_Unchanged);
-    check_set_select_twice(&edit_sky, &editor, NULL, cpos, isize, get_plain_colour);
+    check_set_select_twice(&edit_sky, &editor, (PaletteEntry [NumColours]){0}, cpos, isize, get_plain_colour);
 
     editor_destroy(&editor);
     edit_sky_destroy(&edit_sky);
@@ -1391,7 +1397,7 @@ static void test20(void)
 
   assert(editor_delete_colours(&editor) == EditResult_Unchanged);
 
-  check_nop(&editor, NULL, InsertPos);
+  check_nop(&editor, (PaletteEntry [NumColours]){0}, InsertPos);
 
   editor_destroy(&editor);
   edit_sky_destroy(&edit_sky);
@@ -1477,7 +1483,7 @@ static void test21(void)
   check_caret(&editors[Editor_Destination], cpos);
 
   assert(editor_can_redo(&editors[Editor_Destination]));
-  assert(!editor_redo(&editors[Editor_Destination], NULL));
+  assert(!editor_redo(&editors[Editor_Destination], (PaletteEntry [NumColours]){0}));
 
   check_plain_blocks(&editors[Editor_Destination], cpos, BlockSize, cpos, 0);
   check_caret(&editors[Editor_Destination], cpos);
@@ -1511,7 +1517,7 @@ static void test21(void)
     bands_count = select_count = 0;
 
     assert(editor_can_redo(&editors[Editor_Destination]));
-    assert(editor_redo(&editors[Editor_Destination], NULL));
+    assert(editor_redo(&editors[Editor_Destination], (PaletteEntry [NumColours]){0}));
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -1661,7 +1667,7 @@ static void test22(void)
       bands_count = select_count = 0;
 
       assert(editor_can_redo(&editors[Editor_Destination]));
-      assert(editor_redo(&editors[Editor_Destination], NULL));
+      assert(editor_redo(&editors[Editor_Destination], (PaletteEntry [NumColours]){0}));
 
       assert(bands_count == 1);
       check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -1793,7 +1799,7 @@ static void test23(void)
       bands_count = select_count = 0;
 
       assert(editor_can_redo(&editors[Editor_Destination]));
-      assert(editor_redo(&editors[Editor_Destination], NULL));
+      assert(editor_redo(&editors[Editor_Destination], (PaletteEntry [NumColours]){0}));
 
       assert(bands_count == 1);
       check_redraw_bands(0, &edit_sky,
@@ -1843,7 +1849,7 @@ static void test24(void)
     bool is_valid = false;
     assert(insert_array(&editor, isize, src, &is_valid) == EditResult_Unchanged);
     assert(is_valid);
-    check_nop(&editor, NULL, NColourBands);
+    check_nop(&editor, (PaletteEntry [NumColours]){0}, NColourBands);
 
     editor_destroy(&editor);
     edit_sky_destroy(&edit_sky);
@@ -1906,7 +1912,7 @@ static void test25(void)
       bands_count = select_count = 0;
 
       assert(editor_can_redo(&editor));
-      assert(editor_redo(&editor, NULL));
+      assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
       assert(bands_count == 1);
       check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -1941,7 +1947,7 @@ static void test26(void)
   bool is_valid = false;
   assert(insert_array(&editor, 0, src, &is_valid) == EditResult_Unchanged);
   assert(is_valid);
-  check_nop(&editor, NULL, InsertPos);
+  check_nop(&editor, (PaletteEntry [NumColours]){0}, InsertPos);
 
   editor_destroy(&editor);
   edit_sky_destroy(&edit_sky);
@@ -2061,7 +2067,7 @@ static void test28(void)
       bands_count = select_count = 0;
 
       assert(editor_can_redo(&editor));
-      assert(editor_redo(&editor, NULL));
+      assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
       assert(bands_count == 1);
       check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2173,7 +2179,7 @@ static void test29(void)
     bands_count = select_count = 0;
 
     assert(editor_can_redo(&editor));
-    assert(editor_redo(&editor, NULL));
+    assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2244,7 +2250,7 @@ static void test31(void)
   editor_set_caret_pos(&editor, NColourBands);
 
   assert(insert_sky(&editor, &src) == EditResult_Unchanged);
-  check_nop(&editor, NULL, NColourBands);
+  check_nop(&editor, (PaletteEntry [NumColours]){0}, NColourBands);
 
   editor_destroy(&editor);
   edit_sky_destroy(&edit_sky);
@@ -2316,7 +2322,7 @@ static void test32(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_plain(&editor, isize, Colour) == EditResult_Unchanged);
-    check_replace_twice(&edit_sky, &editor, NULL, cpos, 0, isize, get_plain_colour);
+    check_replace_twice(&edit_sky, &editor, (PaletteEntry [NumColours]){0}, cpos, 0, isize, get_plain_colour);
 
     editor_destroy(&editor);
     edit_sky_destroy(&edit_sky);
@@ -2364,7 +2370,7 @@ static void test33(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_plain(&editor, isize, Colour) == EditResult_Unchanged);
-    check_replace_twice(&edit_sky, &editor, NULL, cpos, send - cpos, isize, get_plain_colour);
+    check_replace_twice(&edit_sky, &editor, (PaletteEntry [NumColours]){0}, cpos, send - cpos, isize, get_plain_colour);
 
     editor_destroy(&editor);
     edit_sky_destroy(&edit_sky);
@@ -2388,7 +2394,7 @@ static void test34(void)
   select_count = bands_count = 0;
 
   assert(insert_plain(&editor, BlockSize, Colour) == EditResult_Unchanged);
-  check_nop(&editor, NULL, NColourBands);
+  check_nop(&editor, (PaletteEntry [NumColours]){0}, NColourBands);
 
   editor_destroy(&editor);
   edit_sky_destroy(&edit_sky);
@@ -2918,7 +2924,7 @@ static void test61(void)
   assert(copy(&editors[Copy_Destination],
       &editors[Copy_Source]) == EditResult_Unchanged);
 
-  check_nop(&editors[Copy_Destination], NULL, InsertPos);
+  check_nop(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}, InsertPos);
 
   check_caret(&editors[Copy_Source], SelectStart);
   check_plain_blocks(&editors[Copy_Source], -1, 0, -1, 0);
@@ -3002,7 +3008,7 @@ static void test63(void)
   assert(copy(&editors[Copy_Destination],
       &editors[Copy_Source]) == EditResult_Unchanged);
 
-  check_nop(&editors[Copy_Destination], NULL, NColourBands);
+  check_nop(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}, NColourBands);
   check_select(&editors[Copy_Source], SelectStart, SelectEnd);
 
   for (size_t i = 0; i < ARRAY_SIZE(editors); ++i)
@@ -3140,7 +3146,7 @@ static void test65(void)
 
       assert(editor_can_redo(&editors[Copy_Source]));
       assert(editor_can_redo(&editors[Copy_Destination]));
-      assert(editor_redo(&editors[Copy_Destination], NULL));
+      assert(editor_redo(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}));
 
       check_copy_down(&edit_sky, editors, start, ipos, isize, get_copied);
     }
@@ -3220,7 +3226,7 @@ static void test66(void)
 
       assert(editor_can_redo(&editors[Copy_Source]));
       assert(editor_can_redo(&editors[Copy_Destination]));
-      assert(editor_redo(&editors[Copy_Destination], NULL));
+      assert(editor_redo(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}));
 
       check_copy_up(&edit_sky, editors, start, ipos, isize, get_copied_up);
     }
@@ -3281,7 +3287,7 @@ static void test67(void)
   assert(move(&editors[Copy_Destination],
       &editors[Copy_Source]) == EditResult_Unchanged);
 
-  check_nop(&editors[Copy_Destination], NULL, InsertPos);
+  check_nop(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}, InsertPos);
   check_caret(&editors[Copy_Source], SelectStart);
 
   for (size_t i = 0; i < ARRAY_SIZE(editors); ++i)
@@ -3390,7 +3396,7 @@ static void check_and_redo_move_up(EditSky *const edit_sky, Editor *const editor
 
     assert(editor_can_redo(&editors[Copy_Source]));
     assert(editor_can_redo(&editors[Copy_Destination]));
-    assert(editor_redo(&editors[Copy_Destination], NULL));
+    assert(editor_redo(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}));
 
     check_move_up(edit_sky, editors, start, ipos, isize, getter);
   }
@@ -3445,7 +3451,7 @@ static void check_and_redo_move_down(EditSky *const edit_sky, Editor *const edit
 
     assert(editor_can_redo(&editors[Copy_Source]));
     assert(editor_can_redo(&editors[Copy_Destination]));
-    assert(editor_redo(&editors[Copy_Destination], NULL));
+    assert(editor_redo(&editors[Copy_Destination], (PaletteEntry [NumColours]){0}));
 
     check_move_down(edit_sky, editors, start, ipos, isize, getter);
   }
@@ -3719,31 +3725,31 @@ static void test73(void)
   check_redraw_render_offset(i++, &edit_sky);
   assert(render_offset_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == RenderOffset);
   check_redraw_render_offset(i++, &edit_sky);
   assert(render_offset_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MaxRenderOffset);
   check_redraw_render_offset(i++, &edit_sky);
   assert(render_offset_count == i);
 
   for (int n = 0; n < 3; ++n)
   {
-    assert(!editor_redo(&editor, NULL));
+    assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
     assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MaxRenderOffset);
     assert(render_offset_count == i);
   }
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MinRenderOffset);
   check_redraw_render_offset(i++, &edit_sky);
   assert(render_offset_count == i);
 
   for (int n = 0; n < 3; ++n)
   {
-    assert(!editor_redo(&editor, NULL));
+    assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
     assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MinRenderOffset);
     assert(render_offset_count == i);
   }
@@ -3859,31 +3865,31 @@ static void test74(void)
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == StarsHeight);
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == MaxStarsHeight);
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
   for (int n = 0; n < 3; ++n)
   {
-    assert(!editor_redo(&editor, NULL));
+    assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
     assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == MaxStarsHeight);
     assert(stars_height_count == i);
   }
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
   assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == MinStarsHeight);
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
   for (int n = 0; n < 3; ++n)
   {
-    assert(!editor_redo(&editor, NULL));
+    assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
     assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == MinStarsHeight);
     assert(stars_height_count == i);
   }
@@ -4068,7 +4074,7 @@ static void test75(void)
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == 2 * RenderOffset);
   check_redraw_render_offset(j++, &edit_sky);
@@ -4078,7 +4084,7 @@ static void test75(void)
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
-  assert(!editor_redo(&editor, NULL));
+  assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == 2 * RenderOffset);
   assert(render_offset_count == j);
@@ -4086,7 +4092,7 @@ static void test75(void)
   assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == StarsHeight - RenderOffset);
   assert(stars_height_count == i);
 
-  assert(editor_redo(&editor, NULL));
+  assert(editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MaxRenderOffset);
   check_redraw_render_offset(j++, &edit_sky);
@@ -4097,7 +4103,7 @@ static void test75(void)
   check_redraw_stars_height(i++, &edit_sky);
   assert(stars_height_count == i);
 
-  assert(!editor_redo(&editor, NULL));
+  assert(!editor_redo(&editor, (PaletteEntry [NumColours]){0}));
 
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == MaxRenderOffset);
   assert(render_offset_count == j);
@@ -4118,7 +4124,7 @@ static void test76(void)
 {
   /* Set render offset (no callback) */
   EditSky edit_sky;
-  edit_sky_init(&edit_sky, NULL, redraw_bands_cb, NULL, redraw_stars_height_cb);
+  edit_sky_init(&edit_sky, NULL, redraw_bands_cb, (EditSkyRedrawRenderOffsetFn *)NULL, redraw_stars_height_cb);
 
   assert(edit_sky_set_render_offset(&edit_sky, RenderOffset) == EditResult_Changed);
   assert(sky_get_render_offset(edit_sky_get_sky(&edit_sky)) == RenderOffset);
@@ -4131,7 +4137,7 @@ static void test77(void)
 {
   /* Set stars height (no callback) */
   EditSky edit_sky;
-  edit_sky_init(&edit_sky, NULL, redraw_bands_cb, redraw_render_offset_cb, NULL);
+  edit_sky_init(&edit_sky, NULL, redraw_bands_cb, redraw_render_offset_cb, (EditSkyRedrawStarsHeightFn *)NULL);
 
   assert(edit_sky_set_stars_height(&edit_sky, StarsHeight) == EditResult_Changed);
   assert(sky_get_stars_height(edit_sky_get_sky(&edit_sky)) == StarsHeight);

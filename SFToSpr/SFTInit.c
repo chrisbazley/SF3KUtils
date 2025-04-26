@@ -33,7 +33,6 @@
 #include "flex.h"
 #include "wimp.h"
 #include "wimplib.h"
-#include "swis.h"
 
 /* My library files */
 #include "Err.h"
@@ -61,6 +60,10 @@
 #include "OurEvents.h"
 #include "QuickView.h"
 #include "SFTInit.h"
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 /* Constant numeric values */
 enum
@@ -173,7 +176,7 @@ static int misc_tb_event(const int event_code, ToolboxEvent *const event,
   {
     case EventCode_Quit:
       if (!PreQuit_queryunsaved(0))
-        quit_msg(NULL, NULL);
+        quit_msg(&(WimpMessage){0}, &(int){0});
       break;
 
     case EventCode_Help:
@@ -362,21 +365,21 @@ void initialise(void)
   static MessagesFD mfd;
   int toolbox_events = 0;
 
-  const _kernel_oserror *e = toolbox_initialise(
+  _Optional const _kernel_oserror *e = toolbox_initialise(
     0, KnownWimpVersion, wimp_messages, &toolbox_events,
     "<"APP_NAME"Res$Dir>", &mfd, &id_block, &wimp_version, NULL, NULL);
 
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   e = messagetrans_lookup(&mfd, "_TaskName", taskname, sizeof(taskname),
                           NULL, 0);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   e = err_initialise(taskname, wimp_version >= MinWimpVersion, &mfd);
   if (e != NULL)
-    simple_exit(e);
+    simple_exit(&*e);
 
   /*
    * initialise the flex library
@@ -398,12 +401,12 @@ void initialise(void)
   for (size_t i = 0; i < ARRAY_SIZE(tb_handlers); i++)
   {
     EF(event_register_toolbox_handler(-1, tb_handlers[i].event_code,
-                                      tb_handlers[i].handler, NULL));
+                                      tb_handlers[i].handler, (void *)NULL));
   }
   for (size_t i = 0; i < ARRAY_SIZE(msg_handlers); i++)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
-                                      msg_handlers[i].handler, NULL));
+                                      msg_handlers[i].handler, (void *)NULL));
   }
 
   /*

@@ -42,6 +42,10 @@
 /* Local headers */
 #include "FNCSaveBox.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -75,7 +79,7 @@ static void destroy_item(UserData *item)
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *const savebox,
+_Optional FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *const savebox,
   char const *const input_path, bool const data_saved,
   int const file_type, char *const template_name,
   char const *const menu_token, int const x,
@@ -85,7 +89,7 @@ FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *const savebox,
   assert(input_path != NULL);
   assert(template_name != NULL);
   assert(menu_token != NULL);
-  assert(deleted_cb != NULL);
+  assert(deleted_cb);
 
   DEBUGF("Initialising savebox %p for %ssaved path '%s' with template '%s'\n",
          (void *)savebox, data_saved ? "" : "un", input_path, template_name);
@@ -104,7 +108,7 @@ FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *const savebox,
          msgs_lookup_subn(menu_token, 1, pathtail(input_path, PathElements)),
          "" /* obsolete */)))
   {
-    if (!userdata_add_to_list(&savebox->super, NULL, destroy_item,
+    if (!userdata_add_to_list(&savebox->super, (UserDataIsSafeFn *)NULL, destroy_item,
         data_saved ? input_path : ""))
     {
       RPT_ERR("NoMem");
@@ -168,7 +172,7 @@ FNCSaveBox *FNCSaveBox_initialise(FNCSaveBox *const savebox,
         }
 
         DEBUGF("Created savebox %p (0x%x)\n", (void *)savebox, savebox->saveas_id);
-        return savebox;
+        return &*savebox;
       }
       while (0);
       userdata_remove_from_list(&savebox->super);
@@ -217,11 +221,11 @@ void FNCSaveBox_finalise(FNCSaveBox *savebox)
 
 /* ----------------------------------------------------------------------- */
 
-void FNCSaveBox_destroy(FNCSaveBox *savebox)
+void FNCSaveBox_destroy(_Optional FNCSaveBox *savebox)
 {
   if (savebox != NULL)
   {
-    assert(savebox->deleted_cb != NULL);
-    savebox->deleted_cb(savebox);
+    assert(savebox->deleted_cb);
+    savebox->deleted_cb(&*savebox);
   }
 }

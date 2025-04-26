@@ -51,6 +51,10 @@
 /* Local headers */
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 enum
 {
   CopyBufferSize = BUFSIZ,
@@ -114,7 +118,7 @@ static CopyResult copy_data(Writer *const dst, Reader *const src,
 
   CopyResult result = Copy_OK;
 
-  void *const buf = malloc(CopyBufferSize);
+  _Optional void *const buf = malloc(CopyBufferSize);
   if (buf == NULL)
   {
     return Copy_NoMem;
@@ -154,7 +158,7 @@ static CopyResult copy_data(Writer *const dst, Reader *const src,
         hourglass_percentage(((int)fpos * 100) / src_size);
       }
 
-      size_t const n = reader_fread(buf, 1, CopyBufferSize, src);
+      size_t const n = reader_fread(&*buf, 1, CopyBufferSize, src);
       assert(n <= CopyBufferSize);
       if (reader_ferror(src))
       {
@@ -162,7 +166,7 @@ static CopyResult copy_data(Writer *const dst, Reader *const src,
         break;
       }
 
-      if (writer_fwrite(buf, 1, n, dst) != n)
+      if (writer_fwrite(&*buf, 1, n, dst) != n)
       {
         result = Copy_WriteFail;
         break;
@@ -228,9 +232,8 @@ static bool write_to_buf(flex_ptr dst, void *const handle,
   bool (*const write_method)(Writer *, void *, char const *))
 {
   assert(dst != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
 
-  *dst = NULL;
   Writer writer;
   writer_flex_init(&writer, dst);
 
@@ -261,7 +264,6 @@ bool copy_to_buf(void *const handle, Reader *const src,
 
   Writer writer;
   flex_ptr dst = handle;
-  *dst = NULL;
   writer_flex_init(&writer, dst);
 
   CopyResult const result = copy_and_destroy_writer(&writer, src, src_size);
@@ -398,7 +400,7 @@ bool load_file(char const *const filename, void *const handle,
   bool (*read_method)(void *, Reader *, int, char const *))
 {
   assert(filename != NULL);
-  assert(read_method != NULL);
+  assert(read_method);
   DEBUGF("Loading from file %s\n", filename);
 
   int size;
@@ -408,7 +410,7 @@ bool load_file(char const *const filename, void *const handle,
   }
 
   bool success = false;
-  FILE *const f = fopen_inc(filename, "rb");
+  _Optional FILE *const f = fopen_inc(filename, "rb");
   if (f == NULL)
   {
     err_complain(DUMMY_ERRNO, msgs_lookup_subn("OpenInFail", 1, filename));
@@ -416,10 +418,10 @@ bool load_file(char const *const filename, void *const handle,
   else
   {
     Reader reader;
-    reader_raw_init(&reader, f);
+    reader_raw_init(&reader, &*f);
     success = read_method(handle, &reader, size, filename);
     reader_destroy(&reader);
-    fclose_dec(f);
+    fclose_dec(&*f);
   }
   return success;
 }
@@ -430,10 +432,10 @@ bool save_file(char const *const filename, int const file_type,
   void *const handle, bool (*const write_method)(Writer *, void *, char const *))
 {
   assert(filename != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
   DEBUGF("Saving to file %s\n", filename);
 
-  FILE *const f = fopen_inc(filename, "wb");
+  _Optional FILE *const f = fopen_inc(filename, "wb");
   if (f == NULL)
   {
     err_complain(DUMMY_ERRNO, msgs_lookup_subn("OpenOutFail", 1, filename));
@@ -441,11 +443,11 @@ bool save_file(char const *const filename, int const file_type,
   }
 
   Writer writer;
-  writer_raw_init(&writer, f);
+  writer_raw_init(&writer, &*f);
 
   bool success = write_method(&writer, handle, filename);
   long int const out_bytes = writer_destroy(&writer);
-  int const err = fclose_dec(f);
+  int const err = fclose_dec(&*f);
   if ((err || out_bytes < 0) && success)
   {
     err_complain(DUMMY_ERRNO, msgs_lookup_subn("WriteFail", 1, filename));
@@ -468,12 +470,12 @@ void tbox_send_data(const SaveAsFillBufferEvent * const safbe,
   assert(safbe != NULL);
   assert(safbe->hdr.event_code == SaveAs_FillBuffer);
   assert(dst != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
 
   DEBUGF("%d bytes received, requesting %d more\n",
     safbe->no_bytes, safbe->size);
 
-  if (*dst == NULL)
+  if (safbe->no_bytes == 0)
   {
     (void)write_to_buf(dst, handle, write_method);
   }
@@ -498,7 +500,8 @@ void tbox_send_data(const SaveAsFillBufferEvent * const safbe,
   }
 
   nobudge_register(PreExpandHeap); /* protect de-reference of flex pointer */
-  void *const buffer = *dst ? (char *)*dst + safbe->no_bytes : NULL;
+  static char dummy;
+  void *const buffer = *dst ? (char *)*dst + safbe->no_bytes : &dummy;
   DEBUGF("Saved %d bytes to buffer %p for object 0x%x\n",
          chunk_size, buffer, saveas_id);
 
@@ -522,7 +525,7 @@ void tbox_save_file(SaveAsSaveToFileEvent * const sastfe,
   assert(sastfe != NULL);
   assert(sastfe->hdr.event_code == SaveAs_SaveToFile);
   assert(saveas_id != NULL_ObjectId);
-  assert(write_method != NULL);
+  assert(write_method);
 
   unsigned int flags = SaveAs_SuccessfulSave;
 

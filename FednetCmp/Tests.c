@@ -30,6 +30,8 @@
 #include "toolbox.h"
 #include "saveas.h"
 #include "gadgets.h"
+#include "kernel.h"
+#include "swis.h"
 
 /* My library files */
 #include "Macros.h"
@@ -54,7 +56,13 @@
 #include "FNCInit.h"
 #include "FNCSaveBox.h"
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.FednetCmpTests"
 #define TEST_DATA_IN TEST_DATA_DIR ".in"
@@ -66,7 +74,7 @@
 
 #define assert_no_error(x) \
 do { \
-  const _kernel_oserror * const e = x; \
+  _Optional const _kernel_oserror * const e = x; \
   if (e != NULL) \
   { \
     DEBUGF("Error: 0x%x,%s %s:%d\n", e->errnum, e->errmess, __FILE__, __LINE__); \
@@ -94,6 +102,7 @@ enum
   ComponentId_SaveDir_Decompress_Radio = 0x02,
   OS_FSControl_Wipe = 27,
   OS_FSControl_Flag_Recurse = 1,
+  //OS_FSControl = 0x29,
 };
 
 static void wipe(char const *path_name)
@@ -108,13 +117,19 @@ static void wipe(char const *path_name)
   _kernel_swi(OS_FSControl, &regs, &regs);
 }
 
+FILE *test_fopen(char const *file_name, char const *mode)
+{
+  _Optional FILE *f = fopen(file_name, mode);
+  assert(f != NULL);
+  return &*f;
+}
+
 static int make_compressed_file(char const *file_name)
 {
   FILE *f;
   size_t n;
   char test_data[TestDataSize], out_buffer[CompressionBufferSize];
-  GKeyComp      *comp;
-  GKeyParameters params;
+  _Optional GKeyComp      *comp;
   unsigned int i;
   int estimated_size = sizeof(int32_t);
   bool ok;
@@ -123,8 +138,7 @@ static int make_compressed_file(char const *file_name)
   for (i = 0; i < TestDataSize; ++i)
     test_data[i] = (char)i;
 
-  f = fopen(file_name, "wb");
-  assert(f != NULL);
+  f = test_fopen(file_name, "wb");
 
   ok = fwrite_int32le(sizeof(test_data), f);
   assert(ok);
@@ -132,17 +146,17 @@ static int make_compressed_file(char const *file_name)
   comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
-  params.in_buffer = test_data;
-  params.in_size = sizeof(test_data);
-  params.out_buffer = out_buffer;
-  params.out_size = sizeof(out_buffer);
-  params.prog_cb = NULL;
-  params.cb_arg = NULL;
+  GKeyParameters params = {
+    .in_buffer = test_data,
+    .in_size = sizeof(test_data),
+    .out_buffer = out_buffer,
+    .out_size = sizeof(out_buffer),
+  };
 
   do
   {
     /* Compress the data from the input buffer to the output buffer */
-    status = gkeycomp_compress(comp, &params);
+    status = gkeycomp_compress(&*comp, &params);
 
     /* Is the output buffer full or have we finished? */
     if (status == GKeyStatus_Finished ||
@@ -177,8 +191,7 @@ static void check_compressed_file(char const *file_name)
 {
   FILE *f;
   char test_data[TestDataSize], in_buffer[CompressionBufferSize];
-  GKeyDecomp     *decomp;
-  GKeyParameters params;
+  _Optional GKeyDecomp     *decomp;
   unsigned int i;
   long int len;
   bool ok, in_pending = false;
@@ -190,8 +203,7 @@ static void check_compressed_file(char const *file_name)
   DEBUGF("Load address: 0x%x\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestCompressedFileType);
 
-  f = fopen(file_name, "rb");
-  assert(f != NULL);
+  f = test_fopen(file_name, "rb");
 
   ok = fread_int32le(&len, f);
   assert(ok);
@@ -200,12 +212,12 @@ static void check_compressed_file(char const *file_name)
   decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
 
-  params.in_buffer = in_buffer;
-  params.in_size = 0;
-  params.out_buffer = test_data;
-  params.out_size = sizeof(test_data);
-  params.prog_cb = NULL;
-  params.cb_arg = NULL;
+  GKeyParameters params = {
+    .in_buffer = in_buffer,
+    .in_size = 0,
+    .out_buffer = test_data,
+    .out_size = sizeof(test_data),
+  };
 
   do
   {
@@ -219,7 +231,7 @@ static void check_compressed_file(char const *file_name)
     }
 
     /* Decompress the data from the input buffer to the output buffer */
-    status = gkeydecomp_decompress(decomp, &params);
+    status = gkeydecomp_decompress(&*decomp, &params);
 
     /* If the input buffer is empty and it cannot be (re-)filled then
        there is no more input pending. */
@@ -252,8 +264,7 @@ static int make_uncompressed_file(char const *file_name)
   for (i = 0; i < TestDataSize; ++i)
     test_data[i] = (char)i;
 
-  f = fopen(file_name, "wb");
-  assert(f != NULL);
+  f = test_fopen(file_name, "wb");
 
   n = fwrite(test_data, TestDataSize, 1, f);
   assert(n == 1);
@@ -278,8 +289,7 @@ static void check_uncompressed_file(char const *file_name)
   DEBUGF("Load address: 0x%x\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestUncompFileType);
 
-  f = fopen(file_name, "rb");
-  assert(f != NULL);
+  f = test_fopen(file_name, "rb");
 
   n = fread(test_data, TestDataSize, 1, f);
   assert(n == 1);
@@ -292,7 +302,7 @@ static void check_uncompressed_file(char const *file_name)
 
 static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 {
-  _kernel_oserror *e;
+  _Optional _kernel_oserror *e;
 
   assert(block != NULL);
 
@@ -306,11 +316,12 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  UserData *savebox;
-  char *path;
+  _Optional UserData *savebox;
+  _Optional char *path = NULL;
 
   assert_no_error(canonicalise(&path, NULL, NULL, filename));
-  savebox = userdata_find_by_file_name(path);
+  assert(path);
+  savebox = userdata_find_by_file_name(&*path);
   free(path);
   return savebox != NULL;
 }
@@ -616,7 +627,7 @@ static bool check_ram_fetch_msg(int my_ref, WimpMessage *ram_fetch)
   return false;
 }
 
-static void check_file_save_completed(ObjectId id, const _kernel_oserror *err)
+static void check_file_save_completed(ObjectId id, _Optional const _kernel_oserror *err)
 {
   /* saveas_get_file_save_completed must have been called
      to indicate success or failure */
@@ -663,7 +674,7 @@ static void load_persistent(int estimated_size, int file_type)
   unsigned long limit;
   int my_ref = 0;
   OS_File_CatalogueInfo cat;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
@@ -752,7 +763,7 @@ static void test3(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
     my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, 0);
 
     err_suppress_errors();
@@ -795,7 +806,7 @@ static void test4(void)
 {
   /* Save compressed file */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   int const estimated_size = make_uncompressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestUncompFileType, 0);
@@ -846,7 +857,7 @@ static void test5(void)
 {
   /* Save uncompressed file */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   int const estimated_size = make_compressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestCompressedFileType, 0);
@@ -897,7 +908,7 @@ static void test6(void)
 {
   /* Save directory */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, 0);
   ObjectId id;
@@ -1001,7 +1012,7 @@ static void batch_test(ComponentId radio)
     ObjectId scan_id;
     unsigned int i;
     OS_File_CatalogueInfo cat;
-    const _kernel_oserror *err = NULL;
+    _Optional const _kernel_oserror *err = NULL;
 
     Fortify_EnterScope();
 
@@ -1045,7 +1056,7 @@ static void batch_test(ComponentId radio)
     {
       /* Deliver null events until the scan dbox completes or an error occurs */
       err_suppress_errors();
-      dispatch_event(Wimp_ENull, NULL);
+      dispatch_event(Wimp_ENull, &(WimpPollBlock){0});
       err = err_dump_suppressed();
     }
 
@@ -1119,7 +1130,7 @@ static void test9(void)
 {
   /* RAM transmit uncompressed file */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   int const estimated_size = make_compressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestCompressedFileType, 0);
@@ -1183,7 +1194,7 @@ static void cleanup_stalled(void)
 {
   /* Wait for timeout then deliver a null event to clean up the failed load */
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
 
   wait();
 
@@ -1192,7 +1203,7 @@ static void cleanup_stalled(void)
     err_suppress_errors();
     Fortify_SetNumAllocationsLimit(limit);
 
-    dispatch_event(Wimp_ENull, NULL);
+    dispatch_event(Wimp_ENull, &(WimpPollBlock){0});
 
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
     err = err_dump_suppressed();
@@ -1206,7 +1217,7 @@ static void cleanup_stalled(void)
 static void send_data_save(int file_type)
 {
   unsigned long limit;
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   int my_ref = 0;
   WimpMessage data_save_ack;
 
@@ -1267,7 +1278,7 @@ static void test11(void)
 static void test12(void)
 {
   /* Transfer dir from app */
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   init_data_save_msg(&poll_block, 0, FileType_Directory);
@@ -1284,14 +1295,14 @@ static void test12(void)
   err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
-  assert(!strcmp(err->errmess, msgs_lookup("AppDir")));
+  assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
   assert(pseudo_wimp_get_message_count() == 0);
 }
 
 static void test13(void)
 {
   /* Transfer app from app */
-  const _kernel_oserror *err;
+  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   init_data_save_msg(&poll_block, 0, FileType_Application);
@@ -1307,7 +1318,7 @@ static void test13(void)
   err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
-  assert(!strcmp(err->errmess, msgs_lookup("AppDir")));
+  assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
   assert(pseudo_wimp_get_message_count() == 0);
 }
 
@@ -1317,8 +1328,8 @@ static void do_data_transfer(int file_type, int (*make_file)(char const *filenam
   unsigned long limit;
   int dataload_ref = 0;
   int estimated_size = 0;
-  const _kernel_oserror *err;
-  UserData *savebox;
+  _Optional const _kernel_oserror *err;
+  _Optional UserData *savebox;
   ObjectId id;
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -1462,7 +1473,7 @@ static void test17(void)
   {
     WimpPollBlock poll_block;
     int const datasave_ref = init_data_save_msg(&poll_block, TestDataSize, TestUncompFileType);
-    const _kernel_oserror *err;
+    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
     Fortify_SetNumAllocationsLimit(limit);

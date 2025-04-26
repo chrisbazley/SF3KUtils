@@ -41,6 +41,11 @@
 #include "PseudoTbox.h"
 #endif
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Menu component IDs */
 enum
 {
@@ -106,8 +111,8 @@ static int menu_selection(int const event_code, ToolboxEvent *const event,
 void OptsMenu_initialise(ObjectId id)
 {
   /* Listen for selections */
-  EF(event_register_toolbox_handler(id, Menu_Selection, menu_selection, NULL));
+  EF(event_register_toolbox_handler(id, Menu_Selection, menu_selection, (void *)NULL));
 
   EF(event_register_toolbox_handler(id, Menu_AboutToBeShown, about_to_be_shown,
-                                    NULL));
+                                    (void *)NULL));
 }

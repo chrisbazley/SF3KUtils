@@ -56,6 +56,10 @@
 #include "SFTIconbar.h"
 #include "SFgfxconv.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -64,12 +68,12 @@ enum
 
 static ObjectId Iconbar_id = NULL_ObjectId;
 static bool multi_saveboxes = false;
-static SFTSaveBox *last_savebox = NULL;
+static _Optional SFTSaveBox *last_savebox = NULL;
 
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 
-static void load_fail(CONST _kernel_oserror *const error,
+static void load_fail(_Optional CONST _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -90,7 +94,7 @@ static void savebox_deleted(SFTSaveBox *savebox)
 
 /* ----------------------------------------------------------------------- */
 
-static bool new_savebox(SFTSaveBox *const savebox)
+static bool new_savebox(_Optional SFTSaveBox *const savebox)
 {
   bool success = false;
   if (savebox != NULL)
@@ -109,13 +113,13 @@ static bool new_savebox(SFTSaveBox *const savebox)
 
 /* ----------------------------------------------------------------------- */
 
-static SFTSaveBox *convert_sprites(char const *const file_path, int const x,
+static _Optional SFTSaveBox *convert_sprites(char const *const file_path, int const x,
   bool const data_saved, flex_ptr buffer)
 {
   DEBUGF("Creating savebox for compressed graphics, input size is %d\n",
     flex_size(buffer));
 
-  ScanSpritesContext *const context = malloc(sizeof(*context));
+  _Optional ScanSpritesContext *const context = malloc(sizeof(*context));
   if (!context)
   {
     RPT_ERR("NoMem");
@@ -124,14 +128,14 @@ static SFTSaveBox *convert_sprites(char const *const file_path, int const x,
 
   Reader breader;
   reader_flex_init(&breader, buffer);
-  SFError const err = scan_sprite_file(&breader, context);
+  SFError const err = scan_sprite_file(&breader, &*context);
   reader_destroy(&breader);
 
-  SFTSaveBox *newbox = NULL;
+  _Optional SFTSaveBox *newbox = NULL;
   if (!handle_error(err, "RAM", ""))
   {
     /* Try to guess whether to convert sprites to planets or tiles */
-    int const ntypes = count_spr_types(context);
+    int const ntypes = count_spr_types(&*context);
     if (ntypes == 0)
     {
       RPT_ERR("AutoNoMatch");
@@ -189,11 +193,11 @@ static SFTSaveBox *convert_sprites(char const *const file_path, int const x,
 static bool read_file(Reader *const reader, int const estimated_size,
   int const file_type, char const *const filename, void *const client_handle)
 {
-  bool const is_safe = client_handle != NULL;
+  bool const *const is_safe = client_handle;
 
   /* We always need to buffer the input data: sprite files require two
      passes and the user may want to tweak conversion parameters. */
-  void *data = NULL;
+  void *data = (void *)NULL;
   flex_ptr buffer = &data;
   if (!copy_to_buf(buffer, reader, estimated_size, filename))
   {
@@ -206,18 +210,18 @@ static bool read_file(Reader *const reader, int const estimated_size,
   {
 
     /* Create save dialogue box for a file */
-    SFTSaveBox *savebox = NULL;
+    _Optional SFTSaveBox *savebox = NULL;
     switch(file_type)
     {
       case FileType_Sprite:
-        savebox = convert_sprites(filename, pointerinfo.x, is_safe, buffer);
+        savebox = convert_sprites(filename, pointerinfo.x, *is_safe, buffer);
         break;
 
       case FileType_SFSkyPic:
       case FileType_SFMapGfx:
       case FileType_SFSkyCol:
         savebox = SaveSprites_create(
-                     filename, pointerinfo.x, is_safe,
+                     filename, pointerinfo.x, *is_safe,
                      buffer, file_type, savebox_deleted);
         break;
 
@@ -274,7 +278,8 @@ static int datasave_message(WimpMessage *const message, void *const handle)
   else
   {
     /* The rest of the data transfer protocol is handled by CBLibrary */
-    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, NULL));
+    static bool is_safe = false;
+    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, &is_safe));
   }
 
   return 1; /* claim message */
@@ -308,14 +313,15 @@ static int dataload_message(WimpMessage *const message, void *const handle)
       message->data.data_load.file_type == FileType_Application)
   {
     /* Canonicalise the file path to be loaded */
-    char *canonical_path = NULL;
+    _Optional char *canonical_path = NULL;
     if (!E(canonicalise(&canonical_path, NULL, NULL,
-                        message->data.data_load.leaf_name)))
+                        message->data.data_load.leaf_name)) &&
+        canonical_path)
     {
       /* If there is already a save box for data loaded from this file path then
          just show that */
       const SFTSaveBox * const existing_dbox =
-          (SFTSaveBox *)userdata_find_by_file_name(canonical_path);
+          (SFTSaveBox *)userdata_find_by_file_name(&*canonical_path);
 
       if (existing_dbox == NULL)
       {
@@ -326,13 +332,13 @@ static int dataload_message(WimpMessage *const message, void *const handle)
           if (!E(wimp_get_pointer_info(&pointerinfo)))
           {
             success = new_savebox(
-              SaveDir_create(canonical_path, pointerinfo.x, savebox_deleted));
+              SaveDir_create(&*canonical_path, pointerinfo.x, savebox_deleted));
           }
         }
         else
         {
-          bool is_safe = true;
-          success = loader3_load_file(canonical_path,
+          static bool is_safe = true;
+          success = loader3_load_file(&*canonical_path,
                                       message->data.data_load.file_type,
                                       read_file, load_failed, &is_safe);
         }
@@ -377,8 +383,8 @@ void Iconbar_initialise(ObjectId id)
   Iconbar_id = id;
 
   /* Register Wimp message handlers to load files dropped on iconbar icon */
-  EF(event_register_message_handler(Wimp_MDataSave, datasave_message, NULL));
-  EF(event_register_message_handler(Wimp_MDataLoad, dataload_message, NULL));
+  EF(event_register_message_handler(Wimp_MDataSave, datasave_message, (void *)NULL));
+  EF(event_register_message_handler(Wimp_MDataLoad, dataload_message, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */

@@ -41,6 +41,11 @@
 /* Local headers */
 #include "PreQuit.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {
@@ -115,8 +120,8 @@ void PreQuit_initialise(ObjectId id)
   dbox_id = id;
 
   /* Install handlers */
-  EF(event_register_toolbox_handler(id, Quit_Quit, quit, NULL));
-  EF(event_register_toolbox_handler(id, Quit_AboutToBeShown, InputFocus_recordcaretpos, NULL));
+  EF(event_register_toolbox_handler(id, Quit_Quit, quit, (void *)NULL));
+  EF(event_register_toolbox_handler(id, Quit_AboutToBeShown, InputFocus_recordcaretpos, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */

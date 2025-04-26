@@ -28,10 +28,17 @@
 #include "PalEntry.h"
 
 /* Local headers */
-#include "Tests.h"
 #include "Editor.h"
+#include "Tests.h"
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 
 enum {
   DefaultPixelColour = 0,
@@ -145,7 +152,7 @@ static void test1(void)
     }
 
     Editor editor;
-    editor_init(&editor, &edit_colmap, NULL);
+    editor_init(&editor, &edit_colmap, (EditorRedrawSelectFn *)NULL);
 
     assert(!editor_can_undo(&editor));
     assert(!editor_can_redo(&editor));
@@ -164,8 +171,8 @@ static void test2(void)
   edit_colmap_init(&edit_colmap, NULL, ColMap_MaxSize, redraw_entry_cb);
 
   Editor editor, editor2;
-  editor_init(&editor, &edit_colmap, NULL);
-  editor_init(&editor2, &edit_colmap, NULL);
+  editor_init(&editor, &edit_colmap, (EditorRedrawSelectFn *)NULL);
+  editor_init(&editor2, &edit_colmap, (EditorRedrawSelectFn *)NULL);
 
   assert(edit_colmap_get_colmap(&edit_colmap) == editor_get_colmap(&editor));
   assert(editor_get_colmap(&editor) == editor_get_colmap(&editor2));
@@ -454,7 +461,7 @@ static void test7(void)
   edit_colmap_init(&edit_colmap, NULL, ColMap_MaxSize, redraw_entry_cb);
 
   Editor editor;
-  editor_init(&editor, &edit_colmap, NULL);
+  editor_init(&editor, &edit_colmap, (EditorRedrawSelectFn *)NULL);
   assert(editor_select(&editor, SelectStart, SelectEnd));
 
   edit_colmap_destroy(&edit_colmap);
@@ -490,7 +497,7 @@ static void test9(void)
   edit_colmap_init(&edit_colmap, NULL, ColMap_MaxSize, redraw_entry_cb);
 
   Editor editor;
-  editor_init(&editor, &edit_colmap, NULL);
+  editor_init(&editor, &edit_colmap, (EditorRedrawSelectFn *)NULL);
   assert(editor_select(&editor, SelectStart, SelectEnd));
   assert(editor_set_plain(&editor, Colour) == EditResult_Changed);
 

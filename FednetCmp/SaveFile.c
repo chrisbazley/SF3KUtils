@@ -43,6 +43,10 @@
 #include "FNCSaveBox.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -56,7 +60,7 @@ typedef struct
   FNCSaveBox super;
   void *comp_data;
   void *decomp_data;
-  FNCSaveBoxDeletedFn *deleted_cb;
+  _Optional FNCSaveBoxDeletedFn *deleted_cb;
 }
 SaveFile;
 
@@ -81,7 +85,7 @@ static void destroy_savefile(FNCSaveBox *const savebox)
   }
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savefile_data->deleted_cb != NULL)
+  if (savefile_data->deleted_cb)
     savefile_data->deleted_cb(savebox);
 
   free(savefile_data);
@@ -130,9 +134,9 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-FNCSaveBox *SaveFile_create(char const *const filename,
+_Optional FNCSaveBox *SaveFile_create(char const *const filename,
   bool const data_saved, Reader *const reader, int const estimated_size,
-  int const x, FNCSaveBoxDeletedFn *const deleted_cb)
+  int const x, _Optional FNCSaveBoxDeletedFn *const deleted_cb)
 {
   /* Open savebox for data - if success, reanchors flex block. */
   assert(filename != NULL);
@@ -140,7 +144,7 @@ FNCSaveBox *SaveFile_create(char const *const filename,
          filename, estimated_size, data_saved ? "file" : "application");
 
   /* Initialise status block */
-  SaveFile * const savefile_data = malloc(sizeof(*savefile_data));
+  _Optional SaveFile * const savefile_data = malloc(sizeof(*savefile_data));
   if (savefile_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -165,12 +169,12 @@ FNCSaveBox *SaveFile_create(char const *const filename,
       {
         if (E(event_register_toolbox_handler(
             savefile_data->super.saveas_id, SaveAs_SaveToFile,
-            save_to_file, savefile_data)))
+            save_to_file, &*savefile_data)))
           break;
 
         if (E(event_register_toolbox_handler(
             savefile_data->super.saveas_id, SaveAs_FillBuffer,
-            fill_buffer, savefile_data)))
+            fill_buffer, &*savefile_data)))
           break;
 
         if (E(saveas_set_file_size(0, savefile_data->super.saveas_id,

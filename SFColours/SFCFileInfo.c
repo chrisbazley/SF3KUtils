@@ -41,6 +41,10 @@
 #include "PseudoTbox.h"
 #endif
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 ObjectId fileinfo_sharedid = NULL_ObjectId;
 
 /* ----------------------------------------------------------------------- */
@@ -85,7 +89,7 @@ void FileInfo_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     FileInfo_AboutToBeShown,
                                     about_to_be_shown,
-                                    NULL));
+                                    (void *)NULL));
 
   fileinfo_sharedid = id;
 }

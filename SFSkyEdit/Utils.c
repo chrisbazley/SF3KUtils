@@ -45,6 +45,11 @@
 #include "Utils.h"
 #include "EditWin.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {

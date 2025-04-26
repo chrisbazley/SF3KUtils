@@ -35,7 +35,7 @@ bool ExpColFile_init(ExpColFile *file, int num_cols);
 void ExpColFile_destroy(ExpColFile *file);
 
 int ExpColFile_get_colour(ExpColFile const *file, int index,
-  int *x_offset, int *y_offset);
+  _Optional int *x_offset, _Optional int *y_offset);
 
 bool ExpColFile_set_colour(ExpColFile *file, int index,
   int x_offset, int y_offset, int colour);

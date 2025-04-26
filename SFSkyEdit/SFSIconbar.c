@@ -52,6 +52,11 @@
 #include "Utils.h"
 #include "SkyIO.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 enum
 {
   WindowHandle_IconBar = -2, /* Pseudo window handle (icon bar) */
@@ -229,6 +234,6 @@ void Iconbar_initialise(ObjectId id)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
                                       msg_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 }

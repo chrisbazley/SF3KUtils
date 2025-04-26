@@ -33,6 +33,11 @@
 #include "Utils.h"
 #include "Export.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {

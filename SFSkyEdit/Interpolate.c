@@ -42,6 +42,11 @@
 #include "Interpolate.h"
 #include "SFSInit.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Window component IDs */
 enum
 {
@@ -136,7 +141,6 @@ static int actionbutton_selected(int const event_code,
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
-  NOT_USED(handle);
 
   switch (id_block->self_component)
   {
@@ -155,7 +159,7 @@ static int actionbutton_selected(int const event_code,
       if (TEST_BITS(abse->hdr.flags, ActionButton_Selected_Adjust))
       {
         /* Reset dbox state */
-        (void)about_to_be_shown(Window_AboutToBeShown, NULL, id_block, NULL);
+        (void)about_to_be_shown(Window_AboutToBeShown, &(ToolboxEvent){0}, id_block, handle);
       }
       break;
     }

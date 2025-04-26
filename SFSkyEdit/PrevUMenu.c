@@ -35,6 +35,11 @@
 #include "PrevUMenu.h"
 #include "Preview.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Menu component IDs */
 enum
 {
@@ -71,7 +76,7 @@ void PrevUMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     about_to_be_shown,
-                                    NULL));
+                                    (void *)NULL));
   PrevUMenu_sharedid = id;
 }
 

@@ -36,6 +36,11 @@
 #include "ParseArgs.h"
 #include "EditWin.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 

@@ -36,6 +36,11 @@
 #include "Goto.h"
 #include "EditWin.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Window component IDs */
 enum
 {
@@ -154,7 +159,7 @@ void Goto_initialise(ObjectId id)
   {
     /* Client handle is only used by the Window_HasBeenHidden handler */
     EF(event_register_toolbox_handler(id, tbox_handlers[i].event_code,
-         tbox_handlers[i].handler, NULL));
+         tbox_handlers[i].handler, (void *)NULL));
   }
 
   Goto_sharedid = id;

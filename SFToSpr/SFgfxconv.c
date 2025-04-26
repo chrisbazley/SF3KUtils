@@ -43,6 +43,10 @@
 #include "SFgfxconv.h"
 #include "SFError.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 #define TILE_SPR_NAME "tile_"
 #define TILE_SPR_TAG "ANIM"
 
@@ -427,7 +431,7 @@ static inline int parse_tile_sprite_name(char const *const name)
   if (strncmp(name, TILE_SPR_NAME, sizeof(TILE_SPR_NAME)-1) == 0 &&
       isdigit(name[sizeof(TILE_SPR_NAME)-1]))
   {
-    char *endp = NULL;
+    char *endp;
     tile_num = strtol(name + sizeof(TILE_SPR_NAME)-1, &endp, 10);
 
     if (tile_num > MapTileMax || *endp != '\0')
@@ -953,7 +957,7 @@ static inline int parse_planet_sprite_name(char const *const name)
   if (strncmp(name, PLANET_SPR_NAME, sizeof(PLANET_SPR_NAME)-1) == 0 &&
       isdigit(name[sizeof(PLANET_SPR_NAME)-1]))
   {
-    char *endp = NULL;
+    char *endp;
     image_num = strtol(name + sizeof(PLANET_SPR_NAME)-1, &endp, 10);
 
     if (image_num > PlanetMax || *endp != '\0')
@@ -1529,13 +1533,13 @@ SFError scan_sprite_file_init(ScanSpritesIter *const iter, Reader *const reader,
 
 SFError scan_sprite_file(Reader *const reader, ScanSpritesContext *const context)
 {
-  ScanSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional ScanSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = scan_sprite_file_init(iter, reader, context);
+  SFError err = scan_sprite_file_init(&*iter, reader, context);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -1584,13 +1588,13 @@ SFError sprites_to_tiles_init(SpritesToTilesIter *const iter,
 SFError sprites_to_tiles(Reader *const reader, Writer *const writer,
   MapTileSpritesContext const *const context)
 {
-  SpritesToTilesIter *const iter = malloc(sizeof(*iter));
+  _Optional SpritesToTilesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = sprites_to_tiles_init(iter, reader, writer, context);
+  SFError err = sprites_to_tiles_init(&*iter, reader, writer, context);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -1622,12 +1626,12 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
     return SFError_StrOFlo;
   }
   csv_buffer[n] = '\0';
-  char *text_ptr = csv_buffer;
+  _Optional char *text_ptr = csv_buffer;
 
   int array[ARRAY_SIZE(hdr->splash_anim_1)];
 
   DEBUG("Reading 1st splash animation");
-  size_t num_fields = csv_parse_string(text_ptr, &text_ptr, array,
+  size_t num_fields = csv_parse_string(&*text_ptr, &text_ptr, array,
                                        CSVOutputType_Int, ARRAY_SIZE(array));
   if (num_fields > ARRAY_SIZE(array))
   {
@@ -1653,7 +1657,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
   if (text_ptr != NULL)
   {
     DEBUG("Reading 2nd splash animation");
-    num_fields = csv_parse_string(text_ptr, &text_ptr, array,
+    num_fields = csv_parse_string(&*text_ptr, &text_ptr, array,
                                   CSVOutputType_Int, ARRAY_SIZE(array));
     if (num_fields > ARRAY_SIZE(array))
     {
@@ -1679,7 +1683,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
   if (text_ptr != NULL)
   {
     DEBUG("Reading 2nd splash triggers");
-    num_fields = csv_parse_string(text_ptr, &text_ptr, array,
+    num_fields = csv_parse_string(&*text_ptr, &text_ptr, array,
                                   CSVOutputType_Int, ARRAY_SIZE(array));
     if (num_fields > ARRAY_SIZE(array))
       num_fields = ARRAY_SIZE(array);
@@ -1785,13 +1789,13 @@ SFError tiles_to_sprites_init(TilesToSpritesIter *const iter,
 
 SFError tiles_to_sprites(Reader *const reader, Writer *const writer)
 {
-  TilesToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional TilesToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = tiles_to_sprites_init(iter, reader, writer);
+  SFError err = tiles_to_sprites_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -1827,13 +1831,13 @@ SFError tiles_to_sprites_ext_init(TilesToSpritesIter *const iter,
 
 SFError tiles_to_sprites_ext(Reader *const reader, Writer *const writer)
 {
-  TilesToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional TilesToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = tiles_to_sprites_ext_init(iter, reader, writer);
+  SFError err = tiles_to_sprites_ext_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -1866,13 +1870,13 @@ SFError sprites_to_planets_init(SpritesToPlanetsIter *const iter,
 SFError sprites_to_planets(Reader *reader, Writer *writer,
   PlanetSpritesContext const *const context)
 {
-  SpritesToPlanetsIter *const iter = malloc(sizeof(*iter));
+  _Optional SpritesToPlanetsIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = sprites_to_planets_init(iter, reader, writer, context);
+  SFError err = sprites_to_planets_init(&*iter, reader, writer, context);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -1896,7 +1900,7 @@ SFError csv_to_planets(Reader *const reader, PlanetsHeader * const hdr)
     return SFError_StrOFlo;
   }
   csv_buffer[n] = '\0';
-  char *text_ptr = csv_buffer;
+  _Optional char *text_ptr = csv_buffer;
 
   bool fixed = false;
   for (int32_t planet = 0; planet <= hdr->last_image_num; planet++)
@@ -1904,7 +1908,7 @@ SFError csv_to_planets(Reader *const reader, PlanetsHeader * const hdr)
     DEBUG("Reading paint offsets for sky picture %" PRId32, planet);
 
     int array[2] = {0, 0}; /* for X and Y coordinates */
-    size_t num_fields = csv_parse_string(text_ptr, &text_ptr, array,
+    size_t num_fields = csv_parse_string(&*text_ptr, &text_ptr, array,
                                          CSVOutputType_Int, ARRAY_SIZE(array));
     if (num_fields > ARRAY_SIZE(array))
       num_fields = ARRAY_SIZE(array);
@@ -2000,13 +2004,13 @@ SFError planets_to_sprites_init(PlanetsToSpritesIter *const iter,
 
 SFError planets_to_sprites(Reader *const reader, Writer *const writer)
 {
-  PlanetsToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional PlanetsToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = planets_to_sprites_init(iter, reader, writer);
+  SFError err = planets_to_sprites_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -2043,13 +2047,13 @@ SFError planets_to_sprites_ext_init(PlanetsToSpritesIter *const iter,
 
 SFError planets_to_sprites_ext(Reader *const reader, Writer *const writer)
 {
-  PlanetsToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional PlanetsToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = planets_to_sprites_ext_init(iter, reader, writer);
+  SFError err = planets_to_sprites_ext_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -2083,13 +2087,13 @@ SFError sprites_to_sky(Reader *const reader, Writer *const writer,
   SkySpritesContext const *const context)
 {
   assert(context);
-  SpritesToSkyIter *const iter = malloc(sizeof(*iter));
+  _Optional SpritesToSkyIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = sprites_to_sky_init(iter, reader, writer, context);
+  SFError err = sprites_to_sky_init(&*iter, reader, writer, context);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -2114,11 +2118,11 @@ SFError csv_to_sky(Reader *const reader, SkyHeader *const hdr)
     return SFError_StrOFlo;
   }
   csv_buffer[n] = '\0';
-  char *text_ptr = csv_buffer;
+  _Optional char *text_ptr = csv_buffer;
 
   int array[2];
 
-  const size_t num_fields = csv_parse_string(text_ptr, &text_ptr, array,
+  const size_t num_fields = csv_parse_string(&*text_ptr, &text_ptr, array,
                                              CSVOutputType_Int, ARRAY_SIZE(array));
   bool fixed = false;
   if (num_fields > 0)
@@ -2226,13 +2230,13 @@ SFError sky_to_sprites_ext_init(SkyToSpritesIter *const iter,
 
 SFError sky_to_sprites(Reader *const reader, Writer *const writer)
 {
-  SkyToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional SkyToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = sky_to_sprites_init(iter, reader, writer);
+  SFError err = sky_to_sprites_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);
@@ -2245,13 +2249,13 @@ SFError sky_to_sprites(Reader *const reader, Writer *const writer)
 
 SFError sky_to_sprites_ext(Reader *const reader, Writer *const writer)
 {
-  SkyToSpritesIter *const iter = malloc(sizeof(*iter));
+  _Optional SkyToSpritesIter *const iter = malloc(sizeof(*iter));
   if (!iter)
   {
     return SFError_NoMem;
   }
 
-  SFError err = sky_to_sprites_ext_init(iter, reader, writer);
+  SFError err = sky_to_sprites_ext_init(&*iter, reader, writer);
   if (err == SFError_OK)
   {
     err = convert_finish(&iter->super);

@@ -25,7 +25,7 @@ void layout_get_caret_bbox(int row, BBox *bbox);
 void layout_get_selection_bbox(int start_row, int end_row, BBox *bbox);
 
 void layout_redraw_bbox(int xmin, int ymax, BBox *bbox,
-  Editor const *editor, Editor const *ghost, const PaletteEntry palette[],
+  Editor const *editor, _Optional Editor const *ghost, const PaletteEntry palette[],
   bool draw_caret);
 
 #endif

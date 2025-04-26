@@ -19,10 +19,10 @@
 typedef struct SkyFile SkyFile;
 typedef struct EditWin EditWin;
 
-SkyFile *SkyFile_find_by_file_name(char const *load_path);
-SkyFile *SkyFile_create(Reader *reader, char const *load_path,
-  bool is_safe);
-void SkyFile_destroy(SkyFile *file);
+_Optional SkyFile *SkyFile_find_by_file_name(char const *load_path);
+_Optional SkyFile *SkyFile_create(_Optional Reader *reader,
+  _Optional char const *load_path, bool is_safe);
+void SkyFile_destroy(_Optional SkyFile *file);
 void SkyFile_export(SkyFile *file, Writer *writer);
 void SkyFile_set_star_height(SkyFile *file, int height);
 void SkyFile_set_render_offset(SkyFile *file, int height);
@@ -36,7 +36,7 @@ void EditWin_initialise(void);
 
 SkyFile *EditWin_get_sky(EditWin *edit_win);
 void EditWin_give_focus(EditWin *edit_win);
-void EditWin_file_saved(EditWin *edit_win, char *save_path);
+void EditWin_file_saved(EditWin *edit_win, _Optional char *save_path);
 void EditWin_show_parent_dir(const EditWin *edit_win);
 void EditWin_delete_colours(EditWin *edit_win);
 void EditWin_insert_plain(EditWin *edit_win, int number, int colour);
@@ -54,15 +54,15 @@ int EditWin_get_array(EditWin *edit_win, int dst[], int dst_size);
 void EditWin_insert_sky(EditWin *edit_win, Sky const *src);
 bool EditWin_has_unsaved(const EditWin *edit_win);
 void EditWin_set_caret_pos(EditWin *edit_win, int new_pos);
-void EditWin_get_selection(EditWin *edit_win, int *start, int *end);
+void EditWin_get_selection(EditWin *edit_win, _Optional int *start, _Optional int *end);
 int *EditWin_get_stamp(const EditWin *edit_win);
-char *EditWin_get_file_path(const EditWin *edit_win);
+_Optional char *EditWin_get_file_path(const EditWin *edit_win);
 void EditWin_do_save(EditWin *edit_win, bool destroy, bool parent);
 void EditWin_destroy(EditWin *edit_win);
 bool EditWin_owns_wimp_handle(const EditWin *edit_win, int wimp_handle);
 int EditWin_get_wimp_handle(const EditWin *edit_win);
 
-EditWin *EditWin_from_wimp_handle(int window_handle);
+_Optional EditWin *EditWin_from_wimp_handle(int window_handle);
 
 void EditWin_set_insert_pos(EditWin *edit_win,
   const WimpGetWindowStateBlock *window_state, int y);
@@ -71,7 +71,7 @@ void EditWin_remove_insert_pos(EditWin *edit_win);
 void EditWin_confirm_insert_pos(EditWin *edit_win);
 
 void EditWin_start_auto_scroll(const EditWin *edit_win,
-  const BBox *visible_area, int pause_time, unsigned int *flags_out);
+  const BBox *visible_area, int pause_time, _Optional unsigned int *flags_out);
 
 void EditWin_stop_auto_scroll(const EditWin *edit_win);
 bool EditWin_export(EditWin *edit_win, Writer *writer);

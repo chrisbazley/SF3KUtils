@@ -13,8 +13,8 @@
 #include "SFTSaveBox.h"
 #include "SFgfxconv.h"
 
-SFTSaveBox *SavePlanets_create(char const *save_path, int x, bool data_saved,
+_Optional SFTSaveBox *SavePlanets_create(char const *save_path, int x, bool data_saved,
   flex_ptr sprites, PlanetSpritesContext const *context,
-  SFTSaveBoxDeletedFn *deleted_cb);
+  _Optional SFTSaveBoxDeletedFn *deleted_cb);
 
 #endif

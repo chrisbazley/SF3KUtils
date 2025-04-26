@@ -32,7 +32,13 @@
 #include "Tests.h"
 #include "Sky.h"
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 enum
 {

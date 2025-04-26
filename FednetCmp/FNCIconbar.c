@@ -52,9 +52,13 @@
 #include "FNCSaveBox.h"
 #include "FNCIconbar.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 static ObjectId Iconbar_id = NULL_ObjectId;
 static bool multi_saveboxes = false;
-static FNCSaveBox *last_savebox = NULL;
+static _Optional FNCSaveBox *last_savebox = NULL;
 
 enum
 {
@@ -64,7 +68,7 @@ enum
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 
-static void load_fail(CONST _kernel_oserror *const error,
+static void load_fail(_Optional CONST _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -85,7 +89,7 @@ static void savebox_deleted(FNCSaveBox *savebox)
 
 /* ----------------------------------------------------------------------- */
 
-static bool new_savebox(FNCSaveBox *const savebox)
+static bool new_savebox(_Optional FNCSaveBox *const savebox)
 {
   bool success = false;
   if (savebox != NULL)
@@ -96,7 +100,7 @@ static bool new_savebox(FNCSaveBox *const savebox)
     {
       FNCSaveBox_destroy(last_savebox);
     }
-    last_savebox = savebox;
+    last_savebox = &*savebox;
     success = true;
   }
   return success;
@@ -112,18 +116,18 @@ static bool read_file(Reader *const reader, int const estimated_size,
 
   if (!E(wimp_get_pointer_info(&pointerinfo)))
   {
-    FNCSaveBox *savebox = NULL;
-    bool const is_safe = client_handle != NULL;
+    _Optional FNCSaveBox *savebox = NULL;
+    bool const *const is_safe = client_handle;
 
     /* Create save dialogue box for a file */
     if (compressed_file_type(file_type))
     {
-      savebox = SaveFile_create(filename, is_safe,
+      savebox = SaveFile_create(filename, *is_safe,
                   reader, estimated_size, pointerinfo.x, savebox_deleted);
     }
     else
     {
-      savebox = SaveComp_create(filename, is_safe,
+      savebox = SaveComp_create(filename, *is_safe,
                   reader, estimated_size, pointerinfo.x, savebox_deleted);
     }
     success = new_savebox(savebox);
@@ -160,7 +164,8 @@ static int datasave_message(WimpMessage *const message, void *const handle)
   else
   {
     /* The rest of the data transfer protocol is handled by CBLibrary */
-    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, NULL));
+    static bool is_safe = false;
+    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, &is_safe));
   }
 
   return 1; /* claim message */
@@ -186,14 +191,15 @@ static int dataload_message(WimpMessage *const message, void *const handle)
   bool success = false;
 
   /* Canonicalise the file path to be loaded */
-  char *canonical_path = NULL;
+  _Optional char *canonical_path = NULL;
   if (!E(canonicalise(&canonical_path, NULL, NULL,
-    message->data.data_load.leaf_name)))
+                      message->data.data_load.leaf_name)) &&
+    canonical_path)
   {
     /* If there is already a save box for data loaded from this file path then
        just show that */
     const FNCSaveBox * const existing_dbox =
-        (FNCSaveBox *)userdata_find_by_file_name(canonical_path);
+        (FNCSaveBox *)userdata_find_by_file_name(&*canonical_path);
 
     if (existing_dbox == NULL)
     {
@@ -204,13 +210,13 @@ static int dataload_message(WimpMessage *const message, void *const handle)
         if (!E(wimp_get_pointer_info(&pointerinfo)))
         {
           success = new_savebox(
-            SaveDir_create(canonical_path, pointerinfo.x, savebox_deleted));
+            SaveDir_create(&*canonical_path, pointerinfo.x, savebox_deleted));
         }
       }
       else
       {
-        bool is_safe = true;
-        success = loader3_load_file(canonical_path,
+        static bool is_safe = true;
+        success = loader3_load_file(&*canonical_path,
                                     message->data.data_load.file_type,
                                     read_file, load_fail, &is_safe);
       }
@@ -249,8 +255,8 @@ void Iconbar_initialise(ObjectId id)
   Iconbar_id = id;
 
   /* Register Wimp message handlers to load files dropped on iconbar icon */
-  EF(event_register_message_handler(Wimp_MDataSave, datasave_message, NULL));
-  EF(event_register_message_handler(Wimp_MDataLoad, dataload_message, NULL));
+  EF(event_register_message_handler(Wimp_MDataSave, datasave_message, (void *)NULL));
+  EF(event_register_message_handler(Wimp_MDataLoad, dataload_message, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */

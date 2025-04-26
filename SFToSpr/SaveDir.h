@@ -9,6 +9,7 @@
 
 #include "SFTSaveBox.h"
 
-SFTSaveBox *SaveDir_create(char const *input_path, int x, SFTSaveBoxDeletedFn *deleted_cb);
+_Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
+                           _Optional SFTSaveBoxDeletedFn *deleted_cb);
 
 #endif

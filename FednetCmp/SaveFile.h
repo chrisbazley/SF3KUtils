@@ -11,11 +11,11 @@
 #include "FNCSaveBox.h"
 #include "Reader.h"
 
-FNCSaveBox *SaveFile_create(char const *filename,
+_Optional FNCSaveBox *SaveFile_create(char const *filename,
                                    bool data_saved,
                                    Reader *reader,
                                    int estimated_size,
                                    int x,
-                                   FNCSaveBoxDeletedFn *deleted_cb);
+                                   _Optional FNCSaveBoxDeletedFn *deleted_cb);
 
 #endif

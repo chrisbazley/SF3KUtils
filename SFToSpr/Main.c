@@ -38,6 +38,10 @@
 #include "ParseArgs.h"
 #include "SFTInit.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 

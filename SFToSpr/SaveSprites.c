@@ -52,6 +52,10 @@
 #include "SFTSaveBox.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -74,7 +78,7 @@ typedef struct
   void      *output_buffer; /* flex block */
   int        reset_radio;
   int        input_file_type;
-  SFTSaveBoxDeletedFn *deleted_cb;
+  _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
 SaveSprites;
 
@@ -98,7 +102,7 @@ static void destroy_savebox(SFTSaveBox *savebox)
   flex_free(&savefile_data->input_buffer);
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savefile_data->deleted_cb != NULL)
+  if (savefile_data->deleted_cb)
     savefile_data->deleted_cb(savebox);
 
   free(savefile_data);
@@ -151,9 +155,9 @@ static int get_size(SaveSprites *const savefile_data, ConverterFn *const fn)
 
 /* ----------------------------------------------------------------------- */
 
-static ConverterFn *pick_converter(SaveSprites *const savefile_data, int const radio_button)
+static _Optional ConverterFn *pick_converter(SaveSprites *const savefile_data, int const radio_button)
 {
-  ConverterFn *fn = NULL;
+  _Optional ConverterFn *fn = (ConverterFn *)NULL;
 
   assert(savefile_data);
   DEBUGF("Input filetype is 0x%x, output component ID is 0x%x\n",
@@ -179,7 +183,7 @@ static ConverterFn *pick_converter(SaveSprites *const savefile_data, int const r
     [ComponentId_ImagesData_Radio] = sky_to_sprites_ext,
     [ComponentId_Images_Radio] = sky_to_sprites,
   };
-  ConverterFn *const (*table)[ComponentId_Data_Radio + 1] = NULL;
+  ConverterFn *_Optional const (*table)[ComponentId_Data_Radio + 1] = NULL;
 
   switch (savefile_data->input_file_type)
   {
@@ -236,14 +240,14 @@ static bool change_output(SaveSprites *const savefile_data, int const radio_butt
     return false;
   }
 
-  ConverterFn *const converter = pick_converter(savefile_data, radio_button);
+  _Optional ConverterFn *const converter = pick_converter(savefile_data, radio_button);
   if (!converter)
   {
     DEBUGF("No format converter\n");
     return false;
   }
 
-  int const file_size = get_size(savefile_data, converter);
+  int const file_size = get_size(savefile_data, &*converter);
   if (E(saveas_set_file_size(0, savefile_data->super.saveas_id, file_size)))
   {
     return false;
@@ -268,7 +272,7 @@ static bool write_sprite_or_csv(Writer *const writer, void *const handle,
     return false;
   }
 
-  ConverterFn *const converter = pick_converter(savefile_data, savefile_data->reset_radio);
+  _Optional ConverterFn *const converter = pick_converter(savefile_data, savefile_data->reset_radio);
   if (!converter)
   {
     DEBUGF("No format converter\n");
@@ -407,8 +411,8 @@ static int radiobutton_state_changed(const int event_code, ToolboxEvent *const e
  *                         Public functions
  */
 
-SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, flex_ptr buffer,
-  int input_file_type, SFTSaveBoxDeletedFn *deleted_cb)
+_Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, flex_ptr buffer,
+  int input_file_type, _Optional SFTSaveBoxDeletedFn *deleted_cb)
 {
   static const struct
   {
@@ -435,7 +439,7 @@ SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, fl
   DEBUGF("Creating savebox for sprites/CSV, input size is %d\n", flex_size(buffer));
 
   /* Initialise status block */
-  SaveSprites * const savefile_data = malloc(sizeof(*savefile_data));
+  _Optional SaveSprites * const savefile_data = malloc(sizeof(*savefile_data));
   if (savefile_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -465,7 +469,7 @@ SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, fl
         if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
                                              tbox_handlers[i].event_code,
                                              tbox_handlers[i].handler,
-                                             savefile_data)))
+                                             &*savefile_data)))
           break;
       }
 
@@ -473,13 +477,13 @@ SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, fl
       if (E(event_register_toolbox_handler(savefile_data->super.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
-                                           savefile_data)))
+                                           &*savefile_data)))
         break;
 
       if (E(event_register_toolbox_handler(savefile_data->super.window_id,
                                            RadioButton_StateChanged,
                                            radiobutton_state_changed,
-                                           savefile_data)))
+                                           &*savefile_data)))
         break;
 
       if (!flex_reanchor(&savefile_data->input_buffer, buffer))
@@ -488,7 +492,7 @@ SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved, fl
         break;
       }
 
-      if (!change_output(savefile_data, savefile_data->reset_radio))
+      if (!change_output(&*savefile_data, savefile_data->reset_radio))
       {
         if (!flex_reanchor(buffer, &savefile_data->input_buffer))
           assert("flex_reanchor failed!" == NULL);

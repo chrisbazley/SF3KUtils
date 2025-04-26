@@ -45,6 +45,10 @@
 #include "ParseArgs.h"
 #include "Scan.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
@@ -118,7 +122,7 @@ void parse_arguments(int argc, char *argv[])
         {
           /* A multi-tasking decompression is incompatible with '-quit'.
              Load the whole file into memory before overwriting it. */
-          void *buffer_anchor = NULL;
+          void *buffer_anchor = (void *)NULL;
           if (load_file(argv[i], &buffer_anchor, copy_to_buf))
           {
             (void)save_file(argv[i], FileType_Data, &buffer_anchor, decomp_from_buf);
@@ -131,11 +135,13 @@ void parse_arguments(int argc, char *argv[])
         else
         {
           /* Start a multi-tasking decompression operation */
-          char *canonical_path;
+          _Optional char *canonical_path = NULL;
           EF(canonicalise(&canonical_path, NULL, NULL, argv[i]));
-
-          Scan_create(canonical_path, canonical_path, false, 0);
-          free(canonical_path);
+          if (canonical_path)
+          {
+            Scan_create(&*canonical_path, &*canonical_path, false, 0);
+            free(canonical_path);
+          }
         }
       }
     }

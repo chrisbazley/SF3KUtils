@@ -43,6 +43,10 @@
 #include "Utils.h"
 #include "SFgfxconv.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 #define COMMAND_PREFIX "Filer_Run "
 
 enum
@@ -55,14 +59,14 @@ static SFError try_convert(const char *const read_filename,
                            const char *const write_filename,
                            int const file_type)
 {
-  FILE *const fr = fopen_inc(read_filename, "rb");
+  _Optional FILE *const fr = fopen_inc(read_filename, "rb");
   if (fr == NULL)
   {
     return SFError_OpenInFail;
   }
 
   SFError err = SFError_OK;
-  FILE *const fw = fopen_inc(write_filename, "wb");
+  _Optional FILE *const fw = fopen_inc(write_filename, "wb");
   if (fw == NULL)
   {
     err = SFError_OpenOutFail;
@@ -70,14 +74,14 @@ static SFError try_convert(const char *const read_filename,
   else
   {
     Reader reader;
-    if (!reader_gkey_init(&reader, FednetHistoryLog2, fr))
+    if (!reader_gkey_init(&reader, FednetHistoryLog2, &*fr))
     {
       err = SFError_NoMem;
     }
     else
     {
       Writer writer;
-      writer_raw_init(&writer, fw);
+      writer_raw_init(&writer, &*fw);
 
       if (file_type == FileType_SFSkyPic)
       {
@@ -107,11 +111,11 @@ static SFError try_convert(const char *const read_filename,
       reader_destroy(&reader);
     }
 
-    if (fclose_dec(fw)) {
+    if (fclose_dec(&*fw)) {
       err = SFError_WriteFail;
     }
   }
-  fclose_dec(fr);
+  fclose_dec(&*fr);
   return err;
 }
 

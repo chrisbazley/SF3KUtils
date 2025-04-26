@@ -75,6 +75,11 @@
 #include "Utils.h"
 #include "SFSInit.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Special value for SWI Wimp_DragBox */
 #undef CancelDrag /* definition in "wimplib.h" is wrong! */
 #define CancelDrag ((WimpDragBox *)-1)
@@ -125,7 +130,7 @@ static int const export_file_types[] =
 
 static int clipboard[NColourBands];
 static int clipboard_size;
-static EditWin *drag_claim_win;
+static _Optional EditWin *drag_claim_win;
 static BBox selected_bbox;
 static int drag_start_x, drag_start_y;
 static int dragclaim_msg_ref;
@@ -158,7 +163,7 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
   size_t const nchars = reader_fread(str, 1, sizeof(str)-1, reader);
   str[nchars] = '\0';
 
-  char *endp;
+  _Optional char *endp;
   size_t const nvals = csv_parse_string(str, &endp, values, CSVOutputType_Int,
     max);
 
@@ -241,10 +246,10 @@ static bool load_csv(Reader *const reader, char const *const filename)
   assert(filename != NULL);
 
   bool success = false;
-  SkyFile *const file = SkyFile_create(NULL, NULL, false);
+  _Optional SkyFile *const file = SkyFile_create(NULL, NULL, false);
   if (file)
   {
-    EditWin *const edit_win = SkyFile_get_win(file);
+    EditWin *const edit_win = SkyFile_get_win(&*file);
     success = import_csv(edit_win, reader, filename);
     if (!success)
     {
@@ -266,7 +271,7 @@ static void probe_complete(int const file_type, void *const client_handle)
 
 /* ----------------------------------------------------------------------- */
 
-static void probe_failed(const _kernel_oserror *const e,
+static void probe_failed(_Optional const _kernel_oserror *const e,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -322,7 +327,7 @@ static bool export_skyfile(EditWin *const edit_win, char const * const path,
 {
   assert(edit_win != NULL);
   assert(path != NULL);
-  assert(fn != NULL);
+  assert(fn);
 
   /* Find the decompressed size upfront to avoid backward-seeking in
      the output stream (which may not be possible). */
@@ -393,7 +398,7 @@ static bool drag_or_paste_read(Reader *const reader, int const estimated_size,
 
 /* ----------------------------------------------------------------------- */
 
-static void drag_or_paste_failed(const _kernel_oserror *const e,
+static void drag_or_paste_failed(_Optional const _kernel_oserror *const e,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -483,11 +488,12 @@ static void relinquish_drag(void)
 {
   if (drag_claim_win != NULL)
   {
+    EditWin *const to_release = &*drag_claim_win;
     DEBUGF("View %p relinquishing drag\n", (void *)drag_claim_win);
 
     /* Undraw the ghost caret, if any */
-    EditWin_remove_insert_pos(drag_claim_win);
-    EditWin_stop_auto_scroll(drag_claim_win);
+    EditWin_remove_insert_pos(to_release);
+    EditWin_stop_auto_scroll(to_release);
     drag_claim_win = NULL;
     dragclaim_msg_ref = 0;
   }
@@ -763,7 +769,6 @@ message_handlers[] =
 
 static void DAO_render(int const cptr, int const ncols)
 {
-
   /* Draw light grey border rectangle */
   if (_swix(ColourTrans_SetGCOL, _IN(0)|_INR(3,4),
             (unsigned)ThumbnailBorderColour << PaletteEntry_RedShift,
@@ -823,7 +828,7 @@ static void DAO_render(int const cptr, int const ncols)
 
 /* ----------------------------------------------------------------------- */
 
-static const _kernel_oserror *drag_box(const DragBoxOp action,
+static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
   bool solid_drags, int const mouse_x, int const mouse_y,
   void *const client_handle)
 {
@@ -889,7 +894,7 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
                                         (uintptr_t)DAO_render,
                                         renderer_args,
                                         &drag_box.dragging_box,
-                                        NULL));
+                                        &(BBox){0}));
 
       using_dao = true;
     }
@@ -964,7 +969,7 @@ static bool sel_write(Writer *const writer, int const file_type,
 
 /* ----------------------------------------------------------------------- */
 
-static void sel_moved(int const file_type, char const *const file_path,
+static void sel_moved(int const file_type, _Optional char const *const file_path,
   int const datasave_ref, void *const client_handle)
 {
   EditWin *const edit_win = client_handle;
@@ -983,7 +988,7 @@ static void sel_moved(int const file_type, char const *const file_path,
 
 /* ----------------------------------------------------------------------- */
 
-static void sel_failed(const _kernel_oserror *const error,
+static void sel_failed(_Optional const _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -1025,7 +1030,7 @@ static bool drop_handler_remote(bool const shift_held, int const window,
   STRCPY_SAFE(msg.data.data_save.leaf_name, msgs_lookup("LeafName"));
 
   return !E(saver2_send_data(claimant_task, &msg, sel_write,
-                             shift_held ? sel_moved : NULL,
+                             shift_held ? sel_moved : 0,
                              sel_failed, source_view));
 }
 
@@ -1036,7 +1041,8 @@ static bool drop_handler(bool const shift_held, int const window,
   int const claimant_task, int const claimant_ref, void *const client_handle)
 {
   /* This function is called when a drag has terminated */
-  EditWin *const source_view = client_handle, *dest_view = NULL;
+  EditWin *const source_view = client_handle;
+  _Optional EditWin *dest_view;
   bool saved = true;
 
   DEBUGF("Notification of drop at %d,%d (icon %d in window %d)\n",
@@ -1057,7 +1063,7 @@ static bool drop_handler(bool const shift_held, int const window,
 
   if (dest_view != NULL)
   {
-    EditWin_drop_handler(dest_view, source_view, shift_held);
+    EditWin_drop_handler(&*dest_view, source_view, shift_held);
 
     /* It's more robust to stop the drag now instead of returning false
        and waiting for a final Dragging message. */
@@ -1137,7 +1143,7 @@ static bool report_dither(void)
 
 /* ----------------------------------------------------------------------- */
 
-static void load_fail(CONST _kernel_oserror *const error,
+static void load_fail(_Optional CONST _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -1218,7 +1224,7 @@ void IO_initialise(void)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
                                       msg_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 
   /* Check for DragAnObject module */
@@ -1226,7 +1232,8 @@ void IO_initialise(void)
   if (_kernel_oscli("RMEnsure DragAnObject 0 Set "APP_NAME"$DAO 0") ==
       _kernel_ERROR)
   {
-    err_check_fatal_rep(_kernel_last_oserror());
+    EF(_kernel_last_oserror());
+    exit(EXIT_FAILURE);
   }
 
   char readvar_buffer[MaxDAOVarValueLen + 1];
@@ -1256,7 +1263,7 @@ void IO_receive(WimpMessage const *const message)
 
   if (in_file_types(message->data.data_save.file_type, import_file_types))
   {
-    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, NULL));
+    ON_ERR_RPT(loader3_receive_data(message, read_file, load_fail, (void *)NULL));
   }
   else
   {
@@ -1270,28 +1277,29 @@ void IO_load_file(int const file_type, char const *const load_path)
 {
   assert(load_path != NULL);
   DEBUGF("Request to load file '%s' of type &%X\n", load_path, file_type);
-  char *canonical_path = NULL;
+  _Optional char *canonical_path = NULL;
 
   /* Check whether this file type is supported */
   if (!in_file_types(file_type, import_file_types))
   {
     RPT_ERR("BadFileType");
   }
-  else if (!E(canonicalise(&canonical_path, NULL, NULL, load_path)))
+  else if (!E(canonicalise(&canonical_path, NULL, NULL, load_path)) &&
+           canonical_path)
   {
     /* Check for whether this file is already being edited */
-    SkyFile *const file = SkyFile_find_by_file_name(canonical_path);
+    _Optional SkyFile *const file = SkyFile_find_by_file_name(&*canonical_path);
     if (file == NULL)
     {
       bool is_safe = true;
-      (void)loader3_load_file(canonical_path, file_type,
+      (void)loader3_load_file(&*canonical_path, file_type,
                               read_file, load_fail, &is_safe);
     }
     else
     {
       /* Reopen existing editing window at top of stack */
       DEBUGF("This file is already being edited (%p)\n", (void *)file);
-      SkyFile_show(file);
+      SkyFile_show(&*file);
     }
     free(canonical_path);
   }
@@ -1401,7 +1409,7 @@ bool IO_copy(EditWin *const edit_win)
   /* Claim the global clipboard
      (a side-effect is to free any clipboard data held by us) */
   if (E(entity2_claim(Wimp_MClaimEntity_Clipboard, export_file_types,
-      estimate_cb, cb_write, cb_lost, NULL)))
+      estimate_cb, cb_write, cb_lost, edit_win)))
   {
     return false; /* failure */
   }
@@ -1423,7 +1431,7 @@ void IO_dragging_msg(const WimpDraggingMessage *const dragging)
      the drag then undraw its ghost caret and stop auto-scrolling. */
   assert(dragging != NULL);
   if (drag_claim_win != NULL &&
-      (dragging->window_handle != EditWin_get_wimp_handle(drag_claim_win) ||
+      (dragging->window_handle != EditWin_get_wimp_handle(&*drag_claim_win) ||
        dragging->icon_handle < WimpIcon_WorkArea))
   {
     relinquish_drag();
@@ -1497,10 +1505,10 @@ bool IO_export_sky_file(EditWin *const edit_win,
 {
   assert(edit_win != NULL);
   assert(path != NULL);
-  assert(fn != NULL);
+  assert(fn);
 
   bool success = false;
-  FILE *const f = fopen_inc(path, "wb");
+  _Optional FILE *const f = fopen_inc(path, "wb");
   if (!f)
   {
     err_report(DUMMY_ERRNO, msgs_lookup_subn("OpenOutFail", 1, path));
@@ -1508,10 +1516,10 @@ bool IO_export_sky_file(EditWin *const edit_win,
   else
   {
     Writer raw;
-    writer_raw_init(&raw, f);
+    writer_raw_init(&raw, &*f);
     success = export_skyfile(edit_win, path, &raw, fn);
     long int const comp_size = writer_destroy(&raw);
-    int const err = fclose_dec(f);
+    int const err = fclose_dec(&*f);
 
     if ((err || comp_size < 0) && success)
     {
@@ -1537,7 +1545,7 @@ bool IO_export_sky_file(EditWin *const edit_win,
 int IO_estimate_sky(EditWin *const edit_win, IOExportSkyFn *const fn)
 {
   assert(edit_win != NULL);
-  assert(fn != NULL);
+  assert(fn);
 
   /* Experimentally compress the sky, to find out the file size */
   Writer gkcounter;

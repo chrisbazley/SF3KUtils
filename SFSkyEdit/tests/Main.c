@@ -31,6 +31,15 @@
 /* Local headers */
 #include "Tests.h"
 
+#ifdef FORTIFY
+#include "Fortify.h"
+#endif
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 static bool fortify_detected = false;
 
 static void fortify_check(void)

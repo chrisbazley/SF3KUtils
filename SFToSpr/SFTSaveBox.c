@@ -42,6 +42,10 @@
 /* Local headers */
 #include "SFTSaveBox.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -75,7 +79,7 @@ static void destroy_item(UserData *item)
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path,
+_Optional SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path,
   bool data_saved, int file_type, char *template_name, const char *menu_token,
   int x, SFTSaveBoxDeletedFn *deleted_cb)
 {
@@ -83,7 +87,7 @@ SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path,
   assert(input_path != NULL);
   assert(template_name != NULL);
   assert(menu_token != NULL);
-  assert(deleted_cb != NULL);
+  assert(deleted_cb);
 
   DEBUGF("Initialising savebox %p for %ssaved path '%s' with template '%s'\n",
          (void *)savebox, data_saved ? "" : "un", input_path, template_name);
@@ -107,7 +111,7 @@ SFTSaveBox *SFTSaveBox_initialise(SFTSaveBox *savebox, char const *input_path,
                                             dialogue_completed,
                                             savebox)))
       {
-        if (userdata_add_to_list(&savebox->super, NULL, destroy_item,
+        if (userdata_add_to_list(&savebox->super, (UserDataIsSafeFn *)NULL, destroy_item,
             data_saved ? input_path : ""))
         {
           do
@@ -207,11 +211,11 @@ void SFTSaveBox_finalise(SFTSaveBox *savebox)
 
 /* ----------------------------------------------------------------------- */
 
-void SFTSaveBox_destroy(SFTSaveBox *savebox)
+void SFTSaveBox_destroy(_Optional SFTSaveBox *savebox)
 {
   if (savebox != NULL)
   {
-    assert(savebox->deleted_cb != NULL);
-    savebox->deleted_cb(savebox);
+    assert(savebox->deleted_cb);
+    savebox->deleted_cb(&*savebox);
   }
 }

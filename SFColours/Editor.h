@@ -19,7 +19,7 @@ typedef struct EditColMap {
   ColMap colmap;
   void (*redraw_entry_cb)(struct EditColMap *, int);
   LinkedList undo_list;
-  LinkedListItem *next_undo;
+  _Optional LinkedListItem *next_undo;
 } EditColMap;
 
 typedef struct Editor {
@@ -37,7 +37,7 @@ typedef struct Editor {
 
 /* Initialize an editing session for a colmap file.
    If 'reader' is null then a default colmap of the given size is created. */
-ColMapState edit_colmap_init(EditColMap *edit_colmap, Reader *reader,
+ColMapState edit_colmap_init(EditColMap *edit_colmap, _Optional Reader *reader,
   int size, void (*redraw_entry_cb)(EditColMap *, int));
 
 /* Destroy an editing session for a colmap file. */
@@ -63,9 +63,11 @@ bool editor_redo(Editor const *editor);
 /* Get the colmap file addressed by an editor */
 ColMap *editor_get_colmap(Editor const *editor);
 
+typedef void EditorRedrawSelectFn(Editor *editor, int pos);
+
 /* Initialize an editor of a colmap file. */
 void editor_init(Editor *editor, EditColMap *edit_colmap,
-  void (*redraw_select_cb)(Editor *, int));
+  _Optional EditorRedrawSelectFn *redraw_select_cb);
 
 typedef enum {
   EditResult_Unchanged,

@@ -31,10 +31,10 @@ enum
 typedef struct ColMapFile ColMapFile;
 typedef struct EditWin EditWin;
 
-ColMapFile *ColMapFile_find_by_file_name(char const *load_path);
-ColMapFile *ColMapFile_create(Reader *reader, char const *load_path,
+_Optional ColMapFile *ColMapFile_find_by_file_name(char const *load_path);
+_Optional ColMapFile *ColMapFile_create(_Optional Reader *reader, _Optional char const *load_path,
   bool is_safe, bool hillcols);
-void ColMapFile_destroy(ColMapFile *file);
+void ColMapFile_destroy(_Optional ColMapFile *file);
 bool ColMapFile_import(ColMapFile *file, Reader *reader);
 EditWin *ColMapFile_get_win(ColMapFile *const file);
 void ColMapFile_show(ColMapFile *file);
@@ -45,23 +45,23 @@ void EditWin_initialise(void);
 ColMapFile *EditWin_get_colmap(EditWin const *edit_win);
 int EditWin_get_colour(EditWin const *edit_win, int index);
 void EditWin_colour_selected(EditWin *edit_win, int colour);
-void EditWin_file_saved(EditWin *edit_win, char *save_path);
+void EditWin_file_saved(EditWin *edit_win, _Optional char *save_path);
 void EditWin_show_parent_dir(EditWin const *edit_win);
 int EditWin_get_next_selected(EditWin *edit_win, int index);
-int EditWin_get_num_selected(EditWin *edit_win, int *num_selectable);
+int EditWin_get_num_selected(EditWin *edit_win, _Optional int *num_selectable);
 void EditWin_give_focus(EditWin *edit_win);
 void EditWin_set_hint(EditWin *edit_win, ComponentId component);
 bool EditWin_has_unsaved(EditWin const *edit_win);
 int *EditWin_get_stamp(EditWin const *edit_win);
-char *EditWin_get_file_path(EditWin const *edit_win);
+_Optional char *EditWin_get_file_path(EditWin const *edit_win);
 void EditWin_do_save(EditWin *edit_win, bool destroy, bool parent);
 void EditWin_destroy(EditWin *edit_win);
 bool EditWin_owns_wimp_handle(EditWin const *edit_win, int wimp_handle);
 int EditWin_get_wimp_handle(EditWin const *edit_win);
-EditWin *EditWin_from_wimp_handle(int window_handle);
+_Optional EditWin *EditWin_from_wimp_handle(int window_handle);
 
 void EditWin_start_auto_scroll(EditWin const *edit_win, const BBox *visible_area,
-  int pause_time, unsigned int *flags_out);
+  int pause_time, _Optional unsigned int *flags_out);
 void EditWin_stop_auto_scroll(EditWin const *edit_win);
 void EditWin_coords_from_index(EditWin const *edit_win, int index,
   int *x, int *y);

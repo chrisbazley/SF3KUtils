@@ -53,6 +53,10 @@
 #include "Utils.h"
 #include "SFTSaveBox.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -78,7 +82,7 @@ typedef struct
   void      *planets_data; /* flex block */
   void      *sprites; /* flex block */
   PlanetSpritesContext context;
-  SFTSaveBoxDeletedFn *deleted_cb;
+  _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
 SavePlanets;
 
@@ -400,7 +404,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
   loader3_cancel_receives(savefile_data);
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savefile_data->deleted_cb != NULL)
+  if (savefile_data->deleted_cb)
     savefile_data->deleted_cb(savebox);
 
   free(savefile_data);
@@ -410,15 +414,15 @@ static void destroy_savebox(SFTSaveBox *const savebox)
  *                         Public functions
  */
 
-SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
+_Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
   bool const data_saved, flex_ptr sprites,
   PlanetSpritesContext const *const context,
-  SFTSaveBoxDeletedFn *const deleted_cb)
+  _Optional SFTSaveBoxDeletedFn *const deleted_cb)
 {
   assert(save_path != NULL);
 
   /* Initialise status block */
-  SavePlanets * const savefile_data = malloc(sizeof(*savefile_data));
+  _Optional SavePlanets * const savefile_data = malloc(sizeof(*savefile_data));
   if (savefile_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -439,11 +443,11 @@ SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
     /* Register Wimp message handlers to load CSV files */
     if (!E(event_register_message_handler(Wimp_MDataSave,
                                           datasave_message,
-                                          savefile_data)))
+                                          &*savefile_data)))
     {
       if (!E(event_register_message_handler(Wimp_MDataLoad,
                                             dataload_message,
-                                            savefile_data)))
+                                            &*savefile_data)))
       {
         do
         {
@@ -466,14 +470,15 @@ SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
           if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
                                                SaveAs_SaveToFile,
                                                save_to_file,
-                                               savefile_data)))
+                                               &*savefile_data)))
           {
             break;
           }
 
           if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
                                                SaveAs_FillBuffer,
-                                               fill_buffer, savefile_data)))
+                                               fill_buffer,
+                                               &*savefile_data)))
           {
             break;
           }
@@ -482,7 +487,7 @@ SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
           if (E(event_register_toolbox_handler(savefile_data->super.window_id,
                                                ActionButton_Selected,
                                                actionbutton_selected,
-                                               savefile_data)))
+                                               &*savefile_data)))
           {
             break;
           }
@@ -518,11 +523,11 @@ SFTSaveBox *SavePlanets_create(char const *const save_path, int const x,
 
         (void)event_deregister_message_handler(Wimp_MDataLoad,
                                                dataload_message,
-                                               savefile_data);
+                                               &*savefile_data);
       }
       (void)event_deregister_message_handler(Wimp_MDataSave,
                                              datasave_message,
-                                             savefile_data);
+                                             &*savefile_data);
     }
     SFTSaveBox_finalise(&savefile_data->super);
   }

@@ -30,7 +30,6 @@
 #include "toolbox.h"
 #include "wimp.h"
 #include "wimplib.h"
-#include "swis.h"
 #include "flex.h"
 #include "saveas.h"
 
@@ -54,6 +53,10 @@
 /* Local headers */
 #include "Utils.h"
 #include "SFTInit.h"
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
 
 enum
 {
@@ -104,7 +107,7 @@ bool dialogue_confirm(const char *mess)
 
 /* ----------------------------------------------------------------------- */
 
-void load_failed(CONST _kernel_oserror *const error,
+void load_failed(_Optional CONST _kernel_oserror *const error,
   void *const client_handle)
 {
   NOT_USED(client_handle);
@@ -127,7 +130,7 @@ static SFError copy_data(Writer *const dst, Reader *const src,
 
   SFError err = SFError_OK;
 
-  void *const buf = malloc(CopyBufferSize);
+  _Optional void *const buf = malloc(CopyBufferSize);
   if (buf == NULL)
   {
     return SFError_NoMem;
@@ -167,7 +170,7 @@ static SFError copy_data(Writer *const dst, Reader *const src,
         hourglass_percentage(((int)fpos * 100) / src_size);
       }
 
-      size_t const n = reader_fread(buf, 1, CopyBufferSize, src);
+      size_t const n = reader_fread(&*buf, 1, CopyBufferSize, src);
       assert(n <= CopyBufferSize);
       if (reader_ferror(src))
       {
@@ -175,7 +178,7 @@ static SFError copy_data(Writer *const dst, Reader *const src,
         break;
       }
 
-      if (writer_fwrite(buf, 1, n, dst) != n)
+      if (writer_fwrite(&*buf, 1, n, dst) != n)
       {
         err = SFError_WriteFail;
         break;
@@ -215,11 +218,10 @@ static bool write_to_buf(flex_ptr dst, void *const handle,
   bool (*const write_method)(Writer *, void *, char const *))
 {
   assert(dst != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
 
   hourglass_on();
 
-  *dst = NULL;
   Writer writer;
   writer_flex_init(&writer, dst);
 
@@ -253,7 +255,6 @@ bool copy_to_buf(void *const handle, Reader *const src,
 
   Writer writer;
   flex_ptr dst = handle;
-  *dst = NULL;
   writer_flex_init(&writer, dst);
 
   SFError err = copy_and_destroy_writer(&writer, src, src_size);
@@ -276,11 +277,11 @@ static bool save_file(char const *const filename, int const file_type,
   void *const handle, bool (*const write_method)(Writer *, void *, char const *))
 {
   assert(filename != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
   DEBUGF("Saving to file %s\n", filename);
 
 
-  FILE *const f = fopen_inc(filename, "wb");
+  _Optional FILE *const f = fopen_inc(filename, "wb");
   if (f == NULL)
   {
     err_complain(DUMMY_ERRNO, msgs_lookup_subn("OpenOutFail", 1, filename));
@@ -290,10 +291,10 @@ static bool save_file(char const *const filename, int const file_type,
   hourglass_on();
 
   Writer writer;
-  writer_raw_init(&writer, f);
+  writer_raw_init(&writer, &*f);
   bool success = write_method(&writer, handle, filename);
   long int const nbytes = writer_destroy(&writer);
-  int const err = fclose_dec(f);
+  int const err = fclose_dec(&*f);
 
   hourglass_off();
 
@@ -319,7 +320,7 @@ void tbox_send_data(ToolboxEvent *const event,
   assert(event != NULL);
   assert(id_block != NULL);
   assert(dst != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
 
   const SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)event;
   assert(safbe->hdr.event_code == SaveAs_FillBuffer);
@@ -328,11 +329,6 @@ void tbox_send_data(ToolboxEvent *const event,
 
   if (safbe->no_bytes == 0)
   {
-    /* Force the dialogue box's values to be incorporated in the output */
-    if (*dst)
-    {
-      flex_free(dst);
-    }
     (void)write_to_buf(dst, handle, write_method);
   }
 
@@ -356,7 +352,8 @@ void tbox_send_data(ToolboxEvent *const event,
   }
 
   nobudge_register(PreExpandHeap); /* protect de-reference of flex pointer */
-  void *const buffer = *dst ? (char *)*dst + safbe->no_bytes : NULL;
+  static char dummy;
+  void *const buffer = *dst ? (char *)*dst + safbe->no_bytes : &dummy;
   DEBUGF("Saved %d bytes to buffer %p for object 0x%x\n",
          chunk_size, buffer, id_block->self_id);
 
@@ -379,7 +376,7 @@ void tbox_save_file(ToolboxEvent *const event,
 {
   assert(event != NULL);
   assert(id_block != NULL);
-  assert(write_method != NULL);
+  assert(write_method);
 
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   assert(sastfe->hdr.event_code == SaveAs_SaveToFile);
@@ -411,10 +408,10 @@ void tbox_save_file(ToolboxEvent *const event,
 
 /* ----------------------------------------------------------------------- */
 
-const _kernel_oserror *conv_error(SFError const err,
+_Optional const _kernel_oserror *conv_error(SFError const err,
   char const *const read_filename, char const *const write_filename)
 {
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
   static char const *const ms_to_token[] = {
 #define DECLARE_ERROR(ms) [SFError_ ## ms] = #ms,
 #include "DeclErrors.h"

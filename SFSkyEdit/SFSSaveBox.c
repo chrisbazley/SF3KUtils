@@ -41,6 +41,11 @@
 #include "SkyIO.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 ObjectId savebox_sharedid = NULL_ObjectId;
 
 /* ----------------------------------------------------------------------- */
@@ -67,13 +72,17 @@ static int save_about_to_be_shown(int const event_code, ToolboxEvent *const even
 
     /* Default file name is the full path under which this file was last saved
      */
-    char *filename = EditWin_get_file_path(edit_win);
+    _Optional char *filename = EditWin_get_file_path(edit_win);
     if (filename == NULL)
     {
       /* This file has not been saved before, so invent a suitable leaf name */
       filename = msgs_lookup("LeafName2");
     }
-    ON_ERR_RPT(saveas_set_file_name(0, savebox_sharedid, filename));
+
+    if (filename)
+    {
+      ON_ERR_RPT(saveas_set_file_name(0, savebox_sharedid, &*filename));
+    }
 
     EditWin_get_selection(edit_win, &sel_start, &sel_end);
     ON_ERR_RPT(saveas_selection_available(0, savebox_sharedid, sel_start != sel_end));
@@ -146,7 +155,7 @@ static int save_completed(int const event_code, ToolboxEvent *const event,
       !TEST_BITS(sasc->hdr.flags, SaveAs_SelectionSaved))
   {
     void *client_handle;
-    char *buf = NULL;
+    _Optional char *buf = NULL;
     if (!E(toolbox_get_client_handle(0, id_block->ancestor_id, &client_handle)) &&
         !E(canonicalise(&buf, NULL, NULL, sasc->filename)))
     {
@@ -191,7 +200,7 @@ void SaveFile_initialise(ObjectId id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
   savebox_sharedid = id;
 }

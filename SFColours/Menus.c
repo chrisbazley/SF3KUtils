@@ -47,6 +47,11 @@
 #include "PseudoTbox.h"
 #endif
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Menu component IDs */
 enum
 {
@@ -161,7 +166,7 @@ void RootMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     root_menu_show_handler,
-                                    NULL));
+                                    (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -173,7 +178,7 @@ void EditMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     edit_menu_show_handler,
-                                    NULL));
+                                    (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */

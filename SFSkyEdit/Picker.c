@@ -44,6 +44,11 @@
 #include "PseudoTbox.h"
 #endif
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 ObjectId Picker_sharedid = NULL_ObjectId;
 
 /* ----------------------------------------------------------------------- */
@@ -98,5 +103,5 @@ void Picker_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Pal256_ColourSelected,
                                     selhandler,
-                                    NULL));
+                                    (void *)NULL));
 }

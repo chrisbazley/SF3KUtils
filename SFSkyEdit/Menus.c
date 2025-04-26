@@ -46,6 +46,11 @@
 #include "SkyIO.h"
 #include "Picker.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Menu component IDs */
 enum
 {
@@ -177,7 +182,7 @@ void RootMenu_initialise(ObjectId id)
 {
   /* Register Toolbox event handlers */
   EF(event_register_toolbox_handler(id, Menu_AboutToBeShown,
-    root_menu_about_to_be_shown, NULL));
+    root_menu_about_to_be_shown, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -186,7 +191,7 @@ void EditMenu_initialise(ObjectId id)
 {
   /* Register Toolbox event handlers */
   EF(event_register_toolbox_handler(id, Menu_AboutToBeShown,
-    edit_menu_about_to_be_shown, NULL));
+    edit_menu_about_to_be_shown, (void *)NULL));
 
   EditMenu_sharedid = id;
 }
@@ -226,7 +231,7 @@ void EffectMenu_initialise(ObjectId id)
   {
     /* Register toolbox event handlers */
     EF(event_register_toolbox_handler(id, tb_handlers[i].event_code,
-      tb_handlers[i].handler, NULL));
+      tb_handlers[i].handler, (void *)NULL));
   }
 
   EffectMenu_sharedid = id;

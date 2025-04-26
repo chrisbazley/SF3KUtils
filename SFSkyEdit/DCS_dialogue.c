@@ -37,6 +37,11 @@
 #include "DCS_dialogue.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 static ObjectId dbox_id = NULL_ObjectId;
 static bool dcs_open_parent = false;
 
@@ -127,7 +132,7 @@ void DCS_initialise(ObjectId id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 }
 

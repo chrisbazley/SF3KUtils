@@ -45,6 +45,10 @@
 #include "FNCSaveBox.h"
 #include "Utils.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 /* Window component IDs */
 enum
 {
@@ -65,7 +69,7 @@ typedef struct
   void *comp_data;
   void *decomp_data;
   char reset_filetype[MaxFileTypeNameLen + 1];
-  FNCSaveBoxDeletedFn *deleted_cb;
+  _Optional FNCSaveBoxDeletedFn *deleted_cb;
 }
 SaveComp;
 
@@ -90,7 +94,7 @@ static void destroy_savecomp(FNCSaveBox *const savebox)
   }
 
   /* Notify the creator of this dialogue box that it was deleted */
-  if (savecomp_data->deleted_cb != NULL)
+  if (savecomp_data->deleted_cb)
     savecomp_data->deleted_cb(savebox);
 
   free(savecomp_data);
@@ -107,14 +111,17 @@ static int stringset_value_changed(int const event_code,
   const StringSetValueChangedEvent * const ssvce =
     (StringSetValueChangedEvent *)event;
   const SaveComp *const savecomp_data = handle;
-  unsigned int hex_type;
+  unsigned int hex_type = FileType_Fednet;
 
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);
   assert(handle != NULL);
 
-  sscanf(strchr(ssvce->string, '('), "(&%x)", &hex_type);
+  _Optional const char *const bracket = strchr(ssvce->string, '(');
+  if (bracket) {
+    sscanf(&*bracket, "(&%x)", &hex_type);
+  }
   ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.saveas_id, hex_type));
 
   return 1; /* claim event */
@@ -183,8 +190,11 @@ static int actionbutton_selected(int const event_code,
                  ComponentId_FileType_StringSet,
                  savecomp_data->reset_filetype));
       {
-        unsigned int hex_type;
-        sscanf(strchr(savecomp_data->reset_filetype, '('), "(&%x)", &hex_type);
+        unsigned int hex_type = FileType_Fednet;
+        _Optional const char *const bracket = strchr(savecomp_data->reset_filetype, '(');
+        if (bracket) {
+          sscanf(&*bracket, "(&%x)", &hex_type);
+        }
         ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.saveas_id,
           hex_type));
       }
@@ -211,16 +221,16 @@ static int actionbutton_selected(int const event_code,
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-FNCSaveBox *SaveComp_create(char const *const filename, bool const data_saved,
+_Optional FNCSaveBox *SaveComp_create(char const *const filename, bool const data_saved,
   Reader *const reader, int const estimated_size, int const x,
-  FNCSaveBoxDeletedFn *const deleted_cb)
+  _Optional FNCSaveBoxDeletedFn *const deleted_cb)
 {
   assert(filename != NULL);
   DEBUGF("Creating savecomp box for data '%s' of size %d (from %s) \n",
          filename, estimated_size, data_saved ? "file" : "application");
 
   /* Initialise status block */
-  SaveComp * const savecomp_data = malloc(sizeof(*savecomp_data));
+  _Optional SaveComp * const savecomp_data = malloc(sizeof(*savecomp_data));
   if (savecomp_data == NULL)
   {
     RPT_ERR("NoMem");
@@ -250,12 +260,12 @@ FNCSaveBox *SaveComp_create(char const *const filename, bool const data_saved,
 
         if (E(event_register_toolbox_handler(
               savecomp_data->super.saveas_id, SaveAs_SaveToFile,
-              save_to_file, savecomp_data)))
+              save_to_file, &*savecomp_data)))
           break;
 
         if (E(event_register_toolbox_handler(
             savecomp_data->super.saveas_id, SaveAs_FillBuffer,
-            fill_buffer, savecomp_data)))
+            fill_buffer, &*savecomp_data)))
           break;
 
         /* Get default output file type from object template */
@@ -274,14 +284,14 @@ FNCSaveBox *SaveComp_create(char const *const filename, bool const data_saved,
               savecomp_data->super.window_id,
               StringSet_ValueChanged,
               stringset_value_changed,
-              savecomp_data)))
+              &*savecomp_data)))
           break;
 
         if (E(event_register_toolbox_handler(
               savecomp_data->super.window_id,
               ActionButton_Selected,
               actionbutton_selected,
-              savecomp_data)))
+              &*savecomp_data)))
           break;
 
         return &savecomp_data->super;

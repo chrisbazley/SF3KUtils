@@ -66,7 +66,7 @@
 /* Local headers */
 #include "Utils.h"
 #include "SFSFileInfo.h"
-#include "SFSSavebox.h"
+#include "SFSSaveBox.h"
 #include "DCS_dialogue.h"
 #include "Menus.h"
 #include "Preview.h"
@@ -80,6 +80,11 @@
 #include "Picker.h"
 #include "Goto.h"
 #include "Layout.h"
+
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
 
 #define VIEWS_SUFFIX " %d"
 #define UNSAVED_SUFFIX " *" /* Appended to a window title to indicate that
@@ -123,7 +128,7 @@ struct SkyFile
 #if !PER_VIEW_SELECT
   Editor editor;
 #endif
-  PreviewData *preview_data; /* preview window, or NULL if none */
+  _Optional PreviewData *preview_data; /* preview window, or NULL if none */
   OSDateAndTime file_date; /* 000000CC DDDDDDDD */
   bool changed_since_save;
   LinkedList views;
@@ -162,24 +167,24 @@ static enum
   DragType_Data
 }
 drag_type = DragType_None;
-static EditWin *drag_view = NULL;
-static EditWin const *auto_scroll_view = NULL;
+static _Optional EditWin *drag_view = NULL;
+static _Optional EditWin const *auto_scroll_view = NULL;
 
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 
 typedef bool EditWinCallbackFn(EditWin *edit_win, void *arg);
 
-static EditWin *for_each_view(SkyFile *const file,
+static _Optional EditWin *for_each_view(SkyFile *const file,
   EditWinCallbackFn *const fn, void *const arg)
 {
   assert(file != NULL);
-  LinkedListItem *next;
-  for (LinkedListItem *node = linkedlist_get_head(&file->views);
+  _Optional LinkedListItem *next;
+  for (_Optional LinkedListItem *node = linkedlist_get_head(&file->views);
        node != NULL;
        node = next)
   {
-    next = linkedlist_get_next(node);
+    next = linkedlist_get_next(&*node);
     EditWin *const edit_win = CONTAINER_OF(node, EditWin, node);
     if (fn(edit_win, arg))
     {
@@ -238,7 +243,7 @@ static bool sky_cancel_io_cb(EditWin *const edit_win, void *const arg)
 
 static void sky_cancel_io(SkyFile *const file)
 {
-  for_each_view(file, sky_cancel_io_cb, NULL);
+  for_each_view(file, sky_cancel_io_cb, file);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -637,7 +642,7 @@ static void has_changed(SkyFile *const file)
   /* Re-render sky preview (if any) */
   if (file->preview_data != NULL)
   {
-    Preview_update(file->preview_data);
+    Preview_update(&*file->preview_data);
   }
 }
 
@@ -696,7 +701,7 @@ static void show_preview(EditWin const *const edit_win)
     }
   }
 
-  Preview_show(file->preview_data, edit_win->window_id);
+  Preview_show(&*file->preview_data, edit_win->window_id);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -981,7 +986,7 @@ static void redraw_render_offset(EditSky *const edit_sky)
   assert(edit_sky != NULL);
 
   SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky);
-  (void)for_each_view(file, set_render_offset_cb, NULL);
+  (void)for_each_view(file, set_render_offset_cb, file);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -992,7 +997,7 @@ static void redraw_stars_height(EditSky *const edit_sky)
   assert(edit_sky != NULL);
 
   SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky);
-  (void)for_each_view(file, set_star_height_cb, NULL);
+  (void)for_each_view(file, set_star_height_cb, file);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -1017,8 +1022,8 @@ static void claim_caret(EditWin *const edit_win)
 {
   assert(edit_win != NULL);
   if (!edit_win->has_input_focus &&
-      !E(entity2_claim(Wimp_MClaimEntity_CaretOrSelection, NULL, NULL, NULL,
-                       caret_lost, edit_win)))
+      !E(entity2_claim(Wimp_MClaimEntity_CaretOrSelection, NULL, (Entity2EstimateMethod *)NULL,
+                       (Saver2WriteMethod *)NULL, caret_lost, edit_win)))
   {
     edit_win->has_input_focus = true;
     redraw_current_select(edit_win);
@@ -1284,7 +1289,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
     (WimpRedrawWindowRequestEvent *)event;
   WimpRedrawWindowBlock block;
   int more;
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
 
   NOT_USED(event_code);
   assert(event != NULL);
@@ -1337,7 +1342,7 @@ static int user_drag(int const event_code, WimpPollBlock *const event,
   if (drag_view == NULL || drag_type != DragType_Rubber)
     return 0; /* No - do not claim event */
 
-  EditWin *const edit_win = drag_view;
+  EditWin *const edit_win = &*drag_view;
   DEBUGF("User has finished dragging a selection box %d,%d,%d,%d\n",
         wudbe->bbox.xmin, wudbe->bbox.ymin,
         wudbe->bbox.xmax, wudbe->bbox.ymax);
@@ -1922,10 +1927,10 @@ static inline bool init_tool_bar(EditWin *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-static EditWin *add_view(SkyFile *const file)
+static _Optional EditWin *add_view(SkyFile *const file)
 {
   assert(file != NULL);
-  EditWin *const edit_win = malloc(sizeof(*edit_win));
+  _Optional EditWin *const edit_win = malloc(sizeof(*edit_win));
   if (edit_win == NULL)
   {
     RPT_ERR("NoMem");
@@ -2041,7 +2046,7 @@ static bool create_view(SkyFile *const file)
   assert(file != NULL);
 
   /* Grab memory for view status */
-  EditWin *const edit_win = add_view(file);
+  _Optional EditWin *const edit_win = add_view(file);
   if (edit_win == NULL)
   {
     return false;
@@ -2052,19 +2057,19 @@ static bool create_view(SkyFile *const file)
     DEBUGF("Created window 0x%x\n", edit_win->window_id);
 
     /* Initialise the I/O subsystem for this view */
-    if (IO_view_created(edit_win))
+    if (IO_view_created(&*edit_win))
     {
       /* Register the handler for custom Toolbox events
          (generated by key shortcuts and menu entries) */
-      if (!E(event_register_toolbox_handler(-1, -1, misc_tb_event, edit_win)))
+      if (!E(event_register_toolbox_handler(-1, -1, misc_tb_event, &*edit_win)))
       {
-        if (init_tool_bar(edit_win))
+        if (init_tool_bar(&*edit_win))
         {
           do
           {
             /* Associate a pointer to the view data with the Window
                object */
-            if (E(toolbox_set_client_handle(0, edit_win->window_id, edit_win)))
+            if (E(toolbox_set_client_handle(0, edit_win->window_id, &*edit_win)))
               break;
 
             /* Get the Wimp handle of the main window */
@@ -2072,7 +2077,7 @@ static bool create_view(SkyFile *const file)
                   &edit_win->wimp_handle)))
               break;
 
-            if (!register_wimp_handlers(edit_win))
+            if (!register_wimp_handlers(&*edit_win))
             {
               break; /* may have partially succeeded */
             }
@@ -2095,7 +2100,7 @@ static bool create_view(SkyFile *const file)
             bool const success = set_title(file);
             if (!success)
             {
-              destroy_view(edit_win);
+              destroy_view(&*edit_win);
 
               /* Restore any pre-existing windows */
               (void)set_title(file);
@@ -2107,14 +2112,14 @@ static bool create_view(SkyFile *const file)
           ON_ERR_RPT(event_deregister_toolbox_handlers_for_object(
                        edit_win->toolbar_id));
         }
-        (void)event_deregister_toolbox_handler(-1, -1, misc_tb_event, edit_win);
+        (void)event_deregister_toolbox_handler(-1, -1, misc_tb_event, &*edit_win);
       }
-      IO_view_deleted(edit_win);
+      IO_view_deleted(&*edit_win);
     }
     (void)remove_event_handlers_delete(edit_win->window_id);
   }
 
-  remove_view(edit_win);
+  remove_view(&*edit_win);
   return false;
 }
 
@@ -2139,14 +2144,14 @@ static void destroy_userdata(struct UserData *const item)
 /* ----------------------------------------------------------------------- */
 
 static inline bool init_date_stamp(SkyFile *const file,
-  char const *const load_path)
+  _Optional char const *const load_path)
 {
   assert(file != NULL);
 
   if (load_path != NULL)
   {
     /* Get datestamp of file */
-    if (E(get_date_stamp(load_path, &file->file_date)))
+    if (E(get_date_stamp(&*load_path, &file->file_date)))
     {
       return false;
     }
@@ -2226,7 +2231,7 @@ static void move_from(EditWin *const dest_data, EditWin *const src_data)
 typedef struct
 {
   int window_handle;
-  EditWin *edit_win;
+  _Optional EditWin *edit_win;
 } FindWindowData;
 
 /* ----------------------------------------------------------------------- */
@@ -2278,18 +2283,18 @@ static bool sky_owns_handle_cb(UserData *const item, void *const arg)
 /* ----------------------------------------------------------------------- */
 /*                         Public functions                                */
 
-SkyFile *SkyFile_find_by_file_name(char const *const load_path)
+_Optional SkyFile *SkyFile_find_by_file_name(char const *const load_path)
 {
-  UserData *const item = userdata_find_by_file_name(load_path);
+  _Optional UserData *const item = userdata_find_by_file_name(load_path);
   return item ? CONTAINER_OF(item, SkyFile, list_node) : NULL;
 }
 
 /* ----------------------------------------------------------------------- */
 
-SkyFile *SkyFile_create(Reader *const reader, char const *const load_path,
-  bool const is_safe)
+_Optional SkyFile *SkyFile_create(_Optional Reader *const reader,
+  _Optional char const *const load_path, bool const is_safe)
 {
-  SkyFile *const file = malloc(sizeof(*file));
+  _Optional SkyFile *const file = malloc(sizeof(*file));
   if (file == NULL)
   {
     RPT_ERR("NoMem");
@@ -2324,7 +2329,7 @@ SkyFile *SkyFile_create(Reader *const reader, char const *const load_path,
     }
     else
     {
-      success = init_date_stamp(file, is_safe ? load_path : NULL);
+      success = init_date_stamp(&*file, is_safe ? load_path : NULL);
       if (!success)
       {
         userdata_remove_from_list(&file->list_node);
@@ -2339,7 +2344,7 @@ SkyFile *SkyFile_create(Reader *const reader, char const *const load_path,
 
   if (success)
   {
-    success = create_view(file);
+    success = create_view(&*file);
     if (!success)
     {
       SkyFile_destroy(file);
@@ -2355,12 +2360,12 @@ SkyFile *SkyFile_create(Reader *const reader, char const *const load_path,
 
 /* ----------------------------------------------------------------------- */
 
-void SkyFile_destroy(SkyFile *const file)
+void SkyFile_destroy(_Optional SkyFile *const file)
 {
   if (file)
   {
     Preview_destroy(file->preview_data);
-    (void)for_each_view(file, destroy_view_cb, NULL);
+    (void)for_each_view(&*file, destroy_view_cb, &*file);
 #if !PER_VIEW_SELECT
     editor_destroy(&file->editor);
 #endif
@@ -2410,7 +2415,7 @@ void SkyFile_export(SkyFile *const file, Writer *const writer)
 EditWin *SkyFile_get_win(SkyFile *const file)
 {
   assert(file != NULL);
-  LinkedListItem *const node = linkedlist_get_head(&file->views);
+  _Optional LinkedListItem *const node = linkedlist_get_head(&file->views);
   assert(node != NULL);
   return CONTAINER_OF(node, EditWin, node);
 }
@@ -2419,14 +2424,14 @@ EditWin *SkyFile_get_win(SkyFile *const file)
 
 void SkyFile_show(SkyFile *const file)
 {
-  (void)for_each_view(file, show_view_cb, NULL);
+  (void)for_each_view(file, show_view_cb, file);
 }
 
 /* ----------------------------------------------------------------------- */
 
 void EditWin_initialise(void)
 {
-  EF(event_register_wimp_handler(-1, Wimp_EUserDrag, user_drag, NULL));
+  EF(event_register_wimp_handler(-1, Wimp_EUserDrag, user_drag, (void *)NULL));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -2512,21 +2517,23 @@ void EditWin_show_parent_dir(EditWin const *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-void EditWin_file_saved(EditWin *const edit_win, char *save_path)
+void EditWin_file_saved(EditWin *const edit_win, _Optional char *save_path)
 {
   assert(edit_win != NULL);
   SkyFile *const file = edit_win->file;
   file->changed_since_save = false; /* mark as unchanged */
 
+  char *filename;
   if (save_path == NULL)
   {
     /* Data was saved under its existing file name */
-    save_path = userdata_get_file_name(&file->list_node);
+    filename = userdata_get_file_name(&file->list_node);
   }
   else
   {
     /* Record new file name under which the data was saved */
-    if (!userdata_set_file_name(&file->list_node, save_path))
+    filename = &*save_path;
+    if (!userdata_set_file_name(&file->list_node, filename))
     {
       RPT_ERR("NoMem");
       return;
@@ -2534,7 +2541,7 @@ void EditWin_file_saved(EditWin *const edit_win, char *save_path)
   }
 
   /* Get date stamp of file */
-  ON_ERR_RPT(get_date_stamp(save_path, &file->file_date));
+  ON_ERR_RPT(get_date_stamp(filename, &file->file_date));
 
   /* Set title of editing window */
   set_title(file);
@@ -2542,8 +2549,8 @@ void EditWin_file_saved(EditWin *const edit_win, char *save_path)
   /* Set title of preview window */
   if (file->preview_data != NULL)
   {
-    Preview_set_title(file->preview_data,
-                      pathtail(save_path, PathElements));
+    Preview_set_title(&*file->preview_data,
+                      pathtail(filename, PathElements));
   }
 
   if (edit_win->parent_pending)
@@ -2728,7 +2735,7 @@ bool EditWin_has_unsaved(EditWin const *const edit_win)
 /* ----------------------------------------------------------------------- */
 
 void EditWin_get_selection(EditWin *const edit_win,
-                           int *const start, int *const end)
+  _Optional int *const start, _Optional int *const end)
 {
   assert(edit_win != NULL);
   editor_get_selection_range(get_editor(edit_win), start, end);
@@ -2744,7 +2751,7 @@ int *EditWin_get_stamp(EditWin const *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-char *EditWin_get_file_path(EditWin const *const edit_win)
+_Optional char *EditWin_get_file_path(EditWin const *const edit_win)
 {
   assert(edit_win != NULL);
   char * const file_name = userdata_get_file_name(&edit_win->file->list_node);
@@ -2796,7 +2803,7 @@ int EditWin_get_wimp_handle(EditWin const *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-EditWin *EditWin_from_wimp_handle(int const window_handle)
+_Optional EditWin *EditWin_from_wimp_handle(int const window_handle)
 {
   /* Search our list of editing windows for the drag destination */
   DEBUGF("Searching for a view with window handle %d\n", window_handle);
@@ -2877,7 +2884,8 @@ void EditWin_confirm_insert_pos(EditWin *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-void EditWin_start_auto_scroll(EditWin const *const edit_win, BBox const *visible_area, int pause_time, unsigned int *flags_out)
+void EditWin_start_auto_scroll(EditWin const *const edit_win, BBox const *visible_area,
+  int pause_time, _Optional unsigned int *flags_out)
 {
   unsigned int flags = 0;
 
@@ -2916,7 +2924,6 @@ void EditWin_start_auto_scroll(EditWin const *const edit_win, BBox const *visibl
         .pause_zones.ymax = ScrollBorder + ToolbarHeight + (1<<y_eigen),
         .pause_time = pause_time,
         .state_change_handler = 1, /* default pointer shapes */
-        .workspace = NULL,
       };
 
       if (!E(wimp_auto_scroll(flags, &auto_scroll, NULL)))
@@ -2942,7 +2949,7 @@ void EditWin_stop_auto_scroll(EditWin const *const edit_win)
   {
     DEBUGF("Stopping auto-scrolling of view %p\n", (void *)edit_win);
     auto_scroll_view = NULL;
-    ON_ERR_RPT(wimp_auto_scroll(0, NULL, NULL));
+    ON_ERR_RPT(wimp_auto_scroll(0, &(WimpAutoScrollBlock){0}, NULL));
   }
   else
   {
@@ -2968,10 +2975,11 @@ bool EditWin_export_sel(EditWin *const edit_win, Writer *const writer)
 
   /* Create a temporary sky file */
   EditSky edit_sky;
-  (void)edit_sky_init(&edit_sky, NULL, NULL, NULL, NULL);
+  (void)edit_sky_init(&edit_sky, NULL, (EditSkyRedrawBandsFn *)NULL,
+    (EditSkyRedrawRenderOffsetFn *)NULL, (EditSkyRedrawStarsHeightFn *)NULL);
 
   Editor tmp;
-  editor_init(&tmp, &edit_sky, NULL);
+  editor_init(&tmp, &edit_sky, (EditorRedrawSelectFn *)NULL);
 
   /* Copy the selected colour bands to the temporary file */
   bool success = true;

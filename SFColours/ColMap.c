@@ -12,6 +12,11 @@
 
 #include "ColMap.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 enum
 {
   NPixelColours = 256,

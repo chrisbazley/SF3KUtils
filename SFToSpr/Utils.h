@@ -18,7 +18,7 @@
 
 #include "flex.h"
 
-void load_failed(CONST _kernel_oserror *error, void *client_handle);
+void load_failed(_Optional CONST _kernel_oserror *error, void *client_handle);
 
 bool dialogue_confirm(const char *mess);
 
@@ -31,7 +31,7 @@ void tbox_send_data(ToolboxEvent *event, IdBlock *id_block, void *handle,
 void tbox_save_file(ToolboxEvent *event, IdBlock *id_block, void *handle,
   bool (*write_method)(Writer *, void *, char const *));
 
-const _kernel_oserror *conv_error(SFError const err, char const *read_filename, char const *write_filename);
+_Optional const _kernel_oserror *conv_error(SFError const err, char const *read_filename, char const *write_filename);
 
 bool handle_error(SFError const err, char const *read_filename, char const *write_filename);
 

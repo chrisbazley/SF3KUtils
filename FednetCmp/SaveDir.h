@@ -9,7 +9,7 @@
 
 #include "FNCSaveBox.h"
 
-FNCSaveBox *SaveDir_create(char const *input_path, int x,
-                                  FNCSaveBoxDeletedFn *deleted_cb);
+_Optional FNCSaveBox *SaveDir_create(char const *input_path, int x,
+                                     _Optional FNCSaveBoxDeletedFn *deleted_cb);
 
 #endif

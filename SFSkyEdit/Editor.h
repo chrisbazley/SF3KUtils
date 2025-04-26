@@ -27,7 +27,7 @@ typedef struct EditSky {
   void (*redraw_render_offset_cb)(struct EditSky *);
   void (*redraw_stars_height_cb)(struct EditSky *);
   LinkedList undo_list;
-  LinkedListItem *next_undo;
+  _Optional LinkedListItem *next_undo;
 } EditSky;
 
 typedef struct Editor {
@@ -43,12 +43,16 @@ typedef struct Editor {
  * 240 and 241 without enforcing every detail (e.g. per-view selection).
  */
 
+typedef void EditSkyRedrawBandsFn(EditSky *, int, int);
+typedef void EditSkyRedrawRenderOffsetFn(EditSky *);
+typedef void EditSkyRedrawStarsHeightFn(EditSky *);
+
 /* Initialize an editing session for a sky file.
    If 'reader' is null then a default sky is created.  */
-SkyState edit_sky_init(EditSky *edit_sky, Reader *reader,
-  void (*redraw_bands_cb)(EditSky *, int, int),
-  void (*redraw_render_offset_cb)(EditSky *),
-  void (*redraw_stars_height_cb)(EditSky *));
+SkyState edit_sky_init(EditSky *edit_sky, _Optional Reader *reader,
+   _Optional EditSkyRedrawBandsFn *redraw_bands_cb,
+   _Optional EditSkyRedrawRenderOffsetFn *redraw_render_offset_cb,
+   _Optional EditSkyRedrawStarsHeightFn *redraw_stars_height_cb);
 
 /* Destroy an editing session for a sky file. */
 void edit_sky_destroy(EditSky *edit_sky);
@@ -81,9 +85,13 @@ EditResult edit_sky_add_render_offset(EditSky *edit_sky, int offset);
 EditResult edit_sky_set_stars_height(EditSky *edit_sky,
   int stars_height);
 
+typedef void EditorRedrawSelectFn(Editor *editor,
+   int old_low, int old_high,
+   int new_low, int new_high);
+
 /* Initialize an editor of a sky file. */
 void editor_init(Editor *editor, EditSky *edit_sky,
-  void (*redraw_select_cb)(Editor *, int, int, int, int));
+   _Optional EditorRedrawSelectFn *redraw_select_cb);
 
 /* Get the sky file in an editor */
 Sky *editor_get_sky(Editor const *editor);
@@ -96,7 +104,7 @@ bool editor_has_selection(Editor const *editor);
 
 /* Get the ordered selection endpoints for redraw and mouse click decoding. */
 void editor_get_selection_range(Editor const *editor,
-  int *sel_low, int *sel_high);
+   _Optional int *sel_low, _Optional int *sel_high);
 
 /* Set the selection end to equal the selection start.
    Returns false if unchanged. */

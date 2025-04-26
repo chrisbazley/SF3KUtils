@@ -46,6 +46,11 @@
 #include "SavePrev.h"
 #include "Preview.h"
 
+#ifdef USE_OPTIONAL
+#include "Optional.h"
+#endif
+
+
 /* Constant numeric values */
 enum
 {
@@ -55,7 +60,7 @@ enum
 
 ObjectId SavePrev_sharedid = NULL_ObjectId;
 
-static char *ss_file_name = NULL;
+static _Optional char *ss_file_name = NULL;
 
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
@@ -71,7 +76,7 @@ static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
 
   /* Set the suggested file path */
   if (ss_file_name != NULL)
-    ON_ERR_RPT(saveas_set_file_name(0, id_block->self_id, ss_file_name));
+    ON_ERR_RPT(saveas_set_file_name(0, id_block->self_id, &*ss_file_name));
 
   /* Set the estimated (actual) file size */
   void *client_handle;
@@ -92,7 +97,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
-  const _kernel_oserror *e = NULL;
+  _Optional const _kernel_oserror *e = NULL;
   void *client_handle;
 
   NOT_USED(event_code);
@@ -131,7 +136,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
   const SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)event;
-  char *buffer = NULL;
+  _Optional char *buffer = NULL;
   void *client_handle;
   int chunk_size = 0;
 
@@ -173,7 +178,9 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
      module has already acknowledged the RAMFetch message. It seems better to
      deliver 0 bytes than leave the other task expectant (e.g. leaking any
      input buffer that it allocated). :-( */
-  ON_ERR_RPT(saveas_buffer_filled(0, id_block->self_id, buffer, chunk_size));
+  static char dummy;
+  ON_ERR_RPT(saveas_buffer_filled(0, id_block->self_id,
+                                  buffer ? &*buffer : &dummy, chunk_size));
 
   if (buffer != NULL)
     nobudge_deregister();
@@ -221,7 +228,7 @@ void SavePrev_initialise(ObjectId const id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      NULL));
+                                      (void *)NULL));
   }
 
   SavePrev_sharedid = id;
@@ -236,6 +243,6 @@ void SavePrev_initialise(ObjectId const id)
   }
   else
   {
-    EF(saveas_get_file_name(0, id, ss_file_name, len, NULL));
+    EF(saveas_get_file_name(0, id, &*ss_file_name, len, NULL));
   }
 }

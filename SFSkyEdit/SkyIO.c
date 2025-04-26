@@ -792,7 +792,7 @@ static void DAO_render(int const cptr, int const ncols)
   if (_swix(OS_Plot, _INR(0,2), PlotOp_SolidInclBoth + PlotOp_PlotFGAbs, 0, 0) != NULL)
     return; /* error! */
 
-  int const *const colours = (int *)cptr;
+  int const *const colours = (int *)(uintptr_t)cptr;
   int const x_pix = 1 << x_eigen;
   int const y_pix = 1 << y_eigen;
   int const row_height = ((ThumbnailHeight - 2 * y_pix) * FixedPointOne) / ncols;
@@ -878,7 +878,7 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
 
       int const renderer_args[4] =
       {
-        (int)&colours, ncol
+        (uintptr_t)&colours, ncol
       };
 
       unsigned int flags = DragAnObject_BBoxPointer | DragAnObject_RenderAPCS;
@@ -886,7 +886,7 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
       flags |= DragAnObject_HAlign_Centre | DragAnObject_VAlign_Centre;
 #endif
       ON_ERR_RTN_E(drag_an_object_start(flags,
-                                        (int)DAO_render,
+                                        (uintptr_t)DAO_render,
                                         renderer_args,
                                         &drag_box.dragging_box,
                                         NULL));

@@ -895,9 +895,9 @@ static void DAO_render(int const cptr, int const pptr, int const sptr, int const
      whilst updating the screen during a drag operation. Must not call shared C
      library functions that may require access to the library's static data
      (not even via assert or DEBUG macros). See DragAnObj.h for details. */
-  const unsigned char *const colours = (const unsigned char *)cptr;
-  const IOCoords *const pos = (const IOCoords *)pptr;
-  const IOCoords *const size = (const IOCoords *)sptr;
+  const unsigned char *const colours = (const unsigned char *)(uintptr_t)cptr;
+  const IOCoords *const pos = (const IOCoords *)(uintptr_t)pptr;
+  const IOCoords *const size = (const IOCoords *)(uintptr_t)sptr;
 
   for (int index = 0; index < ncols; ++index)
   {
@@ -960,7 +960,7 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
   {
     if (solid_drags && action == DragBoxOp_Start)
     {
-      size_t ncols = 0;
+      int ncols = 0;
 
       unsigned char colours[EditWin_MaxSize];
       IOCoords pos[ARRAY_SIZE(colours)];
@@ -998,11 +998,11 @@ static const _kernel_oserror *drag_box(const DragBoxOp action,
 
       int const renderer_args[4] =
       {
-        (int)colours, (int)pos, (int)&size, (int)ncols
+        (uintptr_t)colours, (uintptr_t)pos, (uintptr_t)&size, ncols
       };
       ON_ERR_RTN_E(drag_an_object_start(
                          DragAnObject_BBoxPointer | DragAnObject_RenderAPCS,
-                         (int)DAO_render,
+                         (uintptr_t)DAO_render,
                          renderer_args,
                          &drag_box.dragging_box,
                          NULL));

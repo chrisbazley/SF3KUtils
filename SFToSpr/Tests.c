@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <time.h>
 #include <setjmp.h>
+#include <stdint.h>
 
 /* RISC OS library files */
 #include "swis.h"
@@ -171,7 +172,7 @@ static void wipe(const char *path_name)
   assert(path_name != NULL);
 
   regs.r[0] = OS_FSControl_Wipe;
-  regs.r[1] = (int)path_name;
+  regs.r[1] = (uintptr_t)path_name;
   regs.r[3] = OS_FSControl_Flag_Recurse;
   _kernel_swi(OS_FSControl, &regs, &regs);
 }
@@ -184,8 +185,8 @@ static void copy(const char *src, const char *dst)
   assert(dst != NULL);
 
   regs.r[0] = OS_FSControl_Copy;
-  regs.r[1] = (int)src;
-  regs.r[2] = (int)dst;
+  regs.r[1] = (uintptr_t)src;
+  regs.r[2] = (uintptr_t)dst;
   regs.r[3] = OS_FSControl_Flag_Recurse;
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
 }
@@ -1072,8 +1073,8 @@ static bool path_is_in_userdata(char *filename)
   _kernel_swi_regs regs;
 
   regs.r[0] = FSControl_CanonicalisePath;
-  regs.r[1] = (int)filename;
-  regs.r[2] = (int)buffer;
+  regs.r[1] = (uintptr_t)filename;
+  regs.r[2] = (uintptr_t)buffer;
   regs.r[3] = 0;
   regs.r[4] = 0;
   regs.r[5] = sizeof(buffer);

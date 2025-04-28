@@ -1483,7 +1483,7 @@ void IO_initialise(void)
      passed to _kernel_setenv to delete a variable */
   _kernel_swi_regs regs = {
     .r = {
-      (int)APP_NAME"$DAO",
+      (uintptr_t)APP_NAME"$DAO",
       0, /* no value */
       -1, /* delete variable */
       0, /* first call */

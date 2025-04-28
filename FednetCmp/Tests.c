@@ -23,6 +23,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <stdint.h>
 
 /* RISC OS library files */
 #include "event.h"
@@ -102,7 +103,7 @@ static void wipe(char const *path_name)
   assert(path_name != NULL);
 
   regs.r[0] = OS_FSControl_Wipe;
-  regs.r[1] = (int)path_name;
+  regs.r[1] = (uintptr_t)path_name;
   regs.r[3] = OS_FSControl_Flag_Recurse;
   _kernel_swi(OS_FSControl, &regs, &regs);
 }

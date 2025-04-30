@@ -56,6 +56,7 @@
 #include "WimpExtra.h"
 #include "Pal256.h"
 #include "SprFormats.h"
+#include "Hourglass.h"
 
 /* Local header files */
 #include "Tests.h"
@@ -2067,14 +2068,14 @@ static void wait(clock_t timeout)
   clock_t elapsed;
 
   DEBUGF("Waiting %fs\n", (double)timeout / CLOCKS_PER_SEC);
-  _swix(Hourglass_On, 0);
+  hourglass_on();
   do
   {
     elapsed = clock() - start_time;
-    _swix(Hourglass_Percentage, _IN(0), (elapsed * 100) / timeout);
+    hourglass_percentage((elapsed * 100) / timeout);
   }
   while (elapsed < timeout);
-  _swix(Hourglass_Off, 0);
+  hourglass_off();
 }
 
 static void cleanup_stalled(void)

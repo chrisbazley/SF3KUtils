@@ -2453,7 +2453,7 @@ static void reset_scroll_state(int window_handle)
 {
   WimpAutoScrollBlock auto_scroll;
   auto_scroll.window_handle = window_handle;
-  assert_no_error(_swix(Wimp_AutoScroll, _INR(0,1), 0, &auto_scroll));
+  assert_no_error(wimp_auto_scroll(0, &auto_scroll, NULL));
 }
 
 static unsigned int get_scroll_state(int window_handle)
@@ -2461,7 +2461,7 @@ static unsigned int get_scroll_state(int window_handle)
   unsigned int scroll_state;
   WimpAutoScrollBlock auto_scroll;
   auto_scroll.window_handle = window_handle;
-  assert_no_error(_swix(Wimp_AutoScroll, _INR(0,1)|_OUT(0), Wimp_AutoScroll_ReadFlags, &auto_scroll, &scroll_state));
+  assert_no_error(wimp_auto_scroll(Wimp_AutoScroll_ReadFlags, &auto_scroll, &scroll_state));
   DEBUGF("AutoScroll state: 0x%x\n", scroll_state);
   return scroll_state;
 }

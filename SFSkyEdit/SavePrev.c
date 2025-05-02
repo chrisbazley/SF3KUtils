@@ -36,7 +36,7 @@
 #include "Macros.h"
 #include "SprFormats.h"
 #include "Hourglass.h"
-#include "MsgTrans.h"
+#include "msgtrans.h"
 #include "NoBudge.h"
 #include "FilePerc.h"
 #include "PseudoFlex.h"

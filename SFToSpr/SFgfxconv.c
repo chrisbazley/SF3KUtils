@@ -1481,7 +1481,7 @@ SFError scan_sprite_file_init(ScanSpritesIter *const iter, Reader *const reader,
   };
   iter->context = context;
 
-  *context = (ScanSpritesContext){{{0}}};
+  *context = (ScanSpritesContext){ .tiles = { .count = 0 } };
 
   init_planets_hdr(&context->planets.hdr);
   init_tiles_hdr(&context->tiles.hdr);

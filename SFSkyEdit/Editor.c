@@ -386,7 +386,7 @@ static inline EditRecord *make_undo_move(EditSky *const edit_sky,
   int const src_start, int const src_end)
 {
   return make_undo_edit(edit_sky, EditRecordType_Move,
-    dst_start, dst_end, src_start, (EditFill){src_end - src_start});
+    dst_start, dst_end, src_start, (EditFill){.len = src_end - src_start});
 }
 
 static inline EditRecord *make_undo_copy(EditSky *const edit_sky,
@@ -396,21 +396,21 @@ static inline EditRecord *make_undo_copy(EditSky *const edit_sky,
   /* Storing src_start would be folly because it may belong to a
      different file. */
   return make_undo_edit(edit_sky, EditRecordType_Copy,
-    dst_start, dst_end, 0, (EditFill){src_end - src_start});
+    dst_start, dst_end, 0, (EditFill){.len = src_end - src_start});
 }
 
 static inline EditRecord *make_undo_insert_array(EditSky *const edit_sky,
   int const start, int const end, int new_size)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertArray, start, end, 0,
-    (EditFill){new_size});
+    (EditFill){.len = new_size});
 }
 
 static inline EditRecord *make_undo_insert_plain(EditSky *const edit_sky,
   int const start, int const end, int new_size, int const start_colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertPlain, start, end, 0,
-    (EditFill){new_size, start_colour});
+    (EditFill){.len = new_size, .start = start_colour});
 }
 
 static inline EditRecord *make_undo_insert_gradient(EditSky *const edit_sky,
@@ -424,14 +424,14 @@ static inline EditRecord *make_undo_smooth(EditSky *const edit_sky,
   int const start, int const end)
 {
   return make_undo_edit(edit_sky, EditRecordType_Smooth, start, end, 0,
-    (EditFill){end - start});
+    (EditFill){.len = end - start});
 }
 
 static inline EditRecord *make_undo_set_plain(EditSky *const edit_sky,
   int const start, int const end, int const colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_SetPlain, start, end, 0,
-    (EditFill){end - start, colour});
+    (EditFill){.len = end - start, .start = colour});
 }
 
 static inline EditRecord *make_undo_interpolate(EditSky *const edit_sky,
@@ -439,7 +439,11 @@ static inline EditRecord *make_undo_interpolate(EditSky *const edit_sky,
   int const end_colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_Interpolate, start, end, 0,
-    (EditFill){end - start, start_colour, end_colour, true, true});
+    (EditFill){.len = end - start,
+               .start = start_colour,
+               .end = end_colour,
+               .inc_start = true,
+               .inc_end = true});
 }
 
 static bool s_set_colour(Sky *const sky, int const pos, int const rep,
@@ -1079,9 +1083,11 @@ static bool do_smooth(EditSky *const edit_sky, int const start, int const end,
       {
         if (s_interpolate(&edit_sky->sky, palette,
           last_centre + 1, centre,
-          (EditFill){centre - last_centre - 1,
-                     sky_get_colour(sky, last_centre),
-                     sky_get_colour(sky, centre), false, false}, NULL, 0))
+          (EditFill){.len = centre - last_centre - 1,
+                     .start = sky_get_colour(sky, last_centre),
+                     .end = sky_get_colour(sky, centre),
+                     .inc_start = false,
+                     .inc_end = false}, NULL, 0))
         {
           redraw_bands(edit_sky, last_centre + 1, centre);
           changed = true;
@@ -1108,10 +1114,11 @@ static bool do_smooth(EditSky *const edit_sky, int const start, int const end,
     {
       if (s_interpolate(&edit_sky->sky, palette,
         last_centre + 1, end - 1,
-        (EditFill){end - last_centre - 2,
-                   sky_get_colour(sky, last_centre),
-                   sky_get_colour(sky, end - 1),
-                   false, false}, NULL, 0))
+        (EditFill){.len = end - last_centre - 2,
+                   .start = sky_get_colour(sky, last_centre),
+                   .end = sky_get_colour(sky, end - 1),
+                   .inc_start = false,
+                   .inc_end = false}, NULL, 0))
       {
         redraw_bands(edit_sky, last_centre + 1, end - 1);
         changed = true;
@@ -1986,8 +1993,11 @@ EditResult editor_interpolate(Editor *const editor,
 
   if (!s_interpolate(&edit_sky->sky, palette,
                      sel_low, sel_high,
-                     (EditFill){sel_high - sel_low,
-                                start_col, end_col, true, true},
+                     (EditFill){.len = sel_high - sel_low,
+                                .start = start_col,
+                                .end = end_col,
+                                .inc_start = true,
+                                .inc_end = true},
                      rec->data.edit.lost, rec->data.edit.lsize))
   {
     return EditResult_Unchanged;
@@ -2139,7 +2149,11 @@ EditResult editor_insert_gradient(Editor *const editor,
     dst_start, dst_end, (void *)editor, start_col, end_col, number);
 
   EditSky *const edit_sky = editor->edit_sky;
-  EditFill const fill = {number, start_col, end_col, inc_start, inc_end};
+  EditFill const fill = {.len = number,
+                         .start = start_col,
+                         .end = end_col,
+                         .inc_start = inc_start,
+                         .inc_end = inc_end};
   EditRecord *const rec = make_undo_insert_gradient(edit_sky,
     dst_start, dst_end, fill);
 

@@ -2355,14 +2355,14 @@ static void wait(void)
 
   DEBUGF("Waiting %fs for stalled load operation(s) to be abandoned\n",
          (double)Timeout / CLOCKS_PER_SEC);
-  _swix(Hourglass_On, 0);
+  hourglass_on();
   do
   {
     elapsed = clock() - start_time;
-    _swix(Hourglass_Percentage, _IN(0), (elapsed * 100) / Timeout);
+    hourglass_percentage((elapsed * 100) / Timeout);
   }
   while (elapsed < Timeout);
-  _swix(Hourglass_Off, 0);
+  hourglass_off();
 }
 
 static void cleanup_stalled(void)

@@ -44,7 +44,7 @@
 #include "ViewsMenu.h"
 #include "SFFormats.h"
 #include "Pal256.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "DateStamp.h"
 #include "Debug.h"
 #include "WimpExtra.h"

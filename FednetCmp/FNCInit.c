@@ -41,7 +41,7 @@
 #include "Macros.h"
 #include "SFFormats.h"
 #include "ViewsMenu.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "InputFocus.h"
 #include "StrExtra.h"
 #include "Loader3.h"

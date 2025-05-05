@@ -32,7 +32,7 @@
 #include "OSFile.h"
 #include "msgtrans.h"
 #include "DateStamp.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 
 /* Local headers */
 #include "SFTIconbar.h"

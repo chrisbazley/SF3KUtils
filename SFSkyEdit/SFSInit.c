@@ -41,7 +41,7 @@
 #include "ViewsMenu.h"
 #include "Goto.h"
 #include "DeIconise.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "Saver2.h"
 #include "Entity2.h"
 #include "Drag.h"

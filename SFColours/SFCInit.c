@@ -40,7 +40,7 @@
 #include "Debug.h"
 #include "ViewsMenu.h"
 #include "InputFocus.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "Saver2.h"
 #include "Drag.h"
 #include "Loader3.h"

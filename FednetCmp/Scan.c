@@ -42,7 +42,7 @@
 #include "FedCompMT.h"
 #include "ViewsMenu.h"
 #include "Macros.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "LoadSaveMT.h"
 #include "AbortFOp.h"
 #include "PathTail.h"

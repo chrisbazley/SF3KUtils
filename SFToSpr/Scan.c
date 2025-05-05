@@ -42,7 +42,7 @@
 #include "msgtrans.h"
 #include "ViewsMenu.h"
 #include "Macros.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "PathTail.h"
 #include "Debug.h"
 #include "StrExtra.h"

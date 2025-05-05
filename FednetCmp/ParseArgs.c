@@ -32,7 +32,7 @@
 /* My library files */
 #include "Err.h"
 #include "Macros.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "StrExtra.h"
 #include "FileUtils.h"
 #include "Debug.h"

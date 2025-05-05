@@ -32,7 +32,7 @@
 #include "Err.h"
 #include "Debug.h"
 #include "Macros.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 
 /* Local headers */
 #include "ParseArgs.h"

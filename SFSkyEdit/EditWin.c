@@ -45,7 +45,7 @@
 #include "Macros.h"
 #include "ViewsMenu.h"
 #include "Pal256.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "PathTail.h"
 #include "DateStamp.h"
 #include "Debug.h"

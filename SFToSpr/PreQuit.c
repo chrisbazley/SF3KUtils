@@ -34,7 +34,7 @@
 #include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
-#include "Scheduler.h"
+#include "scheduler.h"
 #include "InputFocus.h"
 #include "UserData.h"
 #include "Debug.h"

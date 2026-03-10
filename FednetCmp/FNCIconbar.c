@@ -198,8 +198,11 @@ static int dataload_message(WimpMessage *const message, void *const handle)
   {
     /* If there is already a save box for data loaded from this file path then
        just show that */
-    const FNCSaveBox * const existing_dbox =
-        (FNCSaveBox *)userdata_find_by_file_name(&*canonical_path);
+    _Optional UserData *const item =
+        userdata_find_by_file_name(&*canonical_path);
+
+    _Optional const FNCSaveBox *const existing_dbox =
+        item ? CONTAINER_OF(item, FNCSaveBox, super) : NULL;
 
     if (existing_dbox == NULL)
     {
@@ -225,7 +228,7 @@ static int dataload_message(WimpMessage *const message, void *const handle)
     {
       /* There is already a save box for data loaded from this file path so
          just show that */
-      FNCSaveBox_show(existing_dbox);
+      FNCSaveBox_show(&*existing_dbox);
       success = true;
     }
     free(canonical_path);

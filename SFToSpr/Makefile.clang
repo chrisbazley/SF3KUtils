@@ -1,0 +1,48 @@
+CLANG ?= clang
+
+COMMON_WARN = -Wall -Wextra -Wsign-compare -pedantic
+COMMON_CFLAGS = -DUSE_OPTIONAL -std=c99 $(COMMON_WARN)
+
+RELEASE_CFLAGS = $(COMMON_CFLAGS) -O3 -DNDEBUG
+DEBUG_CFLAGS = $(COMMON_CFLAGS) -g -DDEBUG_OUTPUT -DFORTIFY
+
+COMMON_ANALYZEFLAGS = \
+	--analyze \
+	-Xanalyzer -analyzer-checker=optionality,nullability,core \
+	--analyzer-no-default-checks
+
+include MakeCommon
+
+OBJS = $(addsuffix .o,$(ObjectList))
+DBGOBJS = $(addsuffix .debug,$(ObjectList))
+ANALYZE_SRCS = $(addsuffix .c,$(ObjectList))
+ANALYZE_TARGETS = $(ANALYZE_SRCS:.c=.analyze)
+
+.PHONY: all release debug analyze clean
+
+all: release
+
+release: RunImage
+
+debug: RunImageD
+
+RunImage: $(OBJS)
+	$(CLANG) -o $@ $(OBJS)
+
+RunImageD: $(DBGOBJS)
+	$(CLANG) -o $@ $(DBGOBJS)
+
+%.o: %.c
+	$(CLANG) $(RELEASE_CFLAGS) $(CFLAGS_$*) -c $< -o $@
+
+%.debug: %.c
+	$(CLANG) $(DEBUG_CFLAGS) $(DEBUG_CFLAGS_$*) -c $< -o $@
+
+analyze: $(ANALYZE_TARGETS)
+
+%.analyze: %.c
+	$(CLANG) $(COMMON_CFLAGS) $(COMMON_ANALYZEFLAGS) $(ANALYZEFLAGS_$*) $<
+	@touch $@
+
+clean:
+	rm -f *.o *.debug *.analyze RunImage RunImageD

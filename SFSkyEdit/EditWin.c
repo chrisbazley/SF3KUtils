@@ -1452,7 +1452,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
       {
         /* Start new selection or move near end of existing selection */
         WimpDragBox drag_box;
-        unsigned int autoscroll_flags;
+        unsigned int autoscroll_flags = 0;
 
         if (E(scheduler_register_delay(drag_selection,
                                        edit_win,

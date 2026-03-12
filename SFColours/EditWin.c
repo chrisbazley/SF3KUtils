@@ -884,7 +884,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
         {
           edit_win->wimp_handle, {0,0,0,0}, 0, 0, WimpWindow_Top, 0
         };
-        unsigned int autoscroll_flags;
+        unsigned int autoscroll_flags = 0;
 
         if (E(wimp_get_window_state(&window_state)))
           break;

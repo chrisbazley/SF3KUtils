@@ -722,7 +722,7 @@ static int make_uncompressed_sprites_file(const char *const file_name, const int
   assert(n < 256);
 
   int const msize = metadata ? TileMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * n)];
+  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * 255)];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = n;
@@ -812,7 +812,7 @@ static void check_uncompressed_planets_file(const char *const file_name, const i
   assert(n > 0);
   assert(n <= 2);
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * n];
+  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * 2];
   assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
 
   size_t i = 0;

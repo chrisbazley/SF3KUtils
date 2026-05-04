@@ -56,7 +56,7 @@
 #include "FileRWInt.h"
 
 /* Local header files */
-#include "SFTInit.h"
+#include "../SFTInit.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

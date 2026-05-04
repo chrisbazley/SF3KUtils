@@ -130,7 +130,7 @@ static SFError copy_data(Writer *const dst, Reader *const src,
 
   SFError err = SFError_OK;
 
-  _Optional void *const buf = malloc(CopyBufferSize);
+  _Optional char *const buf = malloc(CopyBufferSize);
   if (buf == NULL)
   {
     return SFError_NoMem;

@@ -722,7 +722,7 @@ static int make_uncompressed_sprites_file(const char *const file_name, const int
   assert(n < 256);
 
   int const msize = metadata ? TileMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + ((SpriteHdrSize + TileBitmapSize) * n)];
+  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * n)];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = n;

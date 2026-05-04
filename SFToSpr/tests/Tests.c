@@ -284,7 +284,7 @@ static int make_compressed_planets_file(const char *const file_name, const int n
   assert(n > 0);
   assert(n <= 2);
 
-  uint8_t test_data[PlanetsHdrSize + ((PaddingSize + PlanetBitmapSize) * n * 2)];
+  uint8_t test_data[PlanetsHdrSize + ((PaddingSize + PlanetBitmapSize) * 2 * 2)];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = n-1;
@@ -352,7 +352,7 @@ static int make_compressed_sprites_file(const char *const file_name, const int n
   assert(n > 0);
   assert(n < 256);
 
-  uint8_t test_data[TilesHdrSize + (TileBitmapSize * n)];
+  uint8_t test_data[TilesHdrSize + (TileBitmapSize * 255)];
 
   *((int32_t *)test_data) = n-1;
 
@@ -501,7 +501,7 @@ static void check_compressed_planets_file(const char *const file_name, const int
   assert(*file_name != '\0');
   assert(n > 0);
   assert(n <= 2);
-  uint8_t test_data[PlanetsHdrSize + (PlanetBitmapSize * n * 2)];
+  uint8_t test_data[PlanetsHdrSize + (PlanetBitmapSize * 2 * 2)];
   check_compressed_file(file_name, test_data, sizeof(test_data), FileType_SFSkyPic);
   check_planets_file(test_data, n);
 }
@@ -585,7 +585,7 @@ static void check_compressed_sprites_file(const char *const file_name, const int
   assert(*file_name != '\0');
   assert(n > 0);
   assert(n < 256);
-  uint8_t test_data[TilesHdrSize + (TileBitmapSize * n)];
+  uint8_t test_data[TilesHdrSize + (TileBitmapSize * 255)];
   check_compressed_file(file_name, test_data, sizeof(test_data), FileType_SFMapGfx);
   check_sprites_file(test_data, n);
 }
@@ -617,7 +617,7 @@ static int make_uncompressed_planets_file(const char *const file_name, const int
   assert(n <= 2);
 
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + (SpriteHdrSize + PlanetBitmapSize) * n];
+  uint8_t test_data[SpriteAreaHdrSize + msize + (SpriteHdrSize + PlanetBitmapSize) * 2];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = n;
@@ -671,7 +671,7 @@ static int make_uncompressed_sky_file(const char *const file_name, const int n, 
   assert(*file_name != '\0');
 
   int const msize = metadata ? SkyMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + SpriteHdrSize + SkyBitmapSize];
+  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize + SpriteHdrSize + SkyBitmapSize];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = 1;
@@ -812,7 +812,7 @@ static void check_uncompressed_planets_file(const char *const file_name, const i
   assert(n > 0);
   assert(n <= 2);
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + (SpriteHdrSize + PlanetBitmapSize) * n];
+  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * n];
   assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
 
   size_t i = 0;
@@ -883,7 +883,7 @@ static void check_uncompressed_sky_file(const char *const file_name, const int n
   assert(file_name != NULL);
   assert(*file_name != '\0');
   int const msize = metadata ? SkyMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + SpriteHdrSize + SkyBitmapSize];
+  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize + SpriteHdrSize + SkyBitmapSize];
   assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
 
   size_t i = 0;
@@ -935,7 +935,7 @@ static void check_uncompressed_sprites_file(const char *const file_name, const i
   assert(n > 0);
   assert(n < 256);
   int const msize = metadata ? TileMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + ((SpriteHdrSize + TileBitmapSize) * n)];
+  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * n)];
   assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
 
   size_t i = 0;
@@ -2442,7 +2442,8 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
         case DTM_BadRAM:
         {
           /* Allowed to use RAM transfer. */
-          char test_data[estimated_size];
+          char *test_data = malloc(estimated_size);
+          assert(test_data);
           FILE * const f = test_fopen(TEST_DATA_IN, "rb");
           size_t const n = fread(test_data, estimated_size, 1, f);
           assert(n == 1);
@@ -2489,6 +2490,7 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
             }
           }
           while (1);
+          free(test_data);
           break;
         }
 

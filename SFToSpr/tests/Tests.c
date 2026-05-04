@@ -617,7 +617,7 @@ static int make_uncompressed_planets_file(const char *const file_name, const int
   assert(n <= 2);
 
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + msize + (SpriteHdrSize + PlanetBitmapSize) * 2];
+  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * 2];
 
   size_t i = 0;
   ((int32_t *)test_data)[i++] = n;

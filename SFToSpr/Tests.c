@@ -60,10 +60,19 @@
 
 #ifdef FORTIFY
 #include "Fortify.h"
+#else
+#define Fortify_SetAllocationLimit(x)
+#define Fortify_SetNumAllocationsLimit(x)
+#define Fortify_EnterScope()
+#define Fortify_LeaveScope()
+#define Fortify_OutputStatistics()
+#define Fortify_CheckAllMemory()
 #endif
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"
+#else
+#define _Optional
 #endif
 
 #define TEST_DATA_DIR "<Wimp$ScrapDir>.SFtoSprTests"
@@ -2352,7 +2361,7 @@ static void test21(void)
   check_uncompressed_sprites_file(TEST_DATA_OUT, NSprites, true);
 }
 
-static void wait(void)
+static void wait_for_stalled_ops(void)
 {
   const clock_t start_time = clock();
   clock_t elapsed;
@@ -2375,7 +2384,7 @@ static void cleanup_stalled(void)
   unsigned long limit;
   _Optional const _kernel_oserror *err;
 
-  wait();
+  wait_for_stalled_ops();
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
@@ -3124,6 +3133,7 @@ static void test48(void)
   quit_with_confirm_core(true, true);
 }
 
+#ifdef FORTIFY
 static bool fortify_detected = false;
 
 static void fortify_check(void)
@@ -3144,6 +3154,7 @@ static void fortify_output(char const *text)
     fortify_detected = true;
   }
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -3151,9 +3162,10 @@ int main(int argc, char *argv[])
   NOT_USED(argv);
 
   DEBUG_SET_OUTPUT(DebugOutput_FlushedFile, "SFtoSprLog");
+#ifdef FORTIFY
   Fortify_SetOutputFunc(fortify_output);
   atexit(fortify_check);
-
+#endif
   static const struct
   {
     const char *test_name;

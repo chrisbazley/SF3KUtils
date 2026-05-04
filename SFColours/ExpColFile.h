@@ -11,6 +11,10 @@
 #include "Reader.h"
 #include "Writer.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 typedef struct
 {
   int num_cols;

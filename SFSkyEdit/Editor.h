@@ -14,6 +14,10 @@
 #include "Sky.h"
 #include "PalEntry.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 typedef enum {
   EditResult_Unchanged,
   EditResult_Changed,

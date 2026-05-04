@@ -9,6 +9,10 @@
 
 #include "FNCSaveBox.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 _Optional FNCSaveBox *SaveDir_create(char const *input_path, int x,
                                      _Optional FNCSaveBoxDeletedFn *deleted_cb);
 

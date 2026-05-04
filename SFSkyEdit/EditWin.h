@@ -16,6 +16,10 @@
 
 #include "Sky.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 typedef struct SkyFile SkyFile;
 typedef struct EditWin EditWin;
 

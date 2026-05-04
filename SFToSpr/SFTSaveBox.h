@@ -12,6 +12,10 @@
 
 #include "UserData.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 struct SFTSaveBox;
 
 typedef void SFTSaveBoxDeletedFn(struct SFTSaveBox *savebox);

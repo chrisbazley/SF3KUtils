@@ -9,6 +9,10 @@
 
 #include "SFTSaveBox.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 _Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
                            _Optional SFTSaveBoxDeletedFn *deleted_cb);
 

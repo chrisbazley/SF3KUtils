@@ -14,6 +14,10 @@
 
 #include "EditWin.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 typedef struct PreviewData PreviewData;
 
 void Preview_initialise(void);

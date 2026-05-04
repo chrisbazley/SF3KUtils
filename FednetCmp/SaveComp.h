@@ -11,6 +11,10 @@
 #include "FNCSaveBox.h"
 #include "Reader.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 _Optional FNCSaveBox *SaveComp_create(char const *filename,
                                    bool data_saved,
                                    Reader *reader,

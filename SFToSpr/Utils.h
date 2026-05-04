@@ -18,6 +18,10 @@
 
 #include "flex.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 void load_failed(_Optional CONST _kernel_oserror *error, void *client_handle);
 
 bool dialogue_confirm(const char *mess);

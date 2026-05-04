@@ -12,6 +12,10 @@
 #include "PalEntry.h"
 #include "Editor.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 int layout_decode_y_coord(int y);
 
 int layout_get_width(void);

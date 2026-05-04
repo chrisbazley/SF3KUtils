@@ -13,6 +13,10 @@
 
 #include "SFTSaveBox.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data_saved,
   flex_ptr buffer, int input_file_type, _Optional SFTSaveBoxDeletedFn *deleted_cb);
 

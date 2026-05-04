@@ -19,6 +19,10 @@
 #include "ColMap.h"
 #include "ExpColFile.h"
 
+#if !defined(USE_OPTIONAL) && !defined(_Optional)
+#define _Optional
+#endif
+
 enum
 {
   EditWin_MaxSize = ARRAY_SIZE( ((SFObjectColours *)0)->colour_mappings ) -

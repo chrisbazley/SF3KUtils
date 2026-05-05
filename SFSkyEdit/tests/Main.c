@@ -22,7 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef FORTIFY
 #include "Fortify.h"
+#endif
 
 /* CBLibrary headers */
 #include "Macros.h"

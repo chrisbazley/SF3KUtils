@@ -308,7 +308,7 @@ void render_scene(const PreviewData *const preview_data)
 
   /* Final argument is the offset to the first word to be plotted! (4 bytes
      before the end of the lowest scan line to be filled from right to left) */
-  sky_drawsky(preview_data->render_height, &*preview_data->export, screen,
+  sky_drawsky(preview_data->render_height, preview_data->export, screen,
               (Screen_Height * Screen_Width) - 4 + (screen_y * Screen_Width));
 
   SFSky const *const s = (SFSky *)preview_data->export;

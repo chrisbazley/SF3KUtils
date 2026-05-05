@@ -2170,7 +2170,7 @@ static void test3(void)
   assert(fopen_num() == 0);
 }
 
-static void wait(clock_t timeout)
+static void wait_for_stalled_ops(clock_t timeout)
 {
   const clock_t start_time = clock();
   clock_t elapsed;
@@ -2191,7 +2191,7 @@ static void cleanup_stalled(void)
   /* Wait for timeout then deliver a null event */
   unsigned long limit;
 
-  wait(Timeout);
+  wait_for_stalled_ops(Timeout);
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
@@ -4005,7 +4005,7 @@ static void test43(void)
       _Optional const _kernel_oserror *err;
 
       err_suppress_errors();
-      wait(DragMsgInterval);
+      wait_for_stalled_ops(DragMsgInterval);
 
       /* Simulate a null event to trigger a dragging message. */
       dispatch_event_suppress_with_error_sim(Wimp_ENull, &(WimpPollBlock){0}, limit);
@@ -4087,7 +4087,7 @@ static void test44(void)
       err_suppress_errors();
 
       /* Simulate a null event to trigger a dragging message. */
-      wait(DragMsgInterval);
+      wait_for_stalled_ops(DragMsgInterval);
       dispatch_event_suppress(Wimp_ENull, &(WimpPollBlock){0});
 
       err = err_dump_suppressed();

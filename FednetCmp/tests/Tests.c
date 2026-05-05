@@ -1173,7 +1173,7 @@ static void test9(void)
   dialogue_completed(id);
 }
 
-static void wait(void)
+static void wait_for_stalled_ops(void)
 {
   const clock_t start_time = clock();
   clock_t elapsed;
@@ -1196,7 +1196,7 @@ static void cleanup_stalled(void)
   unsigned long limit;
   _Optional const _kernel_oserror *err;
 
-  wait();
+  wait_for_stalled_ops();
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {

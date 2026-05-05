@@ -28,7 +28,7 @@
 #include "PalEntry.h"
 
 /* Local headers */
-#include "Editor.h"
+#include "../Editor.h"
 #include "Tests.h"
 
 #ifdef FORTIFY

@@ -53,8 +53,8 @@
 #include "FileRWInt.h"
 
 /* Local header files */
-#include "FNCInit.h"
-#include "FNCSaveBox.h"
+#include "../FNCInit.h"
+#include "../FNCSaveBox.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

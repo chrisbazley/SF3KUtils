@@ -30,7 +30,7 @@
 
 /* Local headers */
 #include "Tests.h"
-#include "ColMap.h"
+#include "../ColMap.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

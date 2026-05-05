@@ -3,3 +3,5 @@ project(SF3KUtils C)
 
 add_subdirectory(SFToSpr)
 add_subdirectory(SFSkyEdit)
+add_subdirectory(FednetCmp)
+add_subdirectory(SFColours)

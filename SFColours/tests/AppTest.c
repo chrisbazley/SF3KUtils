@@ -60,10 +60,10 @@
 
 /* Local header files */
 #include "Tests.h"
-#include "SFCInit.h"
-#include "Picker.h"
-#include "OurEvents.h"
-#include "Utils.h"
+#include "../SFCInit.h"
+#include "../Picker.h"
+#include "../OurEvents.h"
+#include "../Utils.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

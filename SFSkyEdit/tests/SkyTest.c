@@ -30,7 +30,7 @@
 
 /* Local headers */
 #include "Tests.h"
-#include "Sky.h"
+#include "../Sky.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

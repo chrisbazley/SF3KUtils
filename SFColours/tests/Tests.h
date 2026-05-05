@@ -10,4 +10,17 @@ void Colmap_tests(void);
 void Editor_tests(void);
 void App_tests(void);
 
+#ifdef FORTIFY
+#include "Fortify.h"
+#else
+#define Fortify_SetAllocationLimit(x)
+#define Fortify_SetNumAllocationsLimit(x)
+#define Fortify_EnterScope()
+#define Fortify_LeaveScope()
+#define Fortify_OutputStatistics()
+#define Fortify_CheckAllMemory()
+#define Fortify_GetCurrentAllocation() (0)
+#define Fortify_SetOutputFunc(x)
+#endif
+
 #endif /* Tests_h */

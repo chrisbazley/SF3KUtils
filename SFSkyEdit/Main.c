@@ -80,7 +80,7 @@ static void fortify_output(char const *text)
 
 int main(int const argc, char *argv[])
 {
-  DEBUG_SET_OUTPUT(DebugOutput_Reporter, APP_NAME);
+  DEBUG_SET_OUTPUT(DebugOutput_StdErr, APP_NAME);
 
 #ifdef FORTIFY
   Fortify_SetOutputFunc(fortify_output);

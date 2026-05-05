@@ -20,6 +20,7 @@ void App_tests(void);
 #define Fortify_OutputStatistics()
 #define Fortify_CheckAllMemory()
 #define Fortify_GetCurrentAllocation() (0)
+#define Fortify_SetOutputFunc(x)
 #endif
 
 #endif /* Tests_h */

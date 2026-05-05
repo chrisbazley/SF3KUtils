@@ -52,8 +52,8 @@
 
 /* Local headers */
 #include "Tests.h"
-#include "SFSInit.h"
-#include "OurEvents.h"
+#include "../SFSInit.h"
+#include "../OurEvents.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

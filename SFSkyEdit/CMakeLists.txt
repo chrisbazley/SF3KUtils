@@ -50,13 +50,13 @@ string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
 
 if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
   # RISC OS: The only platform where it links and runs
-  add_executable(RunImage Main.c)
+  add_executable(SFSkyEditApp Main.c)
 else()
   # Other platforms: Compile only (no linking) to catch errors
-  add_library(RunImage Main.c)
+  add_library(SFSkyEditApp Main.c)
 endif()
 
-target_link_libraries(RunImage PRIVATE
+target_link_libraries(SFSkyEditApp PRIVATE
     SFSkyEdit
 )
 

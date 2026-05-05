@@ -22,8 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "Fortify.h"
-
 /* CBLibrary headers */
 #include "Macros.h"
 #include "Debug.h"

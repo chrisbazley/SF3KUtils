@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   NOT_USED(argc);
   NOT_USED(argv);
 
-  DEBUG_SET_OUTPUT(DebugOutput_Reporter, APP_NAME);
+  DEBUG_SET_OUTPUT(DebugOutput_StdErr, APP_NAME);
 
 #ifdef FORTIFY
   Fortify_SetOutputFunc(fortify_output);

@@ -1211,7 +1211,7 @@ static int misc_tb_event(int const event_code, ToolboxEvent *const event,
     {
       /* Generate a different set of pseudo-random stars */
       nobudge_register(PreExpandHeap);
-      generate_stars(&*preview_data->stars);
+      generate_stars(preview_data->stars);
       nobudge_deregister();
 
       render_scene(preview_data);

@@ -2247,7 +2247,8 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
         case DTM_BadRAM:
         {
           /* Allowed to use RAM transfer. */
-          char test_data[estimated_size];
+          char *test_data = malloc(estimated_size);
+          assert(test_data);
           FILE * const f = test_fopen(TEST_DATA_IN, "rb");
           size_t const n = fread(test_data, estimated_size, 1, f);
           assert(n == 1);
@@ -2295,6 +2296,7 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
             }
           }
           while (1);
+          free(test_data);
           break;
         }
 

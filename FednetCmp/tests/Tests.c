@@ -58,6 +58,13 @@
 
 #ifdef FORTIFY
 #include "Fortify.h"
+#else
+#define Fortify_SetAllocationLimit(x)
+#define Fortify_SetNumAllocationsLimit(x)
+#define Fortify_EnterScope()
+#define Fortify_LeaveScope()
+#define Fortify_OutputStatistics()
+#define Fortify_CheckAllMemory()
 #endif
 
 #ifdef USE_OPTIONAL
@@ -1524,6 +1531,7 @@ static void test17(void)
   assert(limit != FortifyAllocationLimit);
 }
 
+#ifdef FORTIFY
 static bool fortify_detected = false;
 
 static void fortify_check(void)
@@ -1544,6 +1552,7 @@ static void fortify_output(char const *text)
     fortify_detected = true;
   }
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -1551,9 +1560,10 @@ int main(int argc, char *argv[])
   NOT_USED(argv);
 
   DEBUG_SET_OUTPUT(DebugOutput_FlushedFile, "FednetCmpLog");
+#ifdef FORTIFY
   Fortify_SetOutputFunc(fortify_output);
   atexit(fortify_check);
-
+#endif
   static const struct
   {
     char const *test_name;

@@ -29,7 +29,7 @@
 
 /* Local headers */
 #include "Tests.h"
-#include "Editor.h"
+#include "../Editor.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"

@@ -41,7 +41,7 @@
 #include "Optional.h"
 #endif
 
-#ifdef FORTIFY
+
 static bool fortify_detected = false;
 
 static void fortify_check(void)
@@ -62,7 +62,6 @@ static void fortify_output(char const *text)
     fortify_detected = true;
   }
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -75,19 +74,16 @@ int main(int argc, char *argv[])
   {
     { "Sky", Sky_tests },
     { "Editor", Editor_tests },
-#ifdef ACORN_C
     { "App", App_tests },
-#endif
   };
 
   NOT_USED(argc);
   NOT_USED(argv);
 
   DEBUG_SET_OUTPUT(DebugOutput_FlushedFile, "SFSkyEditLog");
-#ifdef FORTIFY
   Fortify_SetOutputFunc(fortify_output);
   atexit(fortify_check);
-#endif
+
   for (size_t count = 0; count < ARRAY_SIZE(test_groups); count ++)
   {
     /* Print title of this group of tests */

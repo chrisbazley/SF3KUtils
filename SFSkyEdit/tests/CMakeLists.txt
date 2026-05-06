@@ -1,19 +1,30 @@
-file(GLOB SOURCES "*.c")
+set(CORESOURCES
+    SkyTest.c
+    EditorTest.c
+)
 
-string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
+add_library(SFSkyEditCoreTestsLib OBJECT ${CORESOURCES})
+target_link_libraries(SFSkyEditCoreTestsLib PUBLIC SFSkyEdit)
 
-if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
-  # RISC OS: The only platform where it links and runs
-  add_executable(SFSkyEditTests ${SOURCES})
-  add_test(NAME "tests" COMMAND CBTests)
-else()
-  # Other platforms: Compile only (no linking) to catch errors
-  add_library(SFSkyEditTests OBJECT ${SOURCES})
-endif()
+set(APPSOURCES
+    AppTest.c
+)
 
-target_include_directories(SFSkyEditTests PRIVATE
+add_library(SFSkyEditAppTestsLib OBJECT ${APPSOURCES})
+target_link_libraries(SFSkyEditAppTestsLib PUBLIC SFSkyEdit)
+
+target_include_directories(SFSkyEditAppTestsLib PRIVATE
     $<TARGET_PROPERTY:Stream,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:GKey,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-target_link_libraries(SFSkyEditTests PRIVATE SFSkyEdit)
+string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
+
+add_executable(SFSkyEditTests Main.c)
+target_link_libraries(SFSkyEditTests PRIVATE SFSkyEditCoreTestsLib)
+add_test(NAME "tests" COMMAND SFSkyEditTests)
+
+if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
+  target_compile_definitions(SFSkyEditTests PRIVATE ACORN_C)
+  target_link_libraries(SFSkyEditTests PRIVATE SFSkyEditAppTestsLib)
+endif()

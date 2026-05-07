@@ -17,6 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#undef NDEBUG
+
 /* ISO library headers */
 #include <stdlib.h>
 #include <stdio.h>

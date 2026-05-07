@@ -22,7 +22,7 @@ string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
 
 add_executable(SFSkyEditTests Main.c)
 target_link_libraries(SFSkyEditTests PRIVATE SFSkyEditCoreTestsLib)
-add_test(NAME "tests" COMMAND SFSkyEditTests)
+add_test(NAME "SFSkyEditTests" COMMAND SFSkyEditTests)
 
 if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
   target_compile_definitions(SFSkyEditTests PRIVATE ACORN_C)

@@ -619,7 +619,7 @@ static _Optional const _kernel_oserror *generate_col_table(void)
     DEBUGF("%zu bytes are required for colour translation table\n", size);
 
     /* Allocate a buffer of the required size for the translation table */
-    _Optional char * const ct = malloc(size);
+    _Optional unsigned char * const ct = malloc(size);
     if (ct == NULL)
     {
       e = msgs_error(DUMMY_ERRNO, "ColTransMem");
@@ -647,7 +647,7 @@ static _Optional const _kernel_oserror *generate_col_table(void)
             translate_cols = false;
           }
         }
-	col_trans_table = ct;
+	    col_trans_table = ct;
       }
       else
       {

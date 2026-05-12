@@ -97,34 +97,6 @@ typedef struct
 }
 SFSpriteHeader;
 
-/* Extension data to be embedded in a sprite area for a map tiles set */
-typedef struct
-{
-  uint32_t tag;
-  uint8_t  splash_anim_1[4];
-  uint8_t  splash_anim_2[4];
-  uint8_t  splash_2_triggers[4];
-}
-TileSprExtData;
-
-/* Extension data to be embedded in a sprite area for a planet images set */
-typedef struct
-{
-  uint32_t           tag;
-  uint32_t           num_offsets;
-  PlanetsPaintOffset paint_coords[];
-}
-PlanetSprExtData;
-
-/* Extension data to be embedded in a sprite area for a sky definition */
-typedef struct
-{
-  uint32_t tag;
-  int32_t  render_offset;
-  int32_t  min_stars_height;
-}
-SkySprExtData;
-
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 

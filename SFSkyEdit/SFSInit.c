@@ -23,6 +23,7 @@
 #include "stdlib.h"
 #include <string.h>
 #include <signal.h>
+#include <stdint.h>
 
 /* RISC OS library files */
 #include "kernel.h"
@@ -127,7 +128,7 @@ static int mode_change_msg(WimpMessage *const message, void *const handle)
     [VarIndex_LAST] = VDUVar_EndOfList
   };
 
-  int var_vals[VarIndex_LAST];
+  intptr_t var_vals[VarIndex_LAST];
 
   NOT_USED(handle);
   NOT_USED(message);

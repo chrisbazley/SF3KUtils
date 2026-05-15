@@ -25,7 +25,7 @@
 #include <limits.h>
 #include <time.h>
 #include <setjmp.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 /* RISC OS library files */
 #include "swis.h"
@@ -245,7 +245,7 @@ static void assert_file_has_type(char const *file_name, int file_type)
   OS_File_CatalogueInfo cat;
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 }
 

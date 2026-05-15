@@ -27,7 +27,7 @@
 #include <limits.h>
 #include <time.h>
 #include <setjmp.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 /* RISC OS library files */
 #include "swis.h"
@@ -405,7 +405,7 @@ static void check_compressed_file(const char *const file_name, void *const data,
 
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 
   FILE *const f = test_fopen(file_name, "rb");
@@ -796,7 +796,7 @@ static size_t check_uncompressed_file(const char *file_name, void *const test_da
   OS_File_CatalogueInfo cat;
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 
   FILE *const f = test_fopen(file_name, "rb");

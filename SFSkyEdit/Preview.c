@@ -311,8 +311,8 @@ void render_scene(const PreviewData *const preview_data)
   sky_drawsky(preview_data->render_height, preview_data->export, screen,
               (Screen_Height * Screen_Width) - 4 + (screen_y * Screen_Width));
 
-  SFSky const *const s = (SFSky *)preview_data->export;
-  int star_tint = preview_data->render_height - s->min_stars_height;
+  SFSky const *const sky = (SFSky *)preview_data->export;
+  int star_tint = preview_data->render_height - sky->min_stars_height;
   DEBUGF("Stars tint (based on height) is %d\n", star_tint);
   const StarData *star = preview_data->stars;
   assert(star != NULL);

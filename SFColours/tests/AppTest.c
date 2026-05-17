@@ -1857,17 +1857,17 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
           dispatch_event(Wimp_EToolboxEvent, &poll_block);
           err = err_dump_suppressed();
 
-          unsigned int flags;
+          unsigned int gbf_flags;
           int nbytes;
           ObjectId const quoted_id = pseudo_saveas_get_buffer_filled(
-                                     &flags, buffer, sizeof(buffer), &nbytes);
+                                     &gbf_flags, buffer, sizeof(buffer), &nbytes);
           if (quoted_id != NULL_ObjectId)
           {
             total_bytes += nbytes;
 
             assert(nbytes <= size);
             assert(quoted_id == saveas_id);
-            assert(flags == 0);
+            assert(gbf_flags == 0);
 
             const size_t n = fwrite(buffer, nbytes, 1, f);
             assert(n == 1);

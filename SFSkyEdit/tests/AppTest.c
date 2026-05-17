@@ -477,7 +477,7 @@ static void check_sprite_file(char const *file_name, int (*compute_colour)(int b
   i = 0;
   do
   {
-    size_t n = fread(row, sizeof(row), 1, f);
+    n = fread(row, sizeof(row), 1, f);
     DEBUGF("%d: Read %zu items\n", i, n);
     if (n > 0)
     {
@@ -562,7 +562,7 @@ static void check_preview_file(char const *file_name, int colour)
   do
   {
     unsigned char row[PrevWidth];
-    size_t n = fread(row, sizeof(row), 1, f);
+    n = fread(row, sizeof(row), 1, f);
     DEBUGF("%zu: Read %zu items\n", i, n);
     if (n > 0)
     {
@@ -1946,10 +1946,10 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
           dispatch_event(Wimp_EToolboxEvent, &poll_block);
           err = err_dump_suppressed();
 
-          unsigned int flags;
+          unsigned int gbf_flags;
           int nbytes;
           ObjectId const quoted_id = pseudo_saveas_get_buffer_filled(
-                                     &flags, buffer, sizeof(buffer), &nbytes);
+                                     &gbf_flags, buffer, sizeof(buffer), &nbytes);
 
           if (quoted_id != NULL_ObjectId)
           {
@@ -1957,7 +1957,7 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
 
             assert(nbytes <= size);
             assert(quoted_id == saveas_id);
-            assert(flags == 0);
+            assert(gbf_flags == 0);
 
             const size_t n = fwrite(buffer, nbytes, 1, f);
             assert(n == 1);

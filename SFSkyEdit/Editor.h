@@ -132,23 +132,23 @@ bool editor_set_caret_pos(Editor *editor, int pos);
 bool editor_set_selection_end(Editor *editor, int pos);
 
 /* Get the lowest selected colour */
-int editor_get_selected_colour(Editor const *editor);
+SkyColour editor_get_selected_colour(Editor const *editor);
 
 /* Copy up to 'dst_size' selected colours to an array.
    Returns the no. of colours that would have been copied to 'dst'
    had the supplied array been big enough. */
-int editor_get_array(Editor const *editor, int *dst, int dst_size);
+int editor_get_array(Editor const *editor, SkyColour *dst, int dst_size);
 
 /* Interpolates between centres of homogenous colour blocks within
    the selected region. */
 EditResult editor_smooth(Editor *editor, PaletteEntry const palette[]);
 
 /* Change selected colours to a homogenous colour block. */
-EditResult editor_set_plain(Editor *editor, int colour);
+EditResult editor_set_plain(Editor *editor, SkyColour colour);
 
 /* Interpolate between start and end of the selected region. */
 EditResult editor_interpolate(Editor *editor, PaletteEntry const palette[],
-  int start_col, int end_col);
+                              SkyColour start_col, SkyColour end_col);
 
 /* Replace the selected colours with colours from an array and select the
    inserted colours. Outputs whether or not any colour is invalid. */
@@ -161,12 +161,12 @@ EditResult editor_insert_sky(Editor *editor, Sky const *src);
 
 /* Replace the selected colours with a homogenous colour block
    and set the caret to the end of the inserted colours. */
-EditResult editor_insert_plain(Editor *editor, int number, int col);
+EditResult editor_insert_plain(Editor *editor, int number, SkyColour col);
 
 /* Replace the selected colours with an interpolated gradient fill
    and set the caret to the end of the inserted colours. */
 EditResult editor_insert_gradient(Editor *editor, PaletteEntry const palette[],
-  int number, int start_col, int end_col, bool inc_start, bool inc_end);
+  int number, SkyColour start_col, SkyColour end_col, bool inc_start, bool inc_end);
 
 /* Deletes selected colours. */
 EditResult editor_delete_colours(Editor *editor);

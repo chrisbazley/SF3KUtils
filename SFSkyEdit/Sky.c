@@ -49,13 +49,11 @@ enum
   DefaultStarsHeight = 0,
 };
 
-static inline void set_colour(Sky *const sky, int const pos, int colour)
+static inline void set_colour(Sky *const sky, int const pos, SkyColour const colour)
 {
   assert(sky != NULL);
   assert(pos >= 0);
   assert(pos < NColourBands);
-  assert(colour >= 0);
-  assert(colour < NPixelColours);
 
   DEBUGF("Writing colour %d at position %d in file %p\n", colour, pos,
     (void *)sky);
@@ -63,13 +61,13 @@ static inline void set_colour(Sky *const sky, int const pos, int colour)
   sky->bands[pos] = colour;
 }
 
-static inline int get_colour(Sky const *const sky, int const pos)
+static inline SkyColour get_colour(Sky const *const sky, int const pos)
 {
   assert(sky != NULL);
   assert(pos >= 0);
   assert(pos < NColourBands);
 
-  int const colour = sky->bands[pos];
+  SkyColour const colour = sky->bands[pos];
 
   DEBUGF("Reading colour %d at position %d in file %p\n", colour, pos,
     (void *)sky);
@@ -97,12 +95,12 @@ void sky_write_file(Sky const *const sky, Writer *const writer)
   writer_fwrite_int32(sky->render_offset, writer);
   writer_fwrite_int32(sky->stars_height, writer);
 
-  int prev = get_colour(sky, 0);
+  SkyColour prev = get_colour(sky, 0);
 
   for (int pos = 0; pos < NColourBands && !writer_ferror(writer); pos++)
   {
-    int const colour = get_colour(sky, pos);
-    uint8_t pattern[SFSky_Width];
+    SkyColour const colour = get_colour(sky, pos);
+    SkyColour pattern[SFSky_Width];
 
     /* Dither with preceding colour */
     for (int i = 0; i < SFSky_Width; i++)
@@ -150,18 +148,18 @@ SkyState sky_read_file(Sky *const sky, Reader *const reader)
     return SkyState_BadStar;
   }
 
-  int prev = 0;
+  SkyColour prev = 0;
   for (int pos = 0; pos < NColourBands; pos++)
   {
     /* Read two rows at a time */
-    uint8_t pattern[2][SFSky_Width];
+    SkyColour pattern[2][SFSky_Width];
     if (reader_fread(pattern, sizeof(pattern), 1, reader) != 1)
     {
       return reader_feof(reader) ? SkyState_BadLen : SkyState_ReadFail;
     }
 
     /* The second of each pair of rows is the plain colour */
-    int const colour = pattern[1][0];
+    SkyColour const colour = pattern[1][0];
 
     /* First row should be identical to second row because there is
        no previous colour band to dither with. */
@@ -213,12 +211,12 @@ SkyState sky_read_file(Sky *const sky, Reader *const reader)
   return reader_feof(reader) ? SkyState_OK : SkyState_ReadFail;
 }
 
-int sky_get_colour(Sky const *const sky, int const pos)
+SkyColour sky_get_colour(Sky const *const sky, int const pos)
 {
   return get_colour(sky, pos);
 }
 
-void sky_set_colour(Sky *const sky, int const pos, int colour)
+void sky_set_colour(Sky *const sky, int const pos, SkyColour colour)
 {
   set_colour(sky, pos, colour);
 }

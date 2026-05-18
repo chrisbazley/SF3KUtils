@@ -139,10 +139,12 @@ static int mode_change_msg(WimpMessage *const message, void *const handle)
        per external graphics unit) but the result of shifting by a negative
        operand is undefined (cf K&R appendix A7.9) */
     assert(var_vals[VarIndex_XEigFactor] >= 0);
-    x_eigen = var_vals[VarIndex_XEigFactor];
+    assert(var_vals[VarIndex_XEigFactor] < 32);
+    x_eigen = (int)var_vals[VarIndex_XEigFactor];
 
     assert(var_vals[VarIndex_YEigFactor] >= 0);
-    y_eigen = var_vals[VarIndex_YEigFactor];
+    assert(var_vals[VarIndex_YEigFactor] < 32);
+    y_eigen = (int)var_vals[VarIndex_YEigFactor];
   }
 
   return 0; /* don't claim event */

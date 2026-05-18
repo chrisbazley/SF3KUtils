@@ -2695,7 +2695,7 @@ void EditWin_drop_handler(EditWin *const dest_view,
 
 /* ----------------------------------------------------------------------- */
 
-int EditWin_get_colour(EditWin *const edit_win, int const pos)
+SkyColour EditWin_get_colour(EditWin *const edit_win, int const pos)
 {
   assert(edit_win != NULL);
   Sky *const sky = editor_get_sky(get_editor(edit_win));
@@ -2704,7 +2704,7 @@ int EditWin_get_colour(EditWin *const edit_win, int const pos)
 
 /* ----------------------------------------------------------------------- */
 
-int EditWin_get_array(EditWin *const edit_win, int *const dst,
+int EditWin_get_array(EditWin *const edit_win, SkyColour *const dst,
   int const dst_size)
 {
   assert(edit_win != NULL);

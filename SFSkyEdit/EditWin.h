@@ -53,8 +53,8 @@ void EditWin_interpolate(EditWin *edit_win,
 void EditWin_drop_handler(EditWin *dest_view, EditWin *source_view,
   bool shift_held);
 
-int EditWin_get_colour(EditWin *edit_win, int pos);
-int EditWin_get_array(EditWin *edit_win, int dst[], int dst_size);
+SkyColour EditWin_get_colour(EditWin *edit_win, int pos);
+int EditWin_get_array(EditWin *edit_win, SkyColour dst[], int dst_size);
 void EditWin_insert_sky(EditWin *edit_win, Sky const *src);
 bool EditWin_has_unsaved(const EditWin *edit_win);
 void EditWin_set_caret_pos(EditWin *edit_win, int new_pos);

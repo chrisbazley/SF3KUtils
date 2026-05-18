@@ -128,7 +128,7 @@ static int const export_file_types[] =
   FileType_Null
 };
 
-static int clipboard[NColourBands];
+static SkyColour clipboard[NColourBands];
 static int clipboard_size;
 static _Optional EditWin *drag_claim_win;
 static BBox selected_bbox;
@@ -797,7 +797,7 @@ static void DAO_render(intptr_t const cptr, intptr_t const ncols)
   if (_swix(OS_Plot, _INR(0,2), PlotOp_SolidInclBoth + PlotOp_PlotFGAbs, 0, 0) != NULL)
     return; /* error! */
 
-  int const *const colours = (int *)cptr;
+  SkyColour const *const colours = (SkyColour *)cptr;
   int const x_pix = 1 << x_eigen;
   int const y_pix = 1 << y_eigen;
   int const row_height = ((ThumbnailHeight - 2 * y_pix) * FixedPointOne) / ncols;
@@ -877,7 +877,7 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
 
     if (solid_drags && action == DragBoxOp_Start)
     {
-      int colours[NColourBands];
+      SkyColour colours[NColourBands];
       int const ncol = EditWin_get_array(edit_win, colours, NColourBands);
       assert(ncol <= NColourBands);
 
@@ -941,7 +941,7 @@ static bool sel_write(Writer *const writer, int const file_type,
   EditWin *const edit_win = client_handle;
   assert(edit_win != NULL);
 
-  int raw_values[NColourBands];
+  SkyColour raw_values[NColourBands];
   int const ncols = EditWin_get_array(edit_win, raw_values, ARRAY_SIZE(raw_values));
 
   assert(ncols >= 0);

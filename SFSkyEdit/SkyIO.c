@@ -799,10 +799,10 @@ static void DAO_render(intptr_t const cptr, intptr_t const ncols)
     return; /* error! */
 
   SkyColour const *const colours = (SkyColour *)cptr;
-  int const x_pix = 1 << x_eigen;
-  int const y_pix = 1 << y_eigen;
-  int const row_height = ((ThumbnailHeight - 2 * y_pix) * FixedPointOne) / ncols;
-  int bottom_y = y_pix * FixedPointOne;
+  intptr_t const x_pix = (intptr_t)1 << x_eigen;
+  intptr_t const y_pix = (intptr_t)1 << y_eigen;
+  intptr_t const row_height = ((ThumbnailHeight - 2 * y_pix) * FixedPointOne) / ncols;
+  intptr_t bottom_y = y_pix * FixedPointOne;
 
   for (intptr_t index = 0; index < ncols; ++index)
   {

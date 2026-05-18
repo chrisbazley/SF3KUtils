@@ -216,6 +216,13 @@ static void check_redraw_stars_height(int const n, EditSky *const edit_sky)
   assert(stars_height_args[n].edit_sky == edit_sky);
 }
 
+static SkyColour int_to_colour(int const n)
+{
+  SkyColour colour = (SkyColour)n;
+  assert(colour == n);
+  return colour;
+}
+
 static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
 {
   for (int n = 0; n < NBlocks; ++n)
@@ -228,7 +235,7 @@ static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
     select_count = bands_count = 0;
 
     if (n > 0) {
-      assert(editor_set_plain(editor, n * BlockColourGap) == EditResult_Changed);
+      assert(editor_set_plain(editor, int_to_colour(n * BlockColourGap)) == EditResult_Changed);
     } else {
       assert(editor_set_plain(editor, 0) == EditResult_Unchanged);
     }
@@ -251,7 +258,7 @@ static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
 static void get_all(Editor *const editor, SkyColour (* const dst)[NColourBands])
 {
   Sky *const sky = editor_get_sky(editor);
-  for (size_t pos = 0; pos < ARRAY_SIZE(*dst); ++pos) {
+  for (int pos = 0; pos < NColourBands; ++pos) {
     (*dst)[pos] = sky_get_colour(sky, pos);
   }
 }
@@ -329,7 +336,7 @@ static void pal_init(PaletteEntry (*const pal)[NumColours])
 
 static SkyColour get_valid_colour(int const n)
 {
-  return Colour + n;
+  return int_to_colour(Colour + n);
 }
 
 static int get_invalid_colour(int const n)
@@ -340,7 +347,7 @@ static int get_invalid_colour(int const n)
 static SkyColour get_validated_colour(int const n)
 {
   int const expected = get_invalid_colour(n);
-  return expected < 0 ? 0 : expected;
+  return int_to_colour(expected < 0 ? 0 : expected);
 }
 
 static void make_sky(Sky *const sky)
@@ -355,41 +362,41 @@ static void make_sky(Sky *const sky)
 static SkyColour get_smooth_colour(int const n)
 {
   int const smooth = NBlocks / 2;
-  return n + ((smooth - 1) * BlockColourGap);
+  return int_to_colour(n + ((smooth - 1) * BlockColourGap));
 }
 
 static SkyColour get_interp_colour(int const n)
 {
-  return StartCol + n;
+  return int_to_colour(StartCol + n);
 }
 
 static SkyColour get_plain_colour(int const n)
 {
   NOT_USED(n);
-  return Colour;
+  return int_to_colour(Colour);
 }
 
 static SkyColour get_gradient_colour(int n)
 {
-  return Colour - n;
+  return int_to_colour(Colour - n);
 }
 
 static SkyColour get_copied(int const n)
 {
   int const src = (NBlocks * BlockSize) / 2 + n;
-  return (src / BlockSize) * BlockColourGap;
+  return int_to_colour((src / BlockSize) * BlockColourGap);
 }
 
 static SkyColour get_copied_up(int const n)
 {
   int const src = ((NBlocks * BlockSize) / 4) + n;
-  return (src / BlockSize) * BlockColourGap;
+  return int_to_colour((src / BlockSize) * BlockColourGap);
 }
 
 static SkyColour get_moved_to_end(int const n)
 {
   NOT_USED(n);
-  return (NBlocks / 2) * BlockColourGap;
+  return int_to_colour((NBlocks / 2) * BlockColourGap);
 }
 
 static void check_nop(Editor *const editor, PaletteEntry const *const palette, int const cpos)

@@ -130,9 +130,11 @@ static void test4(void)
   }
 }
 
-static int get_colour(int i)
+static SkyColour get_colour(int i)
 {
-  return i % 2 ? i : MaxColour - i;
+  assert(i >= 0);
+  assert(i < NPixelColours);
+  return (SkyColour)(i % 2 ? i : MaxColour - i);
 }
 
 static void test5(void)

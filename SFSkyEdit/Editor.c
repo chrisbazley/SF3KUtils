@@ -533,7 +533,7 @@ static bool s_set_array(Sky *const sky, int const start, int const end,
       DEBUGF("Replaced invalid colour %d with %d\n", src[idx], rep);
       /* Continue to ensure that all bands are overwritten anyway */
     }
-    if (s_set_colour(sky, pos, rep, (idx < lsize) ? (lost + idx) : NULL))
+    if (s_set_colour(sky, pos, (SkyColour)rep, (idx < lsize) ? (lost + idx) : NULL))
     {
       changed = true;
     }
@@ -983,19 +983,22 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
   int col = PALETTE_GET_RED(start_palette);
   int diff = PALETTE_GET_RED(end_palette) - col;
   const float red_inc = (float)diff / dist;
-  float red_frac = col;
+  float red_frac = (float)col;
+  assert(red_frac == col);
   DEBUGF("RED start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, red_inc);
 
   col = PALETTE_GET_GREEN(start_palette);
   diff = PALETTE_GET_GREEN(end_palette) - col;
   const float green_inc = (float)diff / dist;
-  float green_frac = col;
+  float green_frac = (float)col;
+  assert(green_frac == col);
   DEBUGF("GREEN start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, green_inc);
 
   col = PALETTE_GET_BLUE(start_palette);
   diff = PALETTE_GET_BLUE(end_palette) - col;
   const float blue_inc = (float)diff / dist;
-  float blue_frac = col;
+  float blue_frac = (float)col;
+  assert(blue_frac == col);
   DEBUGF("BLUE start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, blue_inc);
 
   /* Write middle part of colour gradient (this loop never draws the
@@ -1013,11 +1016,12 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
       palette, NPixelColours, (int)(red_frac + 0.5f),
       (int)(green_frac + 0.5f), (int)(blue_frac + 0.5f));
 
-    DEBUG_VERBOSEF("Nearest mode 13 colour:%u (palette 0x%08x)\n",
+    DEBUG_VERBOSEF("Nearest mode 13 colour:%d (palette 0x%08x)\n",
                    near, palette[near]);
 
     int const idx = pos - start;
-    if (s_set_colour(sky, pos, near,
+    assert((SkyColour)near == near);
+    if (s_set_colour(sky, pos, (SkyColour)near,
       (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;

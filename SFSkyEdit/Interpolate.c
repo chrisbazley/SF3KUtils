@@ -59,7 +59,7 @@ enum
 };
 
 ObjectId Interpolate_sharedid = NULL_ObjectId;
-static int start_col, end_col;
+static SkyColour start_col, end_col;
 static bool have_caret;
 
 /* ----------------------------------------------------------------------- */

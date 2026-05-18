@@ -43,12 +43,13 @@ void EditWin_give_focus(EditWin *edit_win);
 void EditWin_file_saved(EditWin *edit_win, _Optional char *save_path);
 void EditWin_show_parent_dir(const EditWin *edit_win);
 void EditWin_delete_colours(EditWin *edit_win);
-void EditWin_insert_plain(EditWin *edit_win, int number, int colour);
+void EditWin_insert_plain(EditWin *edit_win, int number, SkyColour colour);
 void EditWin_insert_gradient(EditWin *edit_win, int number,
-  int start_col, int end_col, bool inc_start, bool inc_end);
+                             SkyColour start_col, SkyColour end_col,
+                             bool inc_start, bool inc_end);
 
 void EditWin_interpolate(EditWin *edit_win,
-  int start_col, int end_col);
+                         SkyColour start_col, SkyColour end_col);
 
 void EditWin_drop_handler(EditWin *dest_view, EditWin *source_view,
   bool shift_held);
@@ -81,7 +82,7 @@ void EditWin_stop_auto_scroll(const EditWin *edit_win);
 bool EditWin_export(EditWin *edit_win, Writer *writer);
 
 bool EditWin_export_sel(EditWin *edit_win, Writer *writer);
-void EditWin_colour_selected(EditWin *edit_win, int colour);
+void EditWin_colour_selected(EditWin *edit_win, SkyColour colour);
 
 bool EditWin_insert_array(EditWin *edit_win, int number,
   int const *src);

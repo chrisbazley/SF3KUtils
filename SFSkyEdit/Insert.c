@@ -72,14 +72,11 @@ enum
 };
 
 /* Constant numeric values */
-enum
-{
-  DefaultStartColour = 255, /* use white when selection touches bottom */
-  DefaultEndColour   = 0    /* use black when selection touches top */
-};
+#define DefaultStartColour ((SkyColour)255) /* use white when selection touches bottom */
+#define DefaultEndColour ((SkyColour)0)     /* use black when selection touches top */
 
 ObjectId Insert_sharedid = NULL_ObjectId;
-static int fill_colour, reset_colour, start_colour, end_colour;
+static SkyColour fill_colour, reset_colour, start_colour, end_colour;
 static int number;
 static ComponentId radio_sel;
 static bool have_caret;
@@ -239,7 +236,7 @@ static int popup_about_to_be_shown(int const event_code,
   assert(id_block != NULL);
   NOT_USED(handle);
 
-  int colour = 0;
+  SkyColour colour = 0;
   switch (id_block->self_component)
   {
     case ComponentId_FillColour_PopUp:

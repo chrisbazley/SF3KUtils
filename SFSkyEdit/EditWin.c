@@ -2617,7 +2617,7 @@ bool EditWin_insert_array(EditWin *const edit_win, int const number,
 
 /* ----------------------------------------------------------------------- */
 
-void EditWin_colour_selected(EditWin *const edit_win, int const colour)
+void EditWin_colour_selected(EditWin *const edit_win, SkyColour const colour)
 {
   assert(edit_win != NULL);
   (void)handle_edit(edit_win->file, editor_set_plain(get_editor(edit_win), colour));
@@ -2626,7 +2626,7 @@ void EditWin_colour_selected(EditWin *const edit_win, int const colour)
 /* ----------------------------------------------------------------------- */
 
 void EditWin_insert_plain(EditWin *const edit_win, int const number,
-  int const col)
+                          SkyColour const col)
 {
   assert(edit_win != NULL);
 
@@ -2640,7 +2640,7 @@ void EditWin_insert_plain(EditWin *const edit_win, int const number,
 /* ----------------------------------------------------------------------- */
 
 void EditWin_interpolate(EditWin *const edit_win,
-  int const start_col, int const end_col)
+                         SkyColour const start_col, SkyColour const end_col)
 {
   assert(edit_win != NULL);
   (void)handle_edit(edit_win->file, editor_interpolate(
@@ -2650,7 +2650,7 @@ void EditWin_interpolate(EditWin *const edit_win,
 /* ----------------------------------------------------------------------- */
 
 void EditWin_insert_gradient(EditWin *const edit_win,
-  int const number, int const start_col, int const end_col,
+  int const number, SkyColour const start_col, SkyColour const end_col,
   bool const inc_start, bool const inc_end)
 {
   assert(edit_win != NULL);

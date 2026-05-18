@@ -38,8 +38,7 @@ typedef struct Editor {
   LinkedListItem node;
   EditSky *edit_sky;
   void (*redraw_select_cb)(struct Editor *, int, int, int, int);
-  unsigned char start;
-  unsigned char end; /* 1st & 2nd band would be start=0, end=2 */
+  int start, end; /* 1st & 2nd band would be start=0, end=2 */
 } Editor;
 
 /*

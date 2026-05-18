@@ -1018,12 +1018,12 @@ static bool generate_persp(void)
   }
 
   DEBUGF("Making reciprocal table with %u entries\n", PerspTableLen);
-  unsigned int divisor = PerspDivisorBase;
+  int divisor = PerspDivisorBase;
 
-  for (unsigned int r = 0; r < PerspTableLen; r++)
+  for (int r = 0; r < PerspTableLen; r++)
   {
     pt[r] = PerspDividend / divisor;
-    DEBUG_VERBOSEF("%u: %u / %u = %u\n", r, PerspDividend, divisor,
+    DEBUG_VERBOSEF("%d: %d / %d = %d\n", r, PerspDividend, divisor,
                    pt[r]);
     divisor += PerspDivisorStep;
   }

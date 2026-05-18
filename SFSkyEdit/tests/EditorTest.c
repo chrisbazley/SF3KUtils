@@ -49,8 +49,6 @@ enum {
   SelectStart = 15,
   SelectEnd = 3,
   BufferOverrun = 2,
-  Colour = 54,
-  StartCol = 170,
   InsertPos = 9,
   MaxInsertLen = 9,
   BlockSize = 3,
@@ -65,6 +63,9 @@ enum {
   NUndoRedo = 2,
   NSmoothBlocks = 3,
 };
+
+#define Colour ((SkyColour)54)
+#define StartCol ((SkyColour)170)
 
 enum {
   Copy_Destination,
@@ -373,7 +374,7 @@ static SkyColour get_interp_colour(int const n)
 static SkyColour get_plain_colour(int const n)
 {
   NOT_USED(n);
-  return int_to_colour(Colour);
+  return Colour;
 }
 
 static SkyColour get_gradient_colour(int n)
@@ -1148,7 +1149,7 @@ static void test15(void)
 }
 
 static EditResult interpolate(Editor *const editor, PaletteEntry const palette[],
-  int const start_col, int const end_col)
+  SkyColour const start_col, SkyColour const end_col)
 {
   select_count = bands_count = 0;
 
@@ -1222,7 +1223,7 @@ static void test17(void)
     editor_set_selection_end(&editor, send);
 
     assert(interpolate(&editor, palette, StartCol,
-      StartCol + isize - 1) == EditResult_Changed);
+                       int_to_colour(StartCol + isize - 1)) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, send);
@@ -1234,7 +1235,7 @@ static void test17(void)
     check_select(&editor, cpos, send);
 
     assert(editor_interpolate(&editor, palette, StartCol,
-        StartCol + isize - 1) == EditResult_Unchanged);
+                              int_to_colour(StartCol + isize - 1)) == EditResult_Unchanged);
 
     check_set_select_twice(&edit_sky, &editor, palette, cpos, isize, get_interp_colour);
 
@@ -2510,8 +2511,8 @@ static void test37(void)
 }
 
 static EditResult insert_gradient(Editor *const editor,
-  PaletteEntry const palette[], int const number, int const start_col,
-  int const end_col, bool const inc_start, bool const inc_end)
+                                  PaletteEntry const palette[], int const number, SkyColour const start_col,
+                                  SkyColour const end_col, bool const inc_start, bool const inc_end)
 {
   select_count = bands_count = 0;
 
@@ -2563,7 +2564,7 @@ static void test38(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+                           Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2581,7 +2582,7 @@ static void test38(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Unchanged);
+                                  Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Unchanged);
     check_replace_twice(&edit_sky, &editor, palette, cpos, 0, isize, get_gradient_colour);
 
     editor_destroy(&editor);
@@ -2615,7 +2616,7 @@ static void test39(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+                           Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos,
@@ -2634,7 +2635,7 @@ static void test39(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Unchanged);
+                                  Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Unchanged);
     check_replace_twice(&edit_sky, &editor, palette, cpos, send - cpos, isize, get_gradient_colour);
 
     editor_destroy(&editor);
@@ -2661,7 +2662,7 @@ static void test40(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, BlockSize,
-    Colour, Colour, true, true) == EditResult_Unchanged);
+                         Colour, Colour, true, true) == EditResult_Unchanged);
 
   check_nop(&editor, palette, NColourBands);
 
@@ -2693,7 +2694,7 @@ static void test41(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+      Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2728,7 +2729,7 @@ static void test42(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, 0,
-    Colour, Colour, true, true) == EditResult_Unchanged);
+                         Colour, Colour, true, true) == EditResult_Unchanged);
 
   check_nop(&editor, palette, InsertPos);
 
@@ -2760,7 +2761,7 @@ static void test43(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, 0,
-    Colour, Colour, true, true) == EditResult_Changed);
+                         Colour, Colour, true, true) == EditResult_Changed);
 
   assert(select_count == 1);
   check_redraw_select(0, &editor, cpos, send, cpos, cpos);

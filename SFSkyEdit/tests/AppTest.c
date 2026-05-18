@@ -389,13 +389,14 @@ static int colour_edited_dragged(int band)
 
 static int make_csv_file(char const *file_name, int (*compute_colour)(int band))
 {
-  size_t total = 0;
+  int total = 0;
   FILE *f = test_fopen(file_name, "wb");
 
   for (int i = 0; i < TestDataSize; ++i)
   {
-    size_t n = fprintf(f, "%d%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
+    int n = fprintf(f, "%d%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
+    assert(n <= INT_MAX - total);
     total += n;
   }
 

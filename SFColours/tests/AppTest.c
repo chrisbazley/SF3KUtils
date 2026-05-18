@@ -412,13 +412,14 @@ static unsigned int colour_edited_dragged(unsigned int index)
 
 static int make_csv_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
 {
-  size_t total = 0;
+  int total = 0;
   FILE * const f = test_fopen(file_name, "wb");
 
   for (unsigned int i = 0; i < TestDataSize; ++i)
   {
-    size_t n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
+    int n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
+    assert(n <= INT_MAX - total);
     total += n;
   }
 

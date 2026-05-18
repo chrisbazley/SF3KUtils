@@ -767,7 +767,7 @@ message_handlers[] =
    (not even via assert or DEBUG macros). See DragAnObj.h for details. */
 #pragma no_check_stack
 
-static void DAO_render(int const cptr, int const ncols)
+static void DAO_render(intptr_t const cptr, intptr_t const ncols)
 {
   /* Draw light grey border rectangle */
   if (_swix(ColourTrans_SetGCOL, _IN(0)|_INR(3,4),
@@ -797,13 +797,13 @@ static void DAO_render(int const cptr, int const ncols)
   if (_swix(OS_Plot, _INR(0,2), PlotOp_SolidInclBoth + PlotOp_PlotFGAbs, 0, 0) != NULL)
     return; /* error! */
 
-  int const *const colours = (int *)(uintptr_t)cptr;
+  int const *const colours = (int *)cptr;
   int const x_pix = 1 << x_eigen;
   int const y_pix = 1 << y_eigen;
   int const row_height = ((ThumbnailHeight - 2 * y_pix) * FixedPointOne) / ncols;
   int bottom_y = y_pix * FixedPointOne;
 
-  for (int index = 0; index < ncols; ++index)
+  for (intptr_t index = 0; index < ncols; ++index)
   {
     if (_swix(ColourTrans_SetGCOL, _IN(0)|_INR(3,4),
               palette[colours[index]],
@@ -881,9 +881,9 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
       int const ncol = EditWin_get_array(edit_win, colours, NColourBands);
       assert(ncol <= NColourBands);
 
-      int const renderer_args[4] =
+      intptr_t const renderer_args[4] =
       {
-        (uintptr_t)&colours, ncol
+        (intptr_t)&colours, ncol
       };
 
       unsigned int flags = DragAnObject_BBoxPointer | DragAnObject_RenderAPCS;
@@ -891,7 +891,7 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
       flags |= DragAnObject_HAlign_Centre | DragAnObject_VAlign_Centre;
 #endif
       ON_ERR_RTN_E(drag_an_object_start(flags,
-                                        (uintptr_t)DAO_render,
+                                        (intptr_t)DAO_render,
                                         renderer_args,
                                         &drag_box.dragging_box,
                                         &(BBox){0}));

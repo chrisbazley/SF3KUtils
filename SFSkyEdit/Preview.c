@@ -578,10 +578,21 @@ static bool handle_redraw_err(bool *suppress_errors, _Optional const _kernel_ose
 static _Optional const _kernel_oserror *generate_col_table(void)
 {
   _Optional const _kernel_oserror *e = NULL;
-  int Log2BPP;
-  size_t size;
-  ColourTransGenerateTableBlock block;
-  bool valid;
+  int Log2BPP = 0;
+  size_t size = 0;
+  ColourTransGenerateTableBlock block = {
+    .source = {
+      .type = ColourTransContextType_Screen,
+      .data.screen.mode = Screen_Mode,
+      .data.screen.palette = ColourTrans_DefaultPalette,
+    },
+    .destination = {
+      .type = ColourTransContextType_Screen,
+      .data.screen.mode = ColourTrans_CurrentMode,
+      .data.screen.palette = ColourTrans_CurrentPalette,
+    },
+  };
+  bool valid = false;
 
   /* Shouldn't call this function if there is an existing colour translation table */
   assert(col_trans_table == NULL);
@@ -603,14 +614,6 @@ static _Optional const _kernel_oserror *generate_col_table(void)
     }
 
     /* Find required memory for colour translation table */
-    block.source.type = ColourTransContextType_Screen;
-    block.source.data.screen.mode = Screen_Mode;
-    block.source.data.screen.palette = ColourTrans_DefaultPalette;
-
-    block.destination.type = ColourTransContextType_Screen;
-    block.destination.data.screen.mode = ColourTrans_CurrentMode;
-    block.destination.data.screen.palette = ColourTrans_CurrentPalette;
-
     e = colourtrans_generate_table(0, &block, NULL, 0, &size);
   }
 
@@ -647,7 +650,7 @@ static _Optional const _kernel_oserror *generate_col_table(void)
             translate_cols = false;
           }
         }
-	    col_trans_table = ct;
+        col_trans_table = ct;
       }
       else
       {

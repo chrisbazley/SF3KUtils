@@ -128,7 +128,7 @@ typedef enum
 }
 DataTransferMethod;
 
-static int th;
+static intptr_t th;
 
 static void wipe(char const *path_name)
 {
@@ -1255,7 +1255,7 @@ static void setup_selection(ObjectId id)
   assert(userdata_count_unsafe() == 1);
 }
 
-static bool check_drag_claim_msg(int d_ref, int d_handle, WimpMessage *drag_claim)
+static bool check_drag_claim_msg(int d_ref, intptr_t d_handle, WimpMessage *drag_claim)
 {
   /* A drag claim message should have been sent in reply to the drag */
   unsigned int count = pseudo_wimp_get_message_count();

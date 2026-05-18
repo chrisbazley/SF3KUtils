@@ -105,7 +105,7 @@ static int popup_about_to_be_shown(int const event_code,
   /* Colour picker about to pop up - set colour */
   const PopUpAboutToBeShownEvent * const puatbs =
     (PopUpAboutToBeShownEvent *)event;
-  int colour = 0;
+  SkyColour colour = 0;
 
   NOT_USED(event_code);
   assert(event != NULL);
@@ -221,7 +221,7 @@ void Interpolate_initialise(ObjectId object)
 }
 /* ----------------------------------------------------------------------- */
 
-void Interpolate_colour_selected(ComponentId parent_component, int colour)
+void Interpolate_colour_selected(ComponentId const parent_component, SkyColour const colour)
 {
   ComponentId button = NULL_ComponentId;
 

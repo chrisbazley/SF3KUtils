@@ -410,7 +410,7 @@ void Insert_initialise(ObjectId object)
 }
 /* ----------------------------------------------------------------------- */
 
-void Insert_colour_selected(EditWin *const edit_win, ComponentId parent_component, int colour)
+void Insert_colour_selected(EditWin *const edit_win, ComponentId const parent_component, SkyColour const colour)
 {
   /* User made selection from 256 colour palette */
   ComponentId button = NULL_ComponentId;

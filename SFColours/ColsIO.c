@@ -182,8 +182,7 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
   str[nchars] = '\0';
 
   _Optional char *endp;
-  size_t const nvals = csv_parse_string(str, &endp, values, CSVOutputType_Int,
-    max);
+  size_t nvals = csv_parse_as_int(str, &endp, values, max);
 
   hourglass_off();
 
@@ -194,7 +193,9 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
     return -1;
   }
 
-  return LOWEST(nvals, max);
+  nvals = LOWEST(nvals, max);
+  assert(nvals <= INT_MAX);
+  return (int)nvals;
 }
 
 /* ----------------------------------------------------------------------- */

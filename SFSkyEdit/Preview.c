@@ -1314,7 +1314,9 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
         }
         else
         {
-          if (!flex_alloc(&preview_data->cached_image, sprite_area_size))
+          int const ssize = (int)sprite_area_size;
+          assert(ssize == sprite_area_size);
+          if (!flex_alloc(&preview_data->cached_image, ssize))
           {
             RPT_ERR("NoMem");
           }

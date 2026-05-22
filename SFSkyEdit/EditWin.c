@@ -1451,7 +1451,6 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
       else
       {
         /* Start new selection or move near end of existing selection */
-        WimpDragBox drag_box;
         unsigned int autoscroll_flags = 0;
 
         if (E(scheduler_register_delay(drag_selection,
@@ -1466,7 +1465,9 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
                                   0,
                                   &autoscroll_flags);
 
-        drag_box.drag_type = Wimp_DragBox_DragPoint;
+        WimpDragBox drag_box = {
+          .drag_type = Wimp_DragBox_DragPoint,
+        };
 
         if (TEST_BITS(autoscroll_flags, Wimp_AutoScroll_Horizontal))
         {

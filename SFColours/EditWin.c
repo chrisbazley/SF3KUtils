@@ -774,7 +774,7 @@ static int scroll_request(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
   /* Handle scroll request events */
-  WimpScrollRequestEvent * const wsre = (WimpScrollRequestEvent *)event;
+  WimpScrollRequestEvent * const wsre = &event->scroll_request;
   int visible_height = 0, visible_width = 0;
 
   NOT_USED(event_code);

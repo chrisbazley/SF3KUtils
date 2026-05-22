@@ -8,19 +8,20 @@
 #define SFSExport_h
 
 #include "Writer.h"
+#include "Sky.h"
 
 /* Returns estimated no. of bytes in a comma-separated values file generated
    from an array of the given number of colours. */
 int estimate_CSV_file(int ncols);
 
 /* Write an array of colours as a comma-separated values file. */
-void write_CSV_file(int const cols_array[], int ncols, Writer *writer);
+void write_CSV_file(SkyColour const cols_array[], int ncols, Writer *writer);
 
 /* Returns estimated no. of bytes in a sprite file generated from an array
    of the given number of colours. */
 int estimate_sprite_file(int ncols);
 
 /* Write an array of colours as a sprite file. */
-void write_sprite_file(int const cols_array[], int ncols, Writer *writer);
+void write_sprite_file(SkyColour const cols_array[], int ncols, Writer *writer);
 
 #endif

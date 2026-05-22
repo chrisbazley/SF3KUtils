@@ -891,7 +891,7 @@ static void test14(void)
     for (limit = 0; limit < FortifyAllocationLimit; ++limit)
     {
       Fortify_SetNumAllocationsLimit(limit);
-      bool is_valid = false;
+      is_valid = false;
       EditResult const r = editor_set_array(&editor, array,
         sizes[size_index], &is_valid);
 

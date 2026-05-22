@@ -311,8 +311,8 @@ void render_scene(const PreviewData *const preview_data)
   sky_drawsky(preview_data->render_height, preview_data->export, screen,
               (Screen_Height * Screen_Width) - 4 + (screen_y * Screen_Width));
 
-  SFSky const *const s = (SFSky *)preview_data->export;
-  int star_tint = preview_data->render_height - s->min_stars_height;
+  SFSky const *const sky = (SFSky *)preview_data->export;
+  int star_tint = preview_data->render_height - sky->min_stars_height;
   DEBUGF("Stars tint (based on height) is %d\n", star_tint);
   const StarData *star = preview_data->stars;
   assert(star != NULL);
@@ -578,10 +578,21 @@ static bool handle_redraw_err(bool *suppress_errors, _Optional const _kernel_ose
 static _Optional const _kernel_oserror *generate_col_table(void)
 {
   _Optional const _kernel_oserror *e = NULL;
-  int Log2BPP;
-  size_t size;
-  ColourTransGenerateTableBlock block;
-  bool valid;
+  int Log2BPP = 0;
+  size_t size = 0;
+  ColourTransGenerateTableBlock block = {
+    .source = {
+      .type = ColourTransContextType_Screen,
+      .data.screen.mode = Screen_Mode,
+      .data.screen.palette = ColourTrans_DefaultPalette,
+    },
+    .destination = {
+      .type = ColourTransContextType_Screen,
+      .data.screen.mode = ColourTrans_CurrentMode,
+      .data.screen.palette = ColourTrans_CurrentPalette,
+    },
+  };
+  bool valid = false;
 
   /* Shouldn't call this function if there is an existing colour translation table */
   assert(col_trans_table == NULL);
@@ -603,14 +614,6 @@ static _Optional const _kernel_oserror *generate_col_table(void)
     }
 
     /* Find required memory for colour translation table */
-    block.source.type = ColourTransContextType_Screen;
-    block.source.data.screen.mode = Screen_Mode;
-    block.source.data.screen.palette = ColourTrans_DefaultPalette;
-
-    block.destination.type = ColourTransContextType_Screen;
-    block.destination.data.screen.mode = ColourTrans_CurrentMode;
-    block.destination.data.screen.palette = ColourTrans_CurrentPalette;
-
     e = colourtrans_generate_table(0, &block, NULL, 0, &size);
   }
 
@@ -619,7 +622,7 @@ static _Optional const _kernel_oserror *generate_col_table(void)
     DEBUGF("%zu bytes are required for colour translation table\n", size);
 
     /* Allocate a buffer of the required size for the translation table */
-    _Optional char * const ct = malloc(size);
+    _Optional unsigned char * const ct = malloc(size);
     if (ct == NULL)
     {
       e = msgs_error(DUMMY_ERRNO, "ColTransMem");
@@ -647,7 +650,7 @@ static _Optional const _kernel_oserror *generate_col_table(void)
             translate_cols = false;
           }
         }
-	col_trans_table = ct;
+        col_trans_table = ct;
       }
       else
       {
@@ -1018,12 +1021,12 @@ static bool generate_persp(void)
   }
 
   DEBUGF("Making reciprocal table with %u entries\n", PerspTableLen);
-  unsigned int divisor = PerspDivisorBase;
+  int divisor = PerspDivisorBase;
 
-  for (unsigned int r = 0; r < PerspTableLen; r++)
+  for (int r = 0; r < PerspTableLen; r++)
   {
     pt[r] = PerspDividend / divisor;
-    DEBUG_VERBOSEF("%u: %u / %u = %u\n", r, PerspDividend, divisor,
+    DEBUG_VERBOSEF("%d: %d / %d = %d\n", r, PerspDividend, divisor,
                    pt[r]);
     divisor += PerspDivisorStep;
   }
@@ -1311,7 +1314,9 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
         }
         else
         {
-          if (!flex_alloc(&preview_data->cached_image, sprite_area_size))
+          int const ssize = (int)sprite_area_size;
+          assert(ssize == sprite_area_size);
+          if (!flex_alloc(&preview_data->cached_image, ssize))
           {
             RPT_ERR("NoMem");
           }

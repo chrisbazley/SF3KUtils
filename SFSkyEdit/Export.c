@@ -54,7 +54,7 @@ int estimate_CSV_file(int const ncols)
   return sizeof("000") * ncols;
 }
 
-void write_CSV_file(int const cols_array[], int const ncols,
+void write_CSV_file(SkyColour const cols_array[], int const ncols,
   Writer *const writer)
 {
   assert(cols_array != NULL);
@@ -84,7 +84,7 @@ int estimate_sprite_file(int const ncols)
   return SpriteAreaHdrSize - sizeof(int32_t) + sprite_size;
 }
 
-void write_sprite_file(int const cols_array[], int const ncols,
+void write_sprite_file(SkyColour const cols_array[], int const ncols,
   Writer *const writer)
 {
   assert(cols_array != NULL);
@@ -114,8 +114,8 @@ void write_sprite_file(int const cols_array[], int const ncols,
   /* Write bitmap (reversed top-bottom) */
   for (int index = ncols - 1; index >= 0; --index)
   {
-    int const colour = cols_array[index];
-    unsigned char image_row[WORD_ALIGN(SFSky_Width)];
+    SkyColour const colour = cols_array[index];
+    SkyColour image_row[WORD_ALIGN(SFSky_Width)];
 
     for (size_t i = 0; i < sizeof(image_row); i++)
     {

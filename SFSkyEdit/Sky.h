@@ -23,10 +23,12 @@ enum
   MaxStarsHeight = 3648,
 };
 
+typedef unsigned char SkyColour;
+
 typedef struct {
   int render_offset;
   int stars_height;
-  unsigned char bands[NColourBands];
+  SkyColour bands[NColourBands];
 } Sky;
 
 /* Initialize a sky file. */
@@ -48,9 +50,9 @@ typedef enum {
 SkyState sky_read_file(Sky *sky, Reader *reader);
 
 /* Get single colour for redraw */
-int sky_get_colour(Sky const *sky, int pos);
+SkyColour sky_get_colour(Sky const *sky, int pos);
 
-void sky_set_colour(Sky *sky, int pos, int colour);
+void sky_set_colour(Sky *sky, int pos, SkyColour colour);
 
 /* Get the colour bands compression offset at ground level. */
 int sky_get_render_offset(Sky const *sky);

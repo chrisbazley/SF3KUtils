@@ -73,7 +73,9 @@ int main(int argc, char *argv[])
   {
     { "Colmap", Colmap_tests },
     { "Editor", Editor_tests },
+  #ifdef ACORN_C
     { "App", App_tests },
+  #endif
   };
 
   NOT_USED(argc);

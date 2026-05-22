@@ -70,9 +70,9 @@ typedef struct EditFill {
   int len;
   /* Start colour (for EditRecordType_InsertPlain
      or EditRecordType_InsertGradient) */
-  unsigned char start;
+  SkyColour start;
   /* End colour (only for EditRecordType_InsertGradient) */
-  unsigned char end;
+  SkyColour end;
   /* Whether or not to include the start colour (only for
      EditRecordType_InsertGradient) */
   bool inc_start;
@@ -135,34 +135,19 @@ typedef struct EditRecord {
       /* Colours lost immediately below the end of the file (budge up) or
          immediately above the end of the replaced colours (budge down) when
          the number of replaced and replacement colours differs */
-      unsigned char *budge_lost;
+      SkyColour *budge_lost;
       /* Colours replaced, not including any lost by budging down or
          gained by budging up. */
-      unsigned char *lost;
+      SkyColour *lost;
       /* Replacement colours (for EditRecordType_InsertArray,
          EditRecordType_Move or EditRecordType_Copy) */
-      unsigned char *fresh;
+      SkyColour *fresh;
       /* The parameters for a colour fill */
       EditFill fill;
    } edit;
   } data;
-  unsigned char store[];
+  SkyColour store[];
 } EditRecord;
-
-static int clamp_colour(int colour)
-{
-  if (colour < 0)
-  {
-    DEBUGF("Clamped colour %d\n", colour);
-    colour = 0;
-  }
-  else if (colour >= NPixelColours)
-  {
-    DEBUGF("Clamped colour %d\n", colour);
-    colour = NPixelColours - 1;
-  }
-  return colour;
-}
 
 static int clamp_pos(int pos)
 {
@@ -412,7 +397,7 @@ static inline _Optional EditRecord *make_undo_insert_array(EditSky *const edit_s
 }
 
 static inline _Optional EditRecord *make_undo_insert_plain(EditSky *const edit_sky,
-  int const start, int const end, int new_size, int const start_colour)
+  int const start, int const end, int new_size, SkyColour const start_colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_InsertPlain, start, end, 0,
     (EditFill){.len = new_size, .start = start_colour});
@@ -433,15 +418,15 @@ static inline _Optional EditRecord *make_undo_smooth(EditSky *const edit_sky,
 }
 
 static inline _Optional EditRecord *make_undo_set_plain(EditSky *const edit_sky,
-  int const start, int const end, int const colour)
+  int const start, int const end, SkyColour const colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_SetPlain, start, end, 0,
     (EditFill){.len = end - start, .start = colour});
 }
 
 static inline _Optional EditRecord *make_undo_interpolate(EditSky *const edit_sky,
-  int const start, int const end, int const start_colour,
-  int const end_colour)
+  int const start, int const end, SkyColour const start_colour,
+  SkyColour const end_colour)
 {
   return make_undo_edit(edit_sky, EditRecordType_Interpolate, start, end, 0,
     (EditFill){.len = end - start,
@@ -451,16 +436,14 @@ static inline _Optional EditRecord *make_undo_interpolate(EditSky *const edit_sk
                .inc_end = true});
 }
 
-static bool s_set_colour(Sky *const sky, int const pos, int const rep,
-  _Optional unsigned char *const lost)
+static bool s_set_colour(Sky *const sky, int const pos, SkyColour const rep,
+  _Optional SkyColour *const lost)
 {
   assert(sky != NULL);
   assert(pos >= 0);
   assert(pos < NColourBands);
-  assert(rep >= 0);
-  assert(rep < NPixelColours);
 
-  int const old = sky_get_colour(sky, pos);
+  SkyColour const old = sky_get_colour(sky, pos);
   if (lost != NULL)
   {
     *lost = old;
@@ -476,7 +459,7 @@ static bool s_set_colour(Sky *const sky, int const pos, int const rep,
 }
 
 static bool s_write_plain(Sky *const sky, int const start, int const end,
-  int const colour, _Optional unsigned char *const lost, int const lsize)
+  SkyColour const colour, _Optional SkyColour *const lost, int const lsize)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -503,7 +486,7 @@ static bool s_write_plain(Sky *const sky, int const start, int const end,
 }
 
 static void s_get_array(Sky const *const sky, int const start, int const end,
-  int *const dst)
+  SkyColour *const dst)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -521,7 +504,7 @@ static void s_get_array(Sky const *const sky, int const start, int const end,
 }
 
 static bool s_set_array(Sky *const sky, int const start, int const end,
-  int const *const src, unsigned char *const lost, int const lsize,
+  int const *const src, SkyColour *const lost, int const lsize,
   bool *const is_valid)
 {
   assert(sky != NULL);
@@ -550,7 +533,7 @@ static bool s_set_array(Sky *const sky, int const start, int const end,
       DEBUGF("Replaced invalid colour %d with %d\n", src[idx], rep);
       /* Continue to ensure that all bands are overwritten anyway */
     }
-    if (s_set_colour(sky, pos, rep, (idx < lsize) ? (lost + idx) : NULL))
+    if (s_set_colour(sky, pos, (SkyColour)rep, (idx < lsize) ? (lost + idx) : NULL))
     {
       changed = true;
     }
@@ -559,7 +542,7 @@ static bool s_set_array(Sky *const sky, int const start, int const end,
 }
 
 static bool s_copy_between(Sky *const dst, int const start, int const end,
-  Sky const *const src, _Optional unsigned char *const lost, int const lsize)
+  Sky const *const src, _Optional SkyColour *const lost, int const lsize)
 {
   assert(src != NULL);
   assert(dst != NULL);
@@ -577,7 +560,7 @@ static bool s_copy_between(Sky *const dst, int const start, int const end,
   for (int pos = start; pos < end; pos++)
   {
     int const idx = pos - start;
-    int const rep = sky_get_colour(src, idx);
+    SkyColour const rep = sky_get_colour(src, idx);
     if (s_set_colour(dst, pos, rep, (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
@@ -587,7 +570,7 @@ static bool s_copy_between(Sky *const dst, int const start, int const end,
 }
 
 static void s_get_barray(Sky const *const sky, int const start, int const end,
-   unsigned char *const dst)
+   SkyColour *const dst)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -605,7 +588,7 @@ static void s_get_barray(Sky const *const sky, int const start, int const end,
 }
 
 static bool s_set_barray(Sky *const sky, int const start, int const end,
-   unsigned char const *const src, _Optional unsigned char *const lost,
+   SkyColour const *const src, _Optional SkyColour *const lost,
    int const lsize)
 {
   assert(sky != NULL);
@@ -633,7 +616,7 @@ static bool s_set_barray(Sky *const sky, int const start, int const end,
 }
 
 static bool s_budge_down(Sky *const sky, int const start,
-  int const end, _Optional unsigned char *const lost)
+  int const end, _Optional SkyColour *const lost)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -652,8 +635,8 @@ static bool s_budge_down(Sky *const sky, int const start,
   bool changed = false;
   for (int pos = start; pos < NColourBands; pos++)
   {
-    int const old = sky_get_colour(sky, pos);
-    int rep = ExtendPixelColour;
+    SkyColour const old = sky_get_colour(sky, pos);
+    SkyColour rep = ExtendPixelColour;
 
     if (pos + size < NColourBands)
     {
@@ -677,7 +660,7 @@ static bool s_budge_down(Sky *const sky, int const start,
 }
 
 static bool s_budge_up(Sky *const sky, int const start,
-  int const end, _Optional unsigned char *const lost)
+  int const end, _Optional SkyColour *const lost)
 {
   assert(sky != NULL);
   assert(start >= 0);
@@ -705,8 +688,8 @@ static bool s_budge_up(Sky *const sky, int const start,
   {
     assert(pos >= size);
 
-    int const old = sky_get_colour(sky, pos);
-    int const rep = sky_get_colour(sky, pos - size);
+    SkyColour const old = sky_get_colour(sky, pos);
+    SkyColour const rep = sky_get_colour(sky, pos - size);
 
     if (old != rep)
     {
@@ -718,7 +701,7 @@ static bool s_budge_up(Sky *const sky, int const start,
 }
 
 static bool s_budge(Sky *const sky,
-  int const old_end, int const new_end, _Optional unsigned char *lost)
+  int const old_end, int const new_end, _Optional SkyColour *lost)
 {
   assert(sky != NULL);
   assert(old_end >= 0);
@@ -748,7 +731,7 @@ static bool s_budge(Sky *const sky,
 }
 
 static bool s_unbudge(Sky *const sky, int const old_end, int const new_end,
-  unsigned char *const lost)
+  SkyColour *const lost)
 {
   assert(sky != NULL);
   assert(old_end >= 0);
@@ -903,7 +886,7 @@ static void all_update_indices(Editor const *const editor, int const start,
 }
 
 static bool delete_range(Editor *const editor, int const start,
-  int const end, _Optional unsigned char *const lost)
+  int const end, _Optional SkyColour *const lost)
 {
   bool const changed = s_budge_down(&editor->edit_sky->sky, start, end, lost);
   all_update_indices(editor, start, end, start);
@@ -912,7 +895,7 @@ static bool delete_range(Editor *const editor, int const start,
 
 static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
   int const start, int const end, const EditFill fill,
-  _Optional unsigned char *const lost, int const lsize)
+  _Optional SkyColour *const lost, int const lsize)
 {
   /* Write gradient fill between specified colours */
   assert(sky != NULL);
@@ -1000,19 +983,22 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
   int col = PALETTE_GET_RED(start_palette);
   int diff = PALETTE_GET_RED(end_palette) - col;
   const float red_inc = (float)diff / dist;
-  float red_frac = col;
+  float red_frac = (float)col;
+  assert(red_frac == col);
   DEBUGF("RED start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, red_inc);
 
   col = PALETTE_GET_GREEN(start_palette);
   diff = PALETTE_GET_GREEN(end_palette) - col;
   const float green_inc = (float)diff / dist;
-  float green_frac = col;
+  float green_frac = (float)col;
+  assert(green_frac == col);
   DEBUGF("GREEN start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, green_inc);
 
   col = PALETTE_GET_BLUE(start_palette);
   diff = PALETTE_GET_BLUE(end_palette) - col;
   const float blue_inc = (float)diff / dist;
-  float blue_frac = col;
+  float blue_frac = (float)col;
+  assert(blue_frac == col);
   DEBUGF("BLUE start=%d diff=%d dist=%d increment=%f\n", col, diff, dist, blue_inc);
 
   /* Write middle part of colour gradient (this loop never draws the
@@ -1026,15 +1012,16 @@ static bool s_interpolate(Sky *const sky, PaletteEntry const palette[],
     DEBUG_VERBOSEF("Ideal colour for band %d is R=%f G=%f B=%f\n",
                   pos, red_frac, green_frac, blue_frac);
 
-    unsigned int const near = nearest_palette_entry_rgb(
+    int const near = nearest_palette_entry_rgb(
       palette, NPixelColours, (int)(red_frac + 0.5f),
       (int)(green_frac + 0.5f), (int)(blue_frac + 0.5f));
 
-    DEBUG_VERBOSEF("Nearest mode 13 colour:%u (palette 0x%08x)\n",
+    DEBUG_VERBOSEF("Nearest mode 13 colour:%d (palette 0x%08x)\n",
                    near, palette[near]);
 
     int const idx = pos - start;
-    if (s_set_colour(sky, pos, near,
+    assert((SkyColour)near == near);
+    if (s_set_colour(sky, pos, (SkyColour)near,
       (lost && idx < lsize) ? (&*lost + idx) : NULL))
     {
       changed = true;
@@ -1888,7 +1875,7 @@ bool editor_set_selection_end(Editor *const editor, int pos)
   return set_selection(editor, editor->start, pos);
 }
 
-int editor_get_selected_colour(Editor const *const editor)
+SkyColour editor_get_selected_colour(Editor const *const editor)
 {
   assert(editor != NULL);
   assert(editor_has_selection(editor));
@@ -1897,7 +1884,7 @@ int editor_get_selected_colour(Editor const *const editor)
     LOWEST(editor->start, editor->end));
 }
 
-int editor_get_array(Editor const *const editor, int *const dst,
+int editor_get_array(Editor const *const editor, SkyColour *const dst,
   int const dst_size)
 {
   assert(editor != NULL);
@@ -1948,10 +1935,9 @@ EditResult editor_smooth(Editor *const editor, PaletteEntry const palette[])
     EditResult_Changed : EditResult_Unchanged;
 }
 
-EditResult editor_set_plain(Editor *const editor, int colour)
+EditResult editor_set_plain(Editor *const editor, SkyColour const colour)
 {
   assert(editor != NULL);
-  colour = clamp_colour(colour);
 
   int sel_low, sel_high;
   editor_get_selection_range(editor, &sel_low, &sel_high);
@@ -1978,11 +1964,9 @@ EditResult editor_set_plain(Editor *const editor, int colour)
 }
 
 EditResult editor_interpolate(Editor *const editor,
-  PaletteEntry const palette[], int start_col, int end_col)
+  PaletteEntry const palette[], SkyColour const start_col, SkyColour const end_col)
 {
   assert(editor != NULL);
-  start_col = clamp_colour(start_col);
-  end_col = clamp_colour(end_col);
 
   int sel_low, sel_high;
   editor_get_selection_range(editor, &sel_low, &sel_high);
@@ -2101,11 +2085,10 @@ EditResult editor_insert_sky(Editor *const editor, Sky const *const src)
   return changed ? EditResult_Changed : EditResult_Unchanged;
 }
 
-EditResult editor_insert_plain(Editor *const editor, int const number, int col)
+EditResult editor_insert_plain(Editor *const editor, int const number, SkyColour const col)
 {
   assert(editor != NULL);
   assert(number >= 0);
-  col = clamp_colour(col);
 
   int dst_start, dst_end;
   editor_get_selection_range(editor, &dst_start, &dst_end);
@@ -2141,13 +2124,11 @@ EditResult editor_insert_plain(Editor *const editor, int const number, int col)
 }
 
 EditResult editor_insert_gradient(Editor *const editor,
-  PaletteEntry const palette[], int const number, int start_col,
-  int end_col, bool const inc_start, bool const inc_end)
+  PaletteEntry const palette[], int const number, SkyColour const start_col,
+  SkyColour const end_col, bool const inc_start, bool const inc_end)
 {
   assert(editor != NULL);
   assert(number >= 0);
-  start_col = clamp_colour(start_col);
-  end_col = clamp_colour(end_col);
 
   int dst_start, dst_end;
   editor_get_selection_range(editor, &dst_start, &dst_end);

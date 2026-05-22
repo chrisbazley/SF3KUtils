@@ -25,7 +25,7 @@
 #include <limits.h>
 #include <time.h>
 #include <setjmp.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 /* RISC OS library files */
 #include "swis.h"
@@ -138,7 +138,7 @@ typedef enum
 }
 DataTransferMethod;
 
-static int th;
+static intptr_t th;
 
 static void wipe(char const *path_name)
 {
@@ -259,7 +259,7 @@ static void assert_file_has_type(char const *file_name, int file_type)
   OS_File_CatalogueInfo cat;
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 }
 
@@ -412,13 +412,14 @@ static unsigned int colour_edited_dragged(unsigned int index)
 
 static int make_csv_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
 {
-  size_t total = 0;
+  int total = 0;
   FILE * const f = test_fopen(file_name, "wb");
 
   for (unsigned int i = 0; i < TestDataSize; ++i)
   {
-    size_t n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
+    int n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
+    assert(n <= INT_MAX - total);
     total += n;
   }
 
@@ -1172,7 +1173,7 @@ static void setup_selection(ObjectId id)
   assert(userdata_count_unsafe() == 1);
 }
 
-static bool check_drag_claim_msg(int d_ref, int d_handle, WimpMessage *drag_claim, bool expect_data_type)
+static bool check_drag_claim_msg(int d_ref, intptr_t d_handle, WimpMessage *drag_claim, bool expect_data_type)
 {
   /* A drag claim message should have been sent in reply to the drag */
   unsigned int count = pseudo_wimp_get_message_count();
@@ -1857,17 +1858,17 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
           dispatch_event(Wimp_EToolboxEvent, &poll_block);
           err = err_dump_suppressed();
 
-          unsigned int flags;
+          unsigned int gbf_flags;
           int nbytes;
           ObjectId const quoted_id = pseudo_saveas_get_buffer_filled(
-                                     &flags, buffer, sizeof(buffer), &nbytes);
+                                     &gbf_flags, buffer, sizeof(buffer), &nbytes);
           if (quoted_id != NULL_ObjectId)
           {
             total_bytes += nbytes;
 
             assert(nbytes <= size);
             assert(quoted_id == saveas_id);
-            assert(flags == 0);
+            assert(gbf_flags == 0);
 
             const size_t n = fwrite(buffer, nbytes, 1, f);
             assert(n == 1);

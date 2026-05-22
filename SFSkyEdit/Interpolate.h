@@ -8,9 +8,10 @@
 #define SFSInterpolate_h
 
 #include "toolbox.h"
+#include "Sky.h"
 
 extern ObjectId Interpolate_sharedid;
 void Interpolate_initialise(ObjectId object);
-void Interpolate_colour_selected(ComponentId parent_component, int colour);
+void Interpolate_colour_selected(ComponentId parent_component, SkyColour colour);
 
 #endif

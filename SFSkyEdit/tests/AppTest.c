@@ -25,7 +25,7 @@
 #include <limits.h>
 #include <time.h>
 #include <setjmp.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 /* RISC OS library files */
 #include "swis.h"
@@ -128,7 +128,7 @@ typedef enum
 }
 DataTransferMethod;
 
-static int th;
+static intptr_t th;
 
 static void wipe(char const *path_name)
 {
@@ -245,7 +245,7 @@ static void assert_file_has_type(char const *file_name, int file_type)
   OS_File_CatalogueInfo cat;
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == file_type);
 }
 
@@ -389,13 +389,14 @@ static int colour_edited_dragged(int band)
 
 static int make_csv_file(char const *file_name, int (*compute_colour)(int band))
 {
-  size_t total = 0;
+  int total = 0;
   FILE *f = test_fopen(file_name, "wb");
 
   for (int i = 0; i < TestDataSize; ++i)
   {
-    size_t n = fprintf(f, "%d%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
+    int n = fprintf(f, "%d%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
+    assert(n <= INT_MAX - total);
     total += n;
   }
 
@@ -477,7 +478,7 @@ static void check_sprite_file(char const *file_name, int (*compute_colour)(int b
   i = 0;
   do
   {
-    size_t n = fread(row, sizeof(row), 1, f);
+    n = fread(row, sizeof(row), 1, f);
     DEBUGF("%d: Read %zu items\n", i, n);
     if (n > 0)
     {
@@ -562,7 +563,7 @@ static void check_preview_file(char const *file_name, int colour)
   do
   {
     unsigned char row[PrevWidth];
-    size_t n = fread(row, sizeof(row), 1, f);
+    n = fread(row, sizeof(row), 1, f);
     DEBUGF("%zu: Read %zu items\n", i, n);
     if (n > 0)
     {
@@ -1254,7 +1255,7 @@ static void setup_selection(ObjectId id)
   assert(userdata_count_unsafe() == 1);
 }
 
-static bool check_drag_claim_msg(int d_ref, int d_handle, WimpMessage *drag_claim)
+static bool check_drag_claim_msg(int d_ref, intptr_t d_handle, WimpMessage *drag_claim)
 {
   /* A drag claim message should have been sent in reply to the drag */
   unsigned int count = pseudo_wimp_get_message_count();
@@ -1946,10 +1947,10 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
           dispatch_event(Wimp_EToolboxEvent, &poll_block);
           err = err_dump_suppressed();
 
-          unsigned int flags;
+          unsigned int gbf_flags;
           int nbytes;
           ObjectId const quoted_id = pseudo_saveas_get_buffer_filled(
-                                     &flags, buffer, sizeof(buffer), &nbytes);
+                                     &gbf_flags, buffer, sizeof(buffer), &nbytes);
 
           if (quoted_id != NULL_ObjectId)
           {
@@ -1957,7 +1958,7 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
 
             assert(nbytes <= size);
             assert(quoted_id == saveas_id);
-            assert(flags == 0);
+            assert(gbf_flags == 0);
 
             const size_t n = fwrite(buffer, nbytes, 1, f);
             assert(n == 1);

@@ -71,21 +71,24 @@ static int selhandler(int const event_code, ToolboxEvent *const event,
   if (E(toolbox_get_client_handle(0, id_block->ancestor_id, &client_handle)))
     return 1;
 
+  SkyColour const colour = (SkyColour)pcse->colour_number;
+  assert(colour == pcse->colour_number);
+
   EditWin * const edit_win = client_handle;
   if (id_block->parent_id == Insert_sharedid)
   {
     Insert_colour_selected(edit_win,
                            id_block->parent_component,
-                           pcse->colour_number);
+                           colour);
   }
   else if (id_block->parent_id == Interpolate_sharedid)
   {
     Interpolate_colour_selected(id_block->parent_component,
-                                pcse->colour_number);
+                                colour);
   }
   else
   {
-    EditWin_colour_selected(edit_win, pcse->colour_number);
+    EditWin_colour_selected(edit_win, colour);
   }
   return 1; /* claim event */
 }

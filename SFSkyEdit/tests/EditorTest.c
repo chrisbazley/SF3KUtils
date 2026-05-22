@@ -49,8 +49,6 @@ enum {
   SelectStart = 15,
   SelectEnd = 3,
   BufferOverrun = 2,
-  Colour = 54,
-  StartCol = 170,
   InsertPos = 9,
   MaxInsertLen = 9,
   BlockSize = 3,
@@ -65,6 +63,9 @@ enum {
   NUndoRedo = 2,
   NSmoothBlocks = 3,
 };
+
+#define Colour ((SkyColour)54)
+#define StartCol ((SkyColour)170)
 
 enum {
   Copy_Destination,
@@ -216,6 +217,13 @@ static void check_redraw_stars_height(int const n, EditSky *const edit_sky)
   assert(stars_height_args[n].edit_sky == edit_sky);
 }
 
+static SkyColour int_to_colour(int const n)
+{
+  SkyColour colour = (SkyColour)n;
+  assert(colour == n);
+  return colour;
+}
+
 static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
 {
   for (int n = 0; n < NBlocks; ++n)
@@ -228,7 +236,7 @@ static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
     select_count = bands_count = 0;
 
     if (n > 0) {
-      assert(editor_set_plain(editor, n * BlockColourGap) == EditResult_Changed);
+      assert(editor_set_plain(editor, int_to_colour(n * BlockColourGap)) == EditResult_Changed);
     } else {
       assert(editor_set_plain(editor, 0) == EditResult_Unchanged);
     }
@@ -248,10 +256,10 @@ static void set_plain_blocks(EditSky *const edit_sky, Editor *const editor)
   }
 }
 
-static void get_all(Editor *const editor, int (*dst)[NColourBands])
+static void get_all(Editor *const editor, SkyColour (* const dst)[NColourBands])
 {
   Sky *const sky = editor_get_sky(editor);
-  for (size_t pos = 0; pos < ARRAY_SIZE(*dst); ++pos) {
+  for (int pos = 0; pos < NColourBands; ++pos) {
     (*dst)[pos] = sky_get_colour(sky, pos);
   }
 }
@@ -259,7 +267,7 @@ static void get_all(Editor *const editor, int (*dst)[NColourBands])
 static void check_plain_blocks(Editor *const editor,
   int const del, int const dsize, int const ins, int const isize)
 {
-  int dst[NColourBands];
+  SkyColour dst[NColourBands];
   get_all(editor, &dst);
 
   for (int i = 0; i < NBlocks * BlockSize && i < NColourBands; ++i)
@@ -286,9 +294,9 @@ static void check_plain_blocks(Editor *const editor,
 }
 
 static void check_one_block(Editor *const editor, int const cpos,
-  int const isize, int (* const getter)(int))
+  int const isize, SkyColour (* const getter)(int))
 {
-  int dst[NColourBands];
+  SkyColour dst[NColourBands];
   get_all(editor, &dst);
 
   for (int i = cpos; i < cpos + isize && i < NColourBands; ++i)
@@ -299,21 +307,21 @@ static void check_one_block(Editor *const editor, int const cpos,
 }
 
 static void check_plain_blocks_after_move(Editor *const editor,
-  int const ins, int const del, int const isize, int (* const getter)(int))
+  int const ins, int const del, int const isize, SkyColour (* const getter)(int))
 {
   check_one_block(editor, del < ins ? ins - isize : ins, isize, getter);
   check_plain_blocks(editor, del, isize, ins, isize);
 }
 
 static void check_plain_blocks_after_replace(Editor *const editor,
-  int const ins, int const dsize, int const isize, int (* const getter)(int))
+  int const ins, int const dsize, int const isize, SkyColour (* const getter)(int))
 {
   check_one_block(editor, ins, isize, getter);
   check_plain_blocks(editor, ins, dsize, ins, isize);
 }
 
 static void check_plain_blocks_after_insert(Editor *const editor,
-  int const ins, int const size, int (* const getter)(int))
+  int const ins, int const size, SkyColour (* const getter)(int))
 {
   check_plain_blocks_after_replace(editor, ins, 0, size, getter);
 }
@@ -327,9 +335,9 @@ static void pal_init(PaletteEntry (*const pal)[NumColours])
   }
 }
 
-static int get_valid_colour(int const n)
+static SkyColour get_valid_colour(int const n)
 {
-  return Colour + n;
+  return int_to_colour(Colour + n);
 }
 
 static int get_invalid_colour(int const n)
@@ -337,10 +345,10 @@ static int get_invalid_colour(int const n)
   return n % 2 ? Colour + n : -n - 1;
 }
 
-static int get_validated_colour(int const n)
+static SkyColour get_validated_colour(int const n)
 {
   int const expected = get_invalid_colour(n);
-  return expected < 0 ? 0 : expected;
+  return int_to_colour(expected < 0 ? 0 : expected);
 }
 
 static void make_sky(Sky *const sky)
@@ -352,44 +360,44 @@ static void make_sky(Sky *const sky)
   }
 }
 
-static int get_smooth_colour(int const n)
+static SkyColour get_smooth_colour(int const n)
 {
   int const smooth = NBlocks / 2;
-  return n + ((smooth - 1) * BlockColourGap);
+  return int_to_colour(n + ((smooth - 1) * BlockColourGap));
 }
 
-static int get_interp_colour(int const n)
+static SkyColour get_interp_colour(int const n)
 {
-  return StartCol + n;
+  return int_to_colour(StartCol + n);
 }
 
-static int get_plain_colour(int const n)
+static SkyColour get_plain_colour(int const n)
 {
   NOT_USED(n);
   return Colour;
 }
 
-static int get_gradient_colour(int n)
+static SkyColour get_gradient_colour(int n)
 {
-  return Colour - n;
+  return int_to_colour(Colour - n);
 }
 
-static int get_copied(int const n)
+static SkyColour get_copied(int const n)
 {
   int const src = (NBlocks * BlockSize) / 2 + n;
-  return (src / BlockSize) * BlockColourGap;
+  return int_to_colour((src / BlockSize) * BlockColourGap);
 }
 
-static int get_copied_up(int const n)
+static SkyColour get_copied_up(int const n)
 {
   int const src = ((NBlocks * BlockSize) / 4) + n;
-  return (src / BlockSize) * BlockColourGap;
+  return int_to_colour((src / BlockSize) * BlockColourGap);
 }
 
-static int get_moved_to_end(int const n)
+static SkyColour get_moved_to_end(int const n)
 {
   NOT_USED(n);
-  return (NBlocks / 2) * BlockColourGap;
+  return int_to_colour((NBlocks / 2) * BlockColourGap);
 }
 
 static void check_nop(Editor *const editor, PaletteEntry const *const palette, int const cpos)
@@ -417,8 +425,8 @@ static void check_nop(Editor *const editor, PaletteEntry const *const palette, i
 }
 
 static void check_set_select_twice(EditSky *const edit_sky, Editor *const editor,
-  PaletteEntry const *const palette, int const cpos, int const isize,
-  int (* const getter)(int))
+                                   PaletteEntry const *const palette, int const cpos, int const isize,
+                                   SkyColour (* const getter)(int))
 {
   /* You only check set select twice, Mister Bond. */
   assert(bands_count == 0);
@@ -479,7 +487,7 @@ static void check_set_select_twice(EditSky *const edit_sky, Editor *const editor
 
 static void check_replace_twice(EditSky *const edit_sky, Editor *const editor,
   PaletteEntry const *const palette, int const cpos, int const dsize,
-  int const isize, int (* const getter)(int))
+  int const isize, SkyColour (* const getter)(int))
 {
   assert(bands_count == 0);
 
@@ -887,7 +895,7 @@ static void test10(void)
   assert(editor_set_caret_pos(&editor, SelectStart));
   assert(editor_set_selection_end(&editor, SelectEnd));
 
-  int dst[NColourBands];
+  SkyColour dst[NColourBands];
   int ncols = abs(SelectEnd - SelectStart);
   assert(editor_get_array(&editor, dst, ARRAY_SIZE(dst)) == ncols);
   assert(!editor_can_undo(&editor));
@@ -1056,7 +1064,7 @@ static void test13(void)
   edit_sky_destroy(&edit_sky);
 }
 
-static EditResult set_plain(Editor *const editor, int const colour)
+static EditResult set_plain(Editor *const editor, SkyColour const colour)
 {
   select_count = bands_count = 0;
 
@@ -1141,7 +1149,7 @@ static void test15(void)
 }
 
 static EditResult interpolate(Editor *const editor, PaletteEntry const palette[],
-  int const start_col, int const end_col)
+  SkyColour const start_col, SkyColour const end_col)
 {
   select_count = bands_count = 0;
 
@@ -1215,7 +1223,7 @@ static void test17(void)
     editor_set_selection_end(&editor, send);
 
     assert(interpolate(&editor, palette, StartCol,
-      StartCol + isize - 1) == EditResult_Changed);
+                       int_to_colour(StartCol + isize - 1)) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, send);
@@ -1227,7 +1235,7 @@ static void test17(void)
     check_select(&editor, cpos, send);
 
     assert(editor_interpolate(&editor, palette, StartCol,
-        StartCol + isize - 1) == EditResult_Unchanged);
+                              int_to_colour(StartCol + isize - 1)) == EditResult_Unchanged);
 
     check_set_select_twice(&edit_sky, &editor, palette, cpos, isize, get_interp_colour);
 
@@ -2259,7 +2267,7 @@ static void test31(void)
 }
 
 static EditResult insert_plain(Editor *const editor, int const isize,
-  int const colour)
+                               SkyColour const colour)
 {
   select_count = bands_count = 0;
 
@@ -2503,8 +2511,8 @@ static void test37(void)
 }
 
 static EditResult insert_gradient(Editor *const editor,
-  PaletteEntry const palette[], int const number, int const start_col,
-  int const end_col, bool const inc_start, bool const inc_end)
+                                  PaletteEntry const palette[], int const number, SkyColour const start_col,
+                                  SkyColour const end_col, bool const inc_start, bool const inc_end)
 {
   select_count = bands_count = 0;
 
@@ -2556,7 +2564,7 @@ static void test38(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+                           Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2574,7 +2582,7 @@ static void test38(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Unchanged);
+                                  Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Unchanged);
     check_replace_twice(&edit_sky, &editor, palette, cpos, 0, isize, get_gradient_colour);
 
     editor_destroy(&editor);
@@ -2608,7 +2616,7 @@ static void test39(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+                           Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos,
@@ -2627,7 +2635,7 @@ static void test39(void)
 
     select_count = bands_count = 0;
     assert(editor_insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Unchanged);
+                                  Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Unchanged);
     check_replace_twice(&edit_sky, &editor, palette, cpos, send - cpos, isize, get_gradient_colour);
 
     editor_destroy(&editor);
@@ -2654,7 +2662,7 @@ static void test40(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, BlockSize,
-    Colour, Colour, true, true) == EditResult_Unchanged);
+                         Colour, Colour, true, true) == EditResult_Unchanged);
 
   check_nop(&editor, palette, NColourBands);
 
@@ -2686,7 +2694,7 @@ static void test41(void)
     select_count = bands_count = 0;
 
     assert(insert_gradient(&editor, palette, isize,
-      Colour, Colour - (isize - 1), true, true) == EditResult_Changed);
+      Colour, int_to_colour(Colour - (isize - 1)), true, true) == EditResult_Changed);
 
     assert(bands_count == 1);
     check_redraw_bands(0, &edit_sky, cpos, NColourBands);
@@ -2721,7 +2729,7 @@ static void test42(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, 0,
-    Colour, Colour, true, true) == EditResult_Unchanged);
+                         Colour, Colour, true, true) == EditResult_Unchanged);
 
   check_nop(&editor, palette, InsertPos);
 
@@ -2753,7 +2761,7 @@ static void test43(void)
   select_count = bands_count = 0;
 
   assert(insert_gradient(&editor, palette, 0,
-    Colour, Colour, true, true) == EditResult_Changed);
+                         Colour, Colour, true, true) == EditResult_Changed);
 
   assert(select_count == 1);
   check_redraw_select(0, &editor, cpos, send, cpos, cpos);
@@ -2779,7 +2787,7 @@ static void test44(void)
   editor_init(&editor, &edit_sky,
     redraw_select_cb);
 
-  int dst[NColourBands];
+  SkyColour dst[NColourBands];
 
   for (size_t n = 0; n < ARRAY_SIZE(dst); ++n)
   {
@@ -2816,7 +2824,7 @@ static void test45(void)
   assert(editor_set_selection_end(&editor, SelectEnd));
   assert(editor_set_plain(&editor, Colour) == EditResult_Changed);
 
-  int dst[NColourBands];
+  SkyColour dst[NColourBands];
 
   for (size_t n = 0; n < ARRAY_SIZE(dst); ++n)
   {
@@ -3071,7 +3079,7 @@ static void test64(void)
 }
 
 static void check_copy_down(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   assert(editor_can_undo(&editors[Copy_Destination]));
   assert(editor_can_undo(&editors[Copy_Source]));
@@ -3162,7 +3170,7 @@ static void test65(void)
 }
 
 static void check_copy_up(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   assert(editor_can_undo(&editors[Copy_Destination]));
   assert(editor_can_undo(&editors[Copy_Source]));
@@ -3350,7 +3358,7 @@ static void test68(void)
 }
 
 static void check_move_up(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   assert(editor_can_undo(&editors[Copy_Destination]));
   assert(editor_can_undo(&editors[Copy_Source]));
@@ -3369,7 +3377,7 @@ static void check_move_up(EditSky *const edit_sky, Editor *const editors,
 }
 
 static void check_and_redo_move_up(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   check_redraw_select(0, &editors[Copy_Source], start, start + isize, start, start);
   check_caret(&editors[Copy_Source], start);
@@ -3405,7 +3413,7 @@ static void check_and_redo_move_up(EditSky *const edit_sky, Editor *const editor
 }
 
 static void check_move_down(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   assert(editor_can_undo(&editors[Copy_Destination]));
   assert(editor_can_undo(&editors[Copy_Source]));
@@ -3424,7 +3432,7 @@ static void check_move_down(EditSky *const edit_sky, Editor *const editors,
 }
 
 static void check_and_redo_move_down(EditSky *const edit_sky, Editor *const editors,
-  int const start, int const ipos, int const isize, int (* const getter)(int))
+  int const start, int const ipos, int const isize, SkyColour (* const getter)(int))
 {
   check_redraw_select(0, &editors[Copy_Source], start, start + isize,
     start, start);

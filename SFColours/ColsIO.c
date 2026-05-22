@@ -182,8 +182,7 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
   str[nchars] = '\0';
 
   _Optional char *endp;
-  size_t const nvals = csv_parse_string(str, &endp, values, CSVOutputType_Int,
-    max);
+  size_t nvals = csv_parse_as_int(str, &endp, values, max);
 
   hourglass_off();
 
@@ -194,7 +193,9 @@ static int read_csv(int values[], size_t const max, Reader *const reader)
     return -1;
   }
 
-  return LOWEST(nvals, max);
+  nvals = LOWEST(nvals, max);
+  assert(nvals <= INT_MAX);
+  return (int)nvals;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -895,17 +896,17 @@ message_handlers[] =
 /* ===================== CBLibrary client functions ====================== */
 
 #pragma no_check_stack
-static void DAO_render(int const cptr, int const pptr, int const sptr, int const ncols)
+static void DAO_render(intptr_t const cptr, intptr_t const pptr, intptr_t const sptr, intptr_t const ncols)
 {
   /* Function to render the selected colours for DragAnObject to use
      whilst updating the screen during a drag operation. Must not call shared C
      library functions that may require access to the library's static data
      (not even via assert or DEBUG macros). See DragAnObj.h for details. */
-  const unsigned char *const colours = (const unsigned char *)(uintptr_t)cptr;
-  const IOCoords *const pos = (const IOCoords *)(uintptr_t)pptr;
-  const IOCoords *const size = (const IOCoords *)(uintptr_t)sptr;
+  const unsigned char *const colours = (const unsigned char *)cptr;
+  const IOCoords *const pos = (const IOCoords *)pptr;
+  const IOCoords *const size = (const IOCoords *)sptr;
 
-  for (int index = 0; index < ncols; ++index)
+  for (intptr_t index = 0; index < ncols; ++index)
   {
     if (_swix(ColourTrans_SetGCOL, _IN(0)|_INR(3,4),
               palette[colours[index]],
@@ -1002,13 +1003,13 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
         ++ncols;
       }
 
-      int const renderer_args[4] =
+      intptr_t const renderer_args[4] =
       {
-        (uintptr_t)colours, (uintptr_t)pos, (uintptr_t)&size, ncols
+        (intptr_t)colours, (intptr_t)pos, (intptr_t)&size, ncols
       };
       ON_ERR_RTN_E(drag_an_object_start(
                          DragAnObject_BBoxPointer | DragAnObject_RenderAPCS,
-                         (uintptr_t)DAO_render,
+                         (intptr_t)DAO_render,
                          renderer_args,
                          &drag_box.dragging_box,
                          &(BBox){0}));

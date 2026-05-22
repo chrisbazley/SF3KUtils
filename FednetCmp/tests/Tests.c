@@ -25,7 +25,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 /* RISC OS library files */
 #include "event.h"
@@ -209,7 +209,7 @@ static void check_compressed_file(char const *file_name)
 
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestCompressedFileType);
 
   f = test_fopen(file_name, "rb");
@@ -295,7 +295,7 @@ static void check_uncompressed_file(char const *file_name)
 
   assert_no_error(os_file_read_cat_no_path(file_name, &cat));
   assert(cat.object_type == ObjectType_File);
-  DEBUGF("Load address: 0x%x\n", cat.load);
+  DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestUncompFileType);
 
   f = test_fopen(file_name, "rb");

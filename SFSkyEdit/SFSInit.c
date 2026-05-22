@@ -23,6 +23,7 @@
 #include "stdlib.h"
 #include <string.h>
 #include <signal.h>
+#include <stdint.h>
 
 /* RISC OS library files */
 #include "kernel.h"
@@ -127,7 +128,7 @@ static int mode_change_msg(WimpMessage *const message, void *const handle)
     [VarIndex_LAST] = VDUVar_EndOfList
   };
 
-  int var_vals[VarIndex_LAST];
+  intptr_t var_vals[VarIndex_LAST];
 
   NOT_USED(handle);
   NOT_USED(message);
@@ -138,10 +139,12 @@ static int mode_change_msg(WimpMessage *const message, void *const handle)
        per external graphics unit) but the result of shifting by a negative
        operand is undefined (cf K&R appendix A7.9) */
     assert(var_vals[VarIndex_XEigFactor] >= 0);
-    x_eigen = var_vals[VarIndex_XEigFactor];
+    assert(var_vals[VarIndex_XEigFactor] < 32);
+    x_eigen = (int)var_vals[VarIndex_XEigFactor];
 
     assert(var_vals[VarIndex_YEigFactor] >= 0);
-    y_eigen = var_vals[VarIndex_YEigFactor];
+    assert(var_vals[VarIndex_YEigFactor] < 32);
+    y_eigen = (int)var_vals[VarIndex_YEigFactor];
   }
 
   return 0; /* don't claim event */
@@ -387,6 +390,15 @@ static int object_auto_created(int const event_code, ToolboxEvent *const event,
   assert(event != NULL);
   assert(id_block != NULL);
   NOT_USED(handle);
+
+  char const *prev = "";
+  for (size_t i = 0; i < ARRAY_SIZE(auto_created); ++i)
+  {
+    char const *const cur = auto_created[i].template_name;
+    assert(strcmp(prev, cur) < 0);
+    prev = cur;
+  }
+  NOT_USED(prev);
 
   /* Find the relevant initialisation function from the name of the template
      used to auto-create the object */

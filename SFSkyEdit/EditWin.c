@@ -1285,8 +1285,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
 {
   /* Custom redraw for editing window */
   EditWin *const edit_win = handle;
-  const WimpRedrawWindowRequestEvent * const wrwre =
-    (WimpRedrawWindowRequestEvent *)event;
+  const WimpRedrawWindowRequestEvent * const wrwre = &event->redraw_window_request;
   WimpRedrawWindowBlock block;
   int more;
   _Optional const _kernel_oserror *e = NULL;

@@ -843,7 +843,7 @@ static int scroll_request(int const event_code, WimpPollBlock *const event,
 static int mouse_click(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
-  const WimpMouseClickEvent * const wmce = (WimpMouseClickEvent *)event;
+  const WimpMouseClickEvent * const wmce = &event->mouse_click;
   EditWin *const edit_win = handle;
 
   NOT_USED(event_code);

@@ -879,7 +879,6 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
       case Wimp_MouseButtonSelect * MouseButtonModifier_Drag:
       case Wimp_MouseButtonAdjust * MouseButtonModifier_Drag:
       { /* Start rubber-band box to allow user selection */
-        WimpDragBox drag_box;
         WimpGetWindowStateBlock window_state =
         {
           edit_win->wimp_handle, {0,0,0,0}, 0, 0, WimpWindow_Top, 0
@@ -892,12 +891,14 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
         /* Start auto-scrolling immediately */
         EditWin_start_auto_scroll(edit_win, &window_state.visible_area, 0, &autoscroll_flags);
 
-        drag_box.wimp_window = edit_win->wimp_handle;
-        drag_box.drag_type = Wimp_DragBox_DragRubberDash;
-        drag_box.dragging_box.xmin = wmce->mouse_x;
-        drag_box.dragging_box.xmax = wmce->mouse_x;
-        drag_box.dragging_box.ymin = wmce->mouse_y;
-        drag_box.dragging_box.ymax = wmce->mouse_y;
+        WimpDragBox drag_box = {
+          .wimp_window = edit_win->wimp_handle,
+          .drag_type = Wimp_DragBox_DragRubberDash,
+          .dragging_box.xmin = wmce->mouse_x,
+          .dragging_box.xmax = wmce->mouse_x,
+          .dragging_box.ymin = wmce->mouse_y,
+          .dragging_box.ymax = wmce->mouse_y,
+        };
 
         if (TEST_BITS(autoscroll_flags, Wimp_AutoScroll_Horizontal))
         {

@@ -1360,7 +1360,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
 {
   /* In order that the pseudo-transient dbox mechanism can work
      we pass mouse click events on rather than claiming them */
-  const WimpMouseClickEvent * const wmce = (WimpMouseClickEvent *)event;
+  const WimpMouseClickEvent * const wmce = &event->mouse_click;
   EditWin *const edit_win = handle;
   WimpGetWindowStateBlock window_state;
 

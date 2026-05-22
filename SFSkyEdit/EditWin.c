@@ -1332,7 +1332,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
 static int user_drag(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
-  const WimpUserDragBoxEvent * const wudbe = (WimpUserDragBoxEvent *)event;
+  const WimpUserDragBoxEvent * const wudbe = &event->user_drag_box;
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);

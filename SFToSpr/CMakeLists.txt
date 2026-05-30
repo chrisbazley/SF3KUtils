@@ -38,11 +38,6 @@ target_link_libraries(SFToSpr PUBLIC
 
 target_compile_definitions(SFToSpr PUBLIC
     $<$<CONFIG:Debug>:DEBUG_OUTPUT>
-    $<$<CONFIG:Release>:NDEBUG>
-)
-
-target_compile_options(SFToSpr PUBLIC
-    $<$<CONFIG:Release>:-O3>
 )
 
 string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)

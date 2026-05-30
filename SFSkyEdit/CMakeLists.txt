@@ -39,11 +39,6 @@ target_link_libraries(SFSkyEdit PUBLIC
 
 target_compile_definitions(SFSkyEdit PUBLIC
     $<$<CONFIG:Debug>:DEBUG_OUTPUT>
-    $<$<CONFIG:Release>:NDEBUG>
-)
-
-target_compile_options(SFSkyEdit PUBLIC
-    $<$<CONFIG:Release>:-O3>
 )
 
 string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)

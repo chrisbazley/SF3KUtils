@@ -37,11 +37,6 @@ target_link_libraries(FednetCmp PUBLIC
 
 target_compile_definitions(FednetCmp PUBLIC
     $<$<CONFIG:Debug>:DEBUG_OUTPUT>
-    $<$<CONFIG:Release>:NDEBUG>
-)
-
-target_compile_options(FednetCmp PUBLIC
-    $<$<CONFIG:Release>:-O3>
 )
 
 string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)

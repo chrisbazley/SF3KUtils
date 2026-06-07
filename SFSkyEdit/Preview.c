@@ -746,7 +746,6 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
          redraw error reporting.*/
       if (E(wimp_get_rectangle(&block, &more)))
       {
-        simple_redraw = true;
         break; /* can't determine whether we have finished, so assume we did */
       }
     }

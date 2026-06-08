@@ -248,6 +248,7 @@ static int object_auto_created(int const event_code, ToolboxEvent *const event,
   {
     char const *const cur = auto_created[i].template_name;
     assert(strcmp(prev, cur) < 0);
+    NOT_USED(prev);
     prev = cur;
   }
   NOT_USED(prev);

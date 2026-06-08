@@ -452,13 +452,12 @@ static SFError tiles_to_sprites_conv(ConvertIter *const iter)
   assert(iter->pos < iter->count);
   assert(iter->count <= MapTileMax + 1);
 
-  char name[SpriteNameSize] = {0};
+  char name[SpriteNameSize] = TILE_SPR_NAME;
   char numstr[16];
   int nout = sprintf(numstr, "%" PRId32, iter->pos);
   assert(nout >= 0); /* no formatting error */
   NOT_USED(nout);
-  strncat(name, TILE_SPR_NAME, sizeof(name)-1);
-  strncat(name, numstr, sizeof(name) - sizeof(TILE_SPR_NAME));
+  strncat(name, numstr, sizeof(name) - strlen(name) - 1);
   DEBUGF("Sprite name is %s\n", name);
 
   write_spr_header(MapTileSprSize, name, MapTileWidth, MapTileHeight, iter->writer);
@@ -785,12 +784,12 @@ static inline SFError planet_to_sprite(Reader *const reader, Writer *const write
   assert(i >= 0);
   assert(i <= PlanetMax);
 
-  char name[16] = PLANET_SPR_NAME;
+  char name[SpriteNameSize] = PLANET_SPR_NAME;
   char numstr[16];
   int nout = sprintf(numstr, "%" PRId32, i);
   assert(nout >= 0); /* no formatting error */
   NOT_USED(nout);
-  strncat(name, numstr, sizeof(name) - sizeof(PLANET_SPR_NAME));
+  strncat(name, numstr, sizeof(name) - strlen(name) - 1);
   DEBUGF("Sprite name is %s\n", name);
 
   write_spr_header(PlanetSprSize, name, PlanetSprWidth, PlanetHeight, writer);
@@ -1203,11 +1202,7 @@ static SFError sky_to_sprites_conv(ConvertIter *const iter)
 
   SkyToSpritesIter *const sub = CONTAINER_OF(iter, SkyToSpritesIter, super);
 
-  char name[SpriteNameSize] = {0};
-  strncat(name, SKY_SPR_NAME, sizeof(name)-1);
-  DEBUGF("Sprite name is %s\n", name);
-
-  write_spr_header(SkySprSize, name, SkyWidth, SkyHeight, iter->writer);
+  write_spr_header(SkySprSize, SKY_SPR_NAME, SkyWidth, SkyHeight, iter->writer);
   return copy_n_flip_sky(iter->reader, iter->writer, sub->tmp);
 }
 

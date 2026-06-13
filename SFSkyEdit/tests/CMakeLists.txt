@@ -3,15 +3,25 @@ set(CORESOURCES
     EditorTest.c
 )
 
-add_library(SFSkyEditCoreTestsLib OBJECT ${CORESOURCES})
+file(GLOB PUBLIC_HEADERS "*.h")
+
+add_library(SFSkyEditCoreTestsLib OBJECT ${CORESOURCES} ${PUBLIC_HEADERS})
 target_link_libraries(SFSkyEditCoreTestsLib PUBLIC SFSkyEdit)
+
+set_target_properties(SFSkyEditCoreTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
 
 set(APPSOURCES
     AppTest.c
 )
 
-add_library(SFSkyEditAppTestsLib OBJECT ${APPSOURCES})
+add_library(SFSkyEditAppTestsLib OBJECT ${APPSOURCES} ${PUBLIC_HEADERS})
 target_link_libraries(SFSkyEditAppTestsLib PUBLIC SFSkyEdit)
+
+set_target_properties(SFSkyEditAppTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
 
 target_include_directories(SFSkyEditAppTestsLib PRIVATE
     $<TARGET_PROPERTY:Stream,INTERFACE_INCLUDE_DIRECTORIES>

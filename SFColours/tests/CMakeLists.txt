@@ -3,15 +3,25 @@ set(CORESOURCES
     EditorTest.c
 )
 
-add_library(SFColoursCoreTestsLib OBJECT ${CORESOURCES})
+file(GLOB PUBLIC_HEADERS "*.h")
+
+add_library(SFColoursCoreTestsLib OBJECT ${CORESOURCES} ${PUBLIC_HEADERS})
 target_link_libraries(SFColoursCoreTestsLib PUBLIC SFColours)
+
+set_target_properties(SFColoursCoreTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
 
 set(APPSOURCES
     AppTest.c
 )
 
-add_library(SFColoursAppTestsLib OBJECT ${APPSOURCES})
+add_library(SFColoursAppTestsLib OBJECT ${APPSOURCES} ${PUBLIC_HEADERS})
 target_link_libraries(SFColoursAppTestsLib PUBLIC SFColours)
+
+set_target_properties(SFColoursAppTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
 
 target_include_directories(SFColoursAppTestsLib PRIVATE
     $<TARGET_PROPERTY:Stream,INTERFACE_INCLUDE_DIRECTORIES>

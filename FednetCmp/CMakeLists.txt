@@ -48,7 +48,9 @@ set(SOURCES
     SaveFile.c SaveComp.c Scan.c PreQuit.c
 )
 
-add_library(FednetCmp ${SOURCES})
+file(GLOB PRIVATE_HEADERS "*.h")
+
+add_library(FednetCmp ${SOURCES} ${PRIVATE_HEADERS})
 
 target_link_libraries(FednetCmp PUBLIC
     CB

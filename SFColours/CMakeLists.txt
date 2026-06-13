@@ -49,7 +49,9 @@ set(SOURCES
              Menus.c PreQuit.c
 )
 
-add_library(SFColours ${SOURCES})
+file(GLOB PRIVATE_HEADERS "*.h")
+
+add_library(SFColours ${SOURCES} ${PRIVATE_HEADERS})
 
 target_link_libraries(SFColours PUBLIC
     CB

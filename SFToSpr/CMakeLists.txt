@@ -49,7 +49,9 @@ set(SOURCES
     QuickView.c ParseArgs.c
 )
 
-add_library(SFToSpr ${SOURCES})
+file(GLOB PRIVATE_HEADERS "*.h")
+
+add_library(SFToSpr ${SOURCES} ${PRIVATE_HEADERS})
 
 target_link_libraries(SFToSpr PUBLIC
     CB

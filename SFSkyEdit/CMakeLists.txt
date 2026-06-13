@@ -50,7 +50,9 @@ set(SOURCES
     PrevUMenu.c SavePrev.c ScalePrev.c Goto.c OptsMenu.c
 )
 
-add_library(SFSkyEdit ${SOURCES})
+file(GLOB PRIVATE_HEADERS "*.h")
+
+add_library(SFSkyEdit ${SOURCES} ${PRIVATE_HEADERS})
 
 target_link_libraries(SFSkyEdit PUBLIC
     CB

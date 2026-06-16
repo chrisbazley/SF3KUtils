@@ -1119,90 +1119,126 @@ static int fake_ref;
 
 static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
 {
-  SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)&poll_block->words;
-
-  sastfe->hdr.size = sizeof(*poll_block);
-  sastfe->hdr.reference_number = ++fake_ref;
-  sastfe->hdr.event_code = SaveAs_SaveToFile;
-  sastfe->hdr.flags = flags;
-  STRCPY_SAFE(sastfe->filename, TEST_DATA_OUT);
+  SaveAsSaveToFileEvent const sastfe = {
+    .hdr =
+      {
+        .size = sizeof(sastfe),
+        .reference_number = ++fake_ref,
+        .event_code = SaveAs_SaveToFile,
+        .flags = flags,
+      },
+    .filename = TEST_DATA_OUT,
+  };
+  memcpy(poll_block, &sastfe, sizeof sastfe);
 }
 
-static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, _Optional char *address, int no_bytes)
+static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags,
+                                  int size, _Optional char *address,
+                                  int no_bytes)
 {
-  SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)&poll_block->words;
-
-  safbe->hdr.size = sizeof(*poll_block);
-  safbe->hdr.reference_number = ++fake_ref;
-  safbe->hdr.event_code = SaveAs_FillBuffer;
-  safbe->hdr.flags = flags;
-  safbe->size = size;
-  safbe->address = address;
-  safbe->no_bytes = no_bytes;
+  SaveAsFillBufferEvent const safbe = {
+    .hdr =
+      {
+        .size = sizeof(safbe),
+        .reference_number = ++fake_ref,
+        .event_code = SaveAs_FillBuffer,
+        .flags = flags,
+      },
+    .size = size,
+    .address = address,
+    .no_bytes = no_bytes,
+  };
+  memcpy(poll_block, &safbe, sizeof safbe);
 }
 
-static void init_savecompleted_event(WimpPollBlock *poll_block, unsigned int flags)
+static void init_savecompleted_event(WimpPollBlock *poll_block,
+                                     unsigned int flags)
 {
-  SaveAsSaveCompletedEvent * const sasce = (SaveAsSaveCompletedEvent *)&poll_block->words;
-
-  sasce->hdr.size = sizeof(*poll_block);
-  sasce->hdr.reference_number = ++fake_ref;
-  sasce->hdr.event_code = SaveAs_SaveCompleted;
-  sasce->hdr.flags = flags;
-  sasce->wimp_message_no = 0; /* as though no drag took place */
-  STRCPY_SAFE(sasce->filename, TEST_DATA_OUT);
+  SaveAsSaveCompletedEvent const sasce = {
+    .hdr =
+      {
+        .size = sizeof(sasce),
+        .reference_number = ++fake_ref,
+        .event_code = SaveAs_SaveCompleted,
+        .flags = flags,
+      },
+    .wimp_message_no = 0, /* as though no drag took place */
+    .filename = TEST_DATA_OUT,
+  };
+  memcpy(poll_block, &sasce, sizeof sasce);
 }
 
-static void init_radiobutton_event(WimpPollBlock *poll_block, ComponentId const old_on_button)
+static void init_radiobutton_event(WimpPollBlock *poll_block,
+                                   ComponentId const old_on_button)
 {
-  RadioButtonStateChangedEvent * const rbsce = (RadioButtonStateChangedEvent *)&poll_block->words;
-
-  rbsce->hdr.size = sizeof(*poll_block);
-  rbsce->hdr.reference_number = ++fake_ref;
-  rbsce->hdr.event_code = RadioButton_StateChanged;
-  rbsce->hdr.flags = 0;
-  rbsce->state = 1;
-  rbsce->old_on_button = old_on_button;
+  RadioButtonStateChangedEvent const rbsce = {
+    .hdr =
+      {
+        .size = sizeof(rbsce),
+        .reference_number = ++fake_ref,
+        .event_code = RadioButton_StateChanged,
+        .flags = 0,
+      },
+    .state = 1,
+    .old_on_button = old_on_button,
+  };
+  memcpy(poll_block, &rbsce, sizeof rbsce);
 }
 
 static void init_actionbutton_event(WimpPollBlock *poll_block)
 {
-  ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)&poll_block->words;
-
-  abse->hdr.size = sizeof(*poll_block);
-  abse->hdr.reference_number = ++fake_ref;
-  abse->hdr.event_code = ActionButton_Selected;
-  abse->hdr.flags = 0;
+  ActionButtonSelectedEvent const abse = {
+    .hdr =
+      {
+        .size = sizeof(abse),
+        .reference_number = ++fake_ref,
+        .event_code = ActionButton_Selected,
+        .flags = 0,
+      },
+  };
+  memcpy(poll_block, &abse, sizeof abse);
 }
 
 static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
 {
-  SaveAsDialogueCompletedEvent * const sadce = (SaveAsDialogueCompletedEvent *)&poll_block->words;
-
-  sadce->hdr.size = sizeof(*poll_block);
-  sadce->hdr.reference_number = ++fake_ref;
-  sadce->hdr.event_code = SaveAs_DialogueCompleted;
-  sadce->hdr.flags = 0;
+  SaveAsDialogueCompletedEvent const sadce = {
+    .hdr =
+      {
+        .size = sizeof(sadce),
+        .reference_number = ++fake_ref,
+        .event_code = SaveAs_DialogueCompleted,
+        .flags = 0,
+      },
+  };
+  memcpy(poll_block, &sadce, sizeof sadce);
 }
 
 static void init_quit_cancel_event(WimpPollBlock *poll_block)
 {
-  QuitCancelEvent * const qce = (QuitCancelEvent *)&poll_block->words;
-
-  qce->hdr.size = sizeof(*poll_block);
-  qce->hdr.reference_number = ++fake_ref;
-  qce->hdr.event_code = Quit_Cancel;
-  qce->hdr.flags = 0;
+  QuitCancelEvent const qce = {
+    .hdr =
+      {
+        .size = sizeof(qce),
+        .reference_number = ++fake_ref,
+        .event_code = Quit_Cancel,
+        .flags = 0,
+      },
+  };
+  memcpy(poll_block, &qce, sizeof qce);
 }
 
 static void init_quit_quit_event(WimpPollBlock *poll_block)
 {
-  QuitQuitEvent * const qce = (QuitQuitEvent *)&poll_block->words;
-
-  qce->hdr.size = sizeof(*poll_block);
-  qce->hdr.reference_number = ++fake_ref;
-  qce->hdr.event_code = Quit_Quit;
-  qce->hdr.flags = 0;
+  QuitQuitEvent const qqe = {
+    .hdr =
+      {
+        .size = sizeof(qqe),
+        .reference_number = ++fake_ref,
+        .event_code = Quit_Quit,
+        .flags = 0,
+      },
+  };
+  memcpy(poll_block, &qqe, sizeof qqe);
 }
 
 static void dispatch_event(int const event_code, WimpPollBlock *poll_block)
@@ -1255,87 +1291,143 @@ static void dialogue_completed(ObjectId id)
   dispatch_event(Wimp_EToolboxEvent, &poll_block);
 }
 
-static int init_ram_transmit_msg(WimpPollBlock *poll_block, const WimpMessage *ram_fetch, const char *data, int nbytes)
+static int init_ram_transmit_msg(WimpPollBlock *poll_block,
+                                 const WimpMessage *ram_fetch, const char *data,
+                                 int nbytes)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpRAMTransmitMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = ram_fetch->hdr.my_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MRAMTransmit;
-
-  char * const buffer = ram_fetch->data.ram_fetch.buffer;
+  char *const buffer = ram_fetch->data.ram_fetch.buffer;
   assert(nbytes <= ram_fetch->data.ram_fetch.buffer_size);
   for (int i = 0; i < nbytes; ++i)
     buffer[i] = data[i];
 
-  poll_block->user_message.data.ram_transmit.buffer = buffer;
-  poll_block->user_message.data.ram_transmit.nbytes = nbytes;
-
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data) + sizeof(WimpRAMTransmitMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = ram_fetch->hdr.my_ref,
+            .action_code = Wimp_MRAMTransmit,
+          },
+        .data.ram_transmit =
+          {
+            .buffer = buffer,
+            .nbytes = nbytes,
+          },
+      },
+  };
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_data_load_msg(WimpPollBlock *poll_block, char *filename, int estimated_size, int file_type, const WimpGetPointerInfoBlock *pointer_info, int your_ref)
+static int init_data_load_msg(WimpPollBlock *poll_block, char *filename,
+                              int estimated_size, int file_type,
+                              const WimpGetPointerInfoBlock *pointer_info,
+                              int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data.data_load.leaf_name) + WORD_ALIGN(strlen(filename)+1);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MDataLoad;
-
-  poll_block->user_message.data.data_load.destination_window = pointer_info->window_handle;
-  poll_block->user_message.data.data_load.destination_icon = pointer_info->icon_handle;
-  poll_block->user_message.data.data_load.destination_x = pointer_info->x;
-  poll_block->user_message.data.data_load.destination_y = pointer_info->y;
-  poll_block->user_message.data.data_load.estimated_size = estimated_size;
-  poll_block->user_message.data.data_load.file_type = file_type;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data.data_load.leaf_name) +
+                    WORD_ALIGN(strlen(filename) + 1),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MDataLoad,
+          },
+        .data.data_load =
+          {
+            .destination_window = pointer_info->window_handle,
+            .destination_icon = pointer_info->icon_handle,
+            .destination_x = pointer_info->x,
+            .destination_y = pointer_info->y,
+            .estimated_size = estimated_size,
+            .file_type = file_type,
+          },
+      },
+  };
   STRCPY_SAFE(poll_block->user_message.data.data_load.leaf_name, filename);
-
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 
 static void init_pointer_info_for_icon(WimpGetPointerInfoBlock *pointer_info)
 {
-  pointer_info->x = DestinationX;
-  pointer_info->y = DestinationY;
-  pointer_info->button_state = 0;
-  pointer_info->window_handle = WimpWindow_Iconbar;
-  assert_no_error(iconbar_get_icon_handle(0, pseudo_toolbox_find_by_template_name("Iconbar"), &pointer_info->icon_handle));
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .x = DestinationX,
+    .y = DestinationY,
+    .button_state = 0,
+    .window_handle = WimpWindow_Iconbar,
+  };
+  assert_no_error(
+    iconbar_get_icon_handle(0, pseudo_toolbox_find_by_template_name("Iconbar"),
+                            &pointer_info->icon_handle));
 }
 
-static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size, int file_type, const WimpGetPointerInfoBlock *pointer_info, int your_ref)
+static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size,
+                              int file_type,
+                              const WimpGetPointerInfoBlock *pointer_info,
+                              int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data.data_save.leaf_name) + WORD_ALIGN(strlen(TEST_LEAFNAME)+1);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data.data_save.leaf_name) +
+                    WORD_ALIGN(strlen(TEST_LEAFNAME) + 1),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MDataSave,
+          },
+        .data.data_save =
+          {
+            .destination_window = pointer_info->window_handle,
+            .destination_icon = pointer_info->icon_handle,
+            .destination_x = pointer_info->x,
+            .destination_y = pointer_info->y,
+            .estimated_size = estimated_size,
+            .file_type = file_type,
+            .leaf_name = TEST_LEAFNAME,
+          },
+      },
+  };
   DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MDataSave;
-
-  poll_block->user_message.data.data_save.destination_window = pointer_info->window_handle;
-  poll_block->user_message.data.data_save.destination_icon = pointer_info->icon_handle;
-  poll_block->user_message.data.data_save.destination_x = pointer_info->x;
-  poll_block->user_message.data.data_save.destination_y = pointer_info->y;
-  poll_block->user_message.data.data_save.estimated_size = estimated_size;
-  poll_block->user_message.data.data_save.file_type = file_type;
-  STRCPY_SAFE(poll_block->user_message.data.data_save.leaf_name, TEST_LEAFNAME);
-
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_pre_quit_msg(WimpPollBlock *poll_block, bool desktop_shutdown, bool is_risc_os_3)
+static int init_pre_quit_msg(WimpPollBlock *poll_block, bool desktop_shutdown,
+                             bool is_risc_os_3)
 {
-  poll_block->user_message.hdr.size = sizeof(poll_block->user_message.hdr) + (is_risc_os_3 ? sizeof(poll_block->user_message.data.words[0]) : 0);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("size %d my_ref %d\n", poll_block->user_message.hdr.size, poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = 0;
-  poll_block->user_message.hdr.action_code = Wimp_MPreQuit;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data.words) +
+              (is_risc_os_3 ? sizeof(poll_block->user_message.data.words[0])
+                            : 0),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = 0,
+            .action_code = Wimp_MPreQuit,
+          },
+      },
+  };
   if (is_risc_os_3)
     poll_block->user_message.data.words[0] = desktop_shutdown ? 0 : 1;
   else
     assert(desktop_shutdown);
+
+  DEBUGF("size %d my_ref %d\n", poll_block->user_message.hdr.size,
+         poll_block->user_message.hdr.my_ref);
 
   return poll_block->user_message.hdr.my_ref;
 }

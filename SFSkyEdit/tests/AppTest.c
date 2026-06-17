@@ -169,6 +169,7 @@ static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
   SFSky in_buffer;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
+  GKeyParameters params;
   int estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;

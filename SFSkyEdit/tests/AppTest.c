@@ -642,13 +642,16 @@ static int fake_ref = 9999999;
 
 static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
 {
-  SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)&poll_block->words;
-
-  sastfe->hdr.size = sizeof(*poll_block);
-  sastfe->hdr.reference_number = ++fake_ref;
-  sastfe->hdr.event_code = SaveAs_SaveToFile;
-  sastfe->hdr.flags = flags;
-  STRCPY_SAFE(sastfe->filename, TEST_DATA_OUT);
+  SaveAsSaveToFileEvent const sastfe = {
+    .hdr = {
+      .size = sizeof sastfe,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_SaveToFile,
+      .flags = flags,
+    },
+    .filename = TEST_DATA_OUT,
+  };
+  memcpy(poll_block, &sastfe, sizeof sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, _Optional char *address, int no_bytes)

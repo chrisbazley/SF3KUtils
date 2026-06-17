@@ -1492,48 +1492,48 @@ static bool register_wimp_handlers(EditWin *const edit_win)
 
   static const struct
   {
+    bool hillcols;
     int event_code;
     WimpEventHandler *handler;
-    bool hillcols;
   }
   wimp_handlers[] =
   {
     {
+      true,
       Wimp_ECloseWindow,
       close_window,
-      true
     },
     {
+      true,
       Wimp_EMouseClick,
       mouse_click,
-      true
     },
 #ifdef USE_WIMP_CARET_EVENTS
     {
+      true,
       Wimp_ELoseCaret,
       lose_caret,
-      true
     },
 #endif /* USE_WIMP_CARET_EVENTS */
     {
+      true,
       Wimp_EGainCaret,
       gain_caret,
-      true
     },
     {
+      false,
       Wimp_EScrollRequest,
       scroll_request,
-      false
     },
     {
+      false,
       Wimp_EPointerLeavingWindow,
       pointer_leaving_window,
-      false
     },
     {
+      false,
       Wimp_EPointerEnteringWindow,
       pointer_entering_window,
-      false
     }
   };
 

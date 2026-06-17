@@ -4206,7 +4206,7 @@ static void drag_selection_core(_Optional int const *file_types, int file_type, 
   char leaf_name[256] = "";
   ObjectId const id = create_window(EventCode_CreateObjColours);
 
-  strncat(leaf_name, msgs_lookup("LeafName"), sizeof(leaf_name)-1);
+  strncat(leaf_name, msgs_lookup("LeafName"), sizeof(leaf_name) - strlen(leaf_name) - 1);
 
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_foreign(&drag_dest);

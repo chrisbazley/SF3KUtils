@@ -353,46 +353,58 @@ static int fake_ref;
 
 static void init_savetofile_event(WimpPollBlock *poll_block)
 {
-  SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)&poll_block->words;
-
-  sastfe->hdr.size = sizeof(*poll_block);
-  sastfe->hdr.reference_number = ++fake_ref;
-  sastfe->hdr.event_code = SaveAs_SaveToFile;
-  sastfe->hdr.flags = 0;
-  STRCPY_SAFE(sastfe->filename, TEST_DATA_OUT);
+  SaveAsSaveToFileEvent const sastfe = {
+    .hdr = {
+      .size = sizeof sastfe,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_SaveToFile,
+      .flags = 0,
+    },
+    .filename = TEST_DATA_OUT,
+  };
+  memcpy(poll_block, &sastfe, sizeof sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block)
 {
-  SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)&poll_block->words;
-
-  safbe->hdr.size = sizeof(*poll_block);
-  safbe->hdr.reference_number = ++fake_ref;
-  safbe->hdr.event_code = SaveAs_FillBuffer;
-  safbe->hdr.flags = 0;
-  safbe->size = 100;
-  safbe->address = NULL;
-  safbe->no_bytes = 0;
+  SaveAsFillBufferEvent const safbe = {
+    .hdr = {
+      .size = sizeof safbe,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_FillBuffer,
+      .flags = 0,
+    },
+    .size = 100,
+    .address = NULL,
+    .no_bytes = 0,
+  };
+  memcpy(poll_block, &safbe, sizeof safbe);
 }
 
 static void init_actionbutton_event(WimpPollBlock *poll_block)
 {
-  ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)&poll_block->words;
-
-  abse->hdr.size = sizeof(*poll_block);
-  abse->hdr.reference_number = ++fake_ref;
-  abse->hdr.event_code = ActionButton_Selected;
-  abse->hdr.flags = 0;
+  ActionButtonSelectedEvent const abse = {
+    .hdr = {
+      .size = sizeof abse,
+      .reference_number = ++fake_ref,
+      .event_code = ActionButton_Selected,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block, &abse, sizeof abse);
 }
 
 static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
 {
-  SaveAsDialogueCompletedEvent * const sadce = (SaveAsDialogueCompletedEvent *)&poll_block->words;
-
-  sadce->hdr.size = sizeof(*poll_block);
-  sadce->hdr.reference_number = ++fake_ref;
-  sadce->hdr.event_code = SaveAs_DialogueCompleted;
-  sadce->hdr.flags = 0;
+  SaveAsDialogueCompletedEvent const sadce = {
+    .hdr = {
+      .size = sizeof sadce,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_DialogueCompleted,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block, &sadce, sizeof sadce);
 }
 
 static void dispatch_event(int const event_code, WimpPollBlock *poll_block)

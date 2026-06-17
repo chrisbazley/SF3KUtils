@@ -651,102 +651,130 @@ static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
     },
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block, &sastfe, sizeof sastfe);
+  memcpy(poll_block->bytes, &sastfe, sizeof sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, _Optional char *address, int no_bytes)
 {
-  SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)&poll_block->words;
-
-  safbe->hdr.size = sizeof(*poll_block);
-  safbe->hdr.reference_number = ++fake_ref;
-  safbe->hdr.event_code = SaveAs_FillBuffer;
-  safbe->hdr.flags = flags;
-  safbe->size = size;
-  safbe->address = address;
-  safbe->no_bytes = no_bytes;
+  SaveAsFillBufferEvent const safbe = {
+    .hdr = {
+      .size = sizeof safbe,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_FillBuffer,
+      .flags = flags,
+    },
+    .size = size,
+    .address = address,
+    .no_bytes = no_bytes,
+  };
+  memcpy(poll_block->bytes, &safbe, sizeof safbe);
 }
 
 static void init_savecompleted_event(WimpPollBlock *poll_block, unsigned int flags)
 {
-  SaveAsSaveCompletedEvent * const sasce = (SaveAsSaveCompletedEvent *)&poll_block->words;
-
-  sasce->hdr.size = sizeof(*poll_block);
-  sasce->hdr.reference_number = ++fake_ref;
-  sasce->hdr.event_code = SaveAs_SaveCompleted;
-  sasce->hdr.flags = flags;
-  sasce->wimp_message_no = 0; /* as though no drag took place */
-  STRCPY_SAFE(sasce->filename, TEST_DATA_OUT);
+  SaveAsSaveCompletedEvent const sasce = {
+    .hdr = {
+      .size = sizeof sasce,
+      .reference_number = ++fake_ref,
+      .event_code = SaveAs_SaveCompleted,
+      .flags = flags,
+    },
+    .wimp_message_no = 0, /* as though no drag took place */
+    .filename = TEST_DATA_OUT,
+  };
+  memcpy(poll_block->bytes, &sasce, sizeof sasce);
 }
 
 static void init_dcs_discard_event(WimpPollBlock *poll_block)
 {
-  DCSDiscardEvent * const dcsde = (DCSDiscardEvent *)&poll_block->words;
-
-  dcsde->hdr.size = sizeof(*poll_block);
-  dcsde->hdr.reference_number = ++fake_ref;
-  dcsde->hdr.event_code = DCS_Discard;
-  dcsde->hdr.flags = 0;
+  DCSDiscardEvent const dcsde = {
+    .hdr = {
+      .size = sizeof dcsde,
+      .reference_number = ++fake_ref,
+      .event_code = DCS_Discard,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &dcsde, sizeof dcsde);
 }
 
 static void init_dcs_save_event(WimpPollBlock *poll_block)
 {
-  DCSDiscardEvent * const dcsde = (DCSDiscardEvent *)&poll_block->words;
-
-  dcsde->hdr.size = sizeof(*poll_block);
-  dcsde->hdr.reference_number = ++fake_ref;
-  dcsde->hdr.event_code = DCS_Save;
-  dcsde->hdr.flags = 0;
+  DCSSaveEvent const dcsse = {
+    .hdr = {
+      .size = sizeof dcsse,
+      .reference_number = ++fake_ref,
+      .event_code = DCS_Save,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &dcsse, sizeof dcsse);
 }
 
 static void init_dcs_cancel_event(WimpPollBlock *poll_block)
 {
-  DCSCancelEvent * const dcsce = (DCSCancelEvent *)&poll_block->words;
-
-  dcsce->hdr.size = sizeof(*poll_block);
-  dcsce->hdr.reference_number = ++fake_ref;
-  dcsce->hdr.event_code = DCS_Cancel;
-  dcsce->hdr.flags = 0;
+  DCSCancelEvent const dcsce = {
+    .hdr = {
+      .size = dcsce,
+      .reference_number = ++fake_ref,
+      .event_code = DCS_Cancel,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &dcsce, sizeof dcsce);
 }
 
 static void init_quit_cancel_event(WimpPollBlock *poll_block)
 {
-  QuitCancelEvent * const qce = (QuitCancelEvent *)&poll_block->words;
-
-  qce->hdr.size = sizeof(*poll_block);
-  qce->hdr.reference_number = ++fake_ref;
-  qce->hdr.event_code = Quit_Cancel;
-  qce->hdr.flags = 0;
+  QuitCancelEvent const qce = {
+    .hdr = {
+      .size = sizeof qce,
+      .reference_number = ++fake_ref,
+      .event_code = Quit_Cancel,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &qce, sizeof qce);
 }
 
 static void init_quit_quit_event(WimpPollBlock *poll_block)
 {
-  QuitQuitEvent * const qce = (QuitQuitEvent *)&poll_block->words;
-
-  qce->hdr.size = sizeof(*poll_block);
-  qce->hdr.reference_number = ++fake_ref;
-  qce->hdr.event_code = Quit_Quit;
-  qce->hdr.flags = 0;
+  QuitQuitEvent const qqe = {
+    .hdr = {
+      .size = sizeof qqe,
+      .reference_number = ++fake_ref,
+      .event_code = Quit_Quit,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &qqe, sizeof qqe);
 }
 
 static void init_custom_event(WimpPollBlock *poll_block, int event_code)
 {
-  ToolboxEvent * const ice = (ToolboxEvent *)&poll_block->words;
-
-  ice->hdr.size = sizeof(*poll_block);
-  ice->hdr.reference_number = ++fake_ref;
-  ice->hdr.event_code = event_code;
-  ice->hdr.flags = 0;
+  ToolboxEvent const ice = {
+    .hdr = {
+      .size = sizeof ice,
+      .reference_number = ++fake_ref,
+      .event_code = event_code,
+      .flags = 0,
+    },
+  };
+  memcpy(poll_block->bytes, &qqe, sizeof qqe);
 }
 
 static void init_pal256_event(WimpPollBlock *poll_block, int colour_number)
 {
-  Pal256ColourSelectedEvent * const pcse = (Pal256ColourSelectedEvent *)&poll_block->words;
-  pcse->hdr.size = sizeof(*poll_block);
-  pcse->hdr.reference_number = ++fake_ref;
-  pcse->hdr.event_code = Pal256_ColourSelected;
-  pcse->hdr.flags = 0;
-  pcse->colour_number = colour_number;
+  Pal256ColourSelectedEvent const pcse = {
+    .hdr = {
+      .size = sizeof pcse,
+      .reference_number = ++fake_ref,
+      .event_code = Pal256_ColourSelected,
+      .flags = 0,
+    },
+    .colour_number = colour_number,
+  };
+  memcpy(poll_block->bytes, &pcse, sizeof pcse);
 }
 
 static int get_wa_origin(ObjectId id, int *x, int *y)

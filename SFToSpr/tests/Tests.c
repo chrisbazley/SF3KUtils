@@ -1122,14 +1122,14 @@ static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
   SaveAsSaveToFileEvent const sastfe = {
     .hdr =
       {
-        .size = sizeof(sastfe),
+        .size = sizeof sastfe,
         .reference_number = ++fake_ref,
         .event_code = SaveAs_SaveToFile,
         .flags = flags,
       },
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block, &sastfe, sizeof sastfe);
+  memcpy(poll_block->bytes, &sastfe, sizeof sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags,
@@ -1139,7 +1139,7 @@ static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags,
   SaveAsFillBufferEvent const safbe = {
     .hdr =
       {
-        .size = sizeof(safbe),
+        .size = sizeof safbe,
         .reference_number = ++fake_ref,
         .event_code = SaveAs_FillBuffer,
         .flags = flags,
@@ -1148,7 +1148,7 @@ static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags,
     .address = address,
     .no_bytes = no_bytes,
   };
-  memcpy(poll_block, &safbe, sizeof safbe);
+  memcpy(poll_block->bytes, &safbe, sizeof safbe);
 }
 
 static void init_savecompleted_event(WimpPollBlock *poll_block,
@@ -1157,7 +1157,7 @@ static void init_savecompleted_event(WimpPollBlock *poll_block,
   SaveAsSaveCompletedEvent const sasce = {
     .hdr =
       {
-        .size = sizeof(sasce),
+        .size = sizeof sasce,
         .reference_number = ++fake_ref,
         .event_code = SaveAs_SaveCompleted,
         .flags = flags,
@@ -1165,7 +1165,7 @@ static void init_savecompleted_event(WimpPollBlock *poll_block,
     .wimp_message_no = 0, /* as though no drag took place */
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block, &sasce, sizeof sasce);
+  memcpy(poll_block->bytes, &sasce, sizeof sasce);
 }
 
 static void init_radiobutton_event(WimpPollBlock *poll_block,
@@ -1174,7 +1174,7 @@ static void init_radiobutton_event(WimpPollBlock *poll_block,
   RadioButtonStateChangedEvent const rbsce = {
     .hdr =
       {
-        .size = sizeof(rbsce),
+        .size = sizeof rbsce,
         .reference_number = ++fake_ref,
         .event_code = RadioButton_StateChanged,
         .flags = 0,
@@ -1182,7 +1182,7 @@ static void init_radiobutton_event(WimpPollBlock *poll_block,
     .state = 1,
     .old_on_button = old_on_button,
   };
-  memcpy(poll_block, &rbsce, sizeof rbsce);
+  memcpy(poll_block->bytes, &rbsce, sizeof rbsce);
 }
 
 static void init_actionbutton_event(WimpPollBlock *poll_block)
@@ -1190,13 +1190,13 @@ static void init_actionbutton_event(WimpPollBlock *poll_block)
   ActionButtonSelectedEvent const abse = {
     .hdr =
       {
-        .size = sizeof(abse),
+        .size = sizeof abse,
         .reference_number = ++fake_ref,
         .event_code = ActionButton_Selected,
         .flags = 0,
       },
   };
-  memcpy(poll_block, &abse, sizeof abse);
+  memcpy(poll_block->bytes, &abse, sizeof abse);
 }
 
 static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
@@ -1204,13 +1204,13 @@ static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
   SaveAsDialogueCompletedEvent const sadce = {
     .hdr =
       {
-        .size = sizeof(sadce),
+        .size = sizeof sadce,
         .reference_number = ++fake_ref,
         .event_code = SaveAs_DialogueCompleted,
         .flags = 0,
       },
   };
-  memcpy(poll_block, &sadce, sizeof sadce);
+  memcpy(poll_block->bytes, &sadce, sizeof sadce);
 }
 
 static void init_quit_cancel_event(WimpPollBlock *poll_block)
@@ -1218,13 +1218,13 @@ static void init_quit_cancel_event(WimpPollBlock *poll_block)
   QuitCancelEvent const qce = {
     .hdr =
       {
-        .size = sizeof(qce),
+        .size = sizeof qce,
         .reference_number = ++fake_ref,
         .event_code = Quit_Cancel,
         .flags = 0,
       },
   };
-  memcpy(poll_block, &qce, sizeof qce);
+  memcpy(poll_block->bytes, &qce, sizeof qce);
 }
 
 static void init_quit_quit_event(WimpPollBlock *poll_block)
@@ -1232,13 +1232,13 @@ static void init_quit_quit_event(WimpPollBlock *poll_block)
   QuitQuitEvent const qqe = {
     .hdr =
       {
-        .size = sizeof(qqe),
+        .size = sizeof qqe,
         .reference_number = ++fake_ref,
         .event_code = Quit_Quit,
         .flags = 0,
       },
   };
-  memcpy(poll_block, &qqe, sizeof qqe);
+  memcpy(poll_block->bytes, &qqe, sizeof qqe);
 }
 
 static void dispatch_event(int const event_code, WimpPollBlock *poll_block)

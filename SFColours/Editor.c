@@ -112,7 +112,7 @@ static bool destroy_record(LinkedList *const list, LinkedListItem *const item,
   EditRecord *const rec = CONTAINER_OF(item, EditRecord, link);
   DEBUGF("Discarding undo record %p\n", (void *)rec);
   linkedlist_remove(list, item);
-  free(item);
+  free(rec);
   return false; /* continue */
 }
 

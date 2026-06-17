@@ -466,7 +466,7 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fet
      to our task rather than to an invalid handle or another task. */
   assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
 
-  char *test_data = ram_fetch->data.ram_fetch.buffer,
+  char *test_data = ram_fetch->data.ram_fetch.buffer;
   for (int i = 0; i < nbytes; ++i)
     test_data[i] = (char)i;
 

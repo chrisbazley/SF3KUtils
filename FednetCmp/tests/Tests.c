@@ -461,26 +461,31 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fet
 {
   /* Set up fake RAMTransmit message */
   _kernel_swi_regs regs;
-  char *test_data;
 
   /* This isn't ideal but it's better for replies to these fake messages to be sent
      to our task rather than to an invalid handle or another task. */
   assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
 
-  poll_block->user_message.hdr.size = sizeof(*poll_block);
-  poll_block->user_message.hdr.sender = regs.r[0];
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = ram_fetch->hdr.my_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MRAMTransmit;
-
-  poll_block->user_message.data.ram_transmit.buffer = ram_fetch->data.ram_fetch.buffer;
-  poll_block->user_message.data.ram_transmit.nbytes = nbytes;
-
-  test_data = ram_fetch->data.ram_fetch.buffer;
+  char *test_data = ram_fetch->data.ram_fetch.buffer,
   for (int i = 0; i < nbytes; ++i)
     test_data[i] = (char)i;
 
+  *poll_block = (WimpPollBlock) {
+    .user_message = {
+      .hdr = {
+        .size = sizeof(*poll_block),
+        .sender = regs.r[0],
+        .my_ref = ++fake_ref,
+        .your_ref = ram_fetch->hdr.my_ref,
+        .action_code = Wimp_MRAMTransmit,
+      },
+    },
+    .data.ram_transmit = {
+      .buffer = ram_fetch->data.ram_fetch.buffer,
+      .nbytes = nbytes,
+    },
+  };
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 

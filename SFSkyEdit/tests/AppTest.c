@@ -715,7 +715,7 @@ static void init_dcs_cancel_event(WimpPollBlock *poll_block)
 {
   DCSCancelEvent const dcsce = {
     .hdr = {
-      .size = dcsce,
+      .size = sizeof dcsce,
       .reference_number = ++fake_ref,
       .event_code = DCS_Cancel,
       .flags = 0,
@@ -760,7 +760,7 @@ static void init_custom_event(WimpPollBlock *poll_block, int event_code)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &qqe, sizeof qqe);
+  memcpy(poll_block->bytes, &ice, sizeof ice);
 }
 
 static void init_pal256_event(WimpPollBlock *poll_block, int colour_number)

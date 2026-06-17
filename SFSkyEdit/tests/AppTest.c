@@ -132,27 +132,27 @@ static intptr_t th;
 
 static void wipe(char const *path_name)
 {
-  _kernel_swi_regs regs;
-
   assert(path_name != NULL);
 
-  regs.r[0] = OS_FSControl_Wipe;
-  regs.r[1] = (intptr_t)(void *)path_name;
-  regs.r[3] = OS_FSControl_Flag_Recurse;
+  _kernel_swi_regs regs = {
+    .r[0] = OS_FSControl_Wipe,
+    .r[1] = (intptr_t)(void *)path_name,
+    .r[3] = OS_FSControl_Flag_Recurse,
+  };
   _kernel_swi(OS_FSControl, &regs, &regs);
 }
 
 static void copy(char const *src, char const *dst)
 {
-  _kernel_swi_regs regs;
-
   assert(src != NULL);
   assert(dst != NULL);
 
-  regs.r[0] = OS_FSControl_Copy;
-  regs.r[1] = (intptr_t)(void *)src;
-  regs.r[2] = (intptr_t)(void *)dst;
-  regs.r[3] = OS_FSControl_Flag_Recurse;
+  _kernel_swi_regs regs = {
+    .r[0] = OS_FSControl_Copy,
+    .r[1] = (intptr_t)(void *)src,
+    .r[2] = (intptr_t)(void *)dst,
+    .r[3] = OS_FSControl_Flag_Recurse,
+  };
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
 }
 
@@ -169,7 +169,6 @@ static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
   SFSky in_buffer;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
-  GKeyParameters params;
   int estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;

@@ -362,7 +362,7 @@ static void init_savetofile_event(WimpPollBlock *poll_block)
     },
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block, &sastfe, sizeof sastfe);
+  memcpy(poll_block.bytes, &sastfe, sizeof sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block)
@@ -378,7 +378,7 @@ static void init_fillbuffer_event(WimpPollBlock *poll_block)
     .address = NULL,
     .no_bytes = 0,
   };
-  memcpy(poll_block, &safbe, sizeof safbe);
+  memcpy(poll_block.bytes, &safbe, sizeof safbe);
 }
 
 static void init_actionbutton_event(WimpPollBlock *poll_block)
@@ -391,7 +391,7 @@ static void init_actionbutton_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block, &abse, sizeof abse);
+  memcpy(poll_block.bytes, &abse, sizeof abse);
 }
 
 static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
@@ -404,7 +404,7 @@ static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block, &sadce, sizeof sadce);
+  memcpy(poll_block.bytes, &sadce, sizeof sadce);
 }
 
 static void dispatch_event(int const event_code, WimpPollBlock *poll_block)

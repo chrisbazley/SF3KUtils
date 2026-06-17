@@ -795,44 +795,68 @@ static int get_wa_origin(ObjectId id, int *x, int *y)
 static void init_mouseclick_event(WimpPollBlock *poll_block, ObjectId id, int y, int buttons)
 {
   WimpMouseClickEvent * const wmce = &poll_block->mouse_click;
-  wmce->window_handle = get_wa_origin(id, &wmce->mouse_x, &wmce->mouse_y);
-  wmce->mouse_y += y;
-  wmce->buttons = buttons;
-  wmce->icon_handle = WorkArea;
+
+  int wa_origin_x = 0,
+      wa_origin_y = 0,
+      window_handle = get_wa_origin(id, &wa_origin_x, &wa_origin_y);
+
+  *wmce = (WimpMouseClickEvent){
+    .window_handle = window_handle,
+    .icon_handle = WorkArea,
+    .buttons = buttons,
+    .mouse_x = wa_origin_x,
+    .mouse_y = wa_origin_y + y,
+  };
 }
 
 static void init_pointer_info_for_win(WimpGetPointerInfoBlock *pointer_info, ObjectId id, int pos, int buttons)
 {
-  pointer_info->window_handle = get_wa_origin(id, &pointer_info->x, &pointer_info->y);
-  pointer_info->icon_handle = WorkArea;
-  pointer_info->y += pos * HeightOfBand;
-  pointer_info->button_state = buttons;
+  int wa_origin_x = 0,
+      wa_origin_y = 0,
+      window_handle = get_wa_origin(id, &wa_origin_x, &wa_origin_y);
+
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .window_handle = window_handle,
+    .icon_handle = WorkArea,
+    .x = wa_origin_x,
+    .y = wa_origin_y + pos * HeightOfBand,
+    .button_state = buttons,
+  };
 }
 
 static void init_pointer_info_for_icon(WimpGetPointerInfoBlock *pointer_info)
 {
-  pointer_info->x = DestinationX;
-  pointer_info->y = DestinationY;
-  pointer_info->button_state = 0;
-  pointer_info->window_handle = WimpWindow_Iconbar;
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .x = DestinationX,
+    .y = DestinationY,
+    .button_state = 0,
+    .window_handle = WimpWindow_Iconbar,
+    .icon_handle = 0,
+  };
   assert_no_error(iconbar_get_icon_handle(0, pseudo_toolbox_find_by_template_name("Iconbar"), &pointer_info->icon_handle));
 }
 
 static void init_pointer_info_for_foreign(WimpGetPointerInfoBlock *pointer_info)
 {
-  pointer_info->x = DestinationX;
-  pointer_info->y = DestinationY;
-  pointer_info->button_state = 0;
-  pointer_info->window_handle = DirViewerHandle;
-  pointer_info->icon_handle = 0;
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .x = DestinationX,
+    .y = DestinationY,
+    .button_state = 0,
+    .window_handle = DirViewerHandle,
+    .icon_handle = 0,
+  };
 }
 
 static void init_userdrag_event(WimpPollBlock *poll_block, int x, int y)
 {
-  poll_block->user_drag_box.bbox.xmin = x - UDBSize;
-  poll_block->user_drag_box.bbox.xmax = x + UDBSize;
-  poll_block->user_drag_box.bbox.ymin = y - UDBSize;
-  poll_block->user_drag_box.bbox.ymax = y + UDBSize;
+  *poll_block = (WimpPollBlock){
+    .user_drag_box.bbox = {
+      .xmin = x - UDBSize,
+      .xmax = x + UDBSize,
+      .ymin = y - UDBSize,
+      .ymax = y + UDBSize,
+    },
+  };
 }
 
 static void init_close_window_event(WimpPollBlock *poll_block, ObjectId id)

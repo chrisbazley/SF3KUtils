@@ -169,7 +169,6 @@ static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
   SFSky in_buffer;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
-  GKeyParameters params;
   int estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;
@@ -199,12 +198,14 @@ static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
   comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
-  params.in_buffer = &in_buffer;
-  params.in_size = sizeof(in_buffer);
-  params.out_buffer = out_buffer;
-  params.out_size = sizeof(out_buffer);
-  params.prog_cb = (GKeyProgressFn *)NULL;
-  params.cb_arg = &params; // unused
+  GKeyParameters params = {
+    .in_buffer = &in_buffer,
+    .in_size = sizeof in_buffer,
+    .out_buffer = out_buffer,
+    .out_size = sizeof out_buffer,
+    .prog_cb = (GKeyProgressFn *)NULL,
+    .cb_arg = &(int){0}, // unused
+  };
 
   do
   {

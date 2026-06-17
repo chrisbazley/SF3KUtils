@@ -255,7 +255,6 @@ static void check_sky_file(char const *file_name,
   char in_buffer[CompressionBufferSize];
   SFSky out_buffer;
   _Optional GKeyDecomp     *decomp;
-  GKeyParameters params;
   long int len;
   bool ok, in_pending = false;
   GKeyStatus status;
@@ -268,13 +267,15 @@ static void check_sky_file(char const *file_name,
 
   decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
-
-  params.in_buffer = in_buffer;
-  params.in_size = 0;
-  params.out_buffer = &out_buffer;
-  params.out_size = sizeof(out_buffer);
-  params.prog_cb = (GKeyProgressFn *)NULL;
-  params.cb_arg = &params; // unused
+  
+  GKeyParameters params = {
+    .in_buffer = in_buffer,
+    .in_size = 0,
+    .out_buffer = &out_buffer,
+    .out_size = sizeof(out_buffer),
+    .prog_cb = (GKeyProgressFn *)NULL,
+    .cb_arg = &(int){0}, // unused
+  };
 
   do
   {

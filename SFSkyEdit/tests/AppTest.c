@@ -608,14 +608,14 @@ static bool path_is_in_userdata(char *filename)
 {
   _Optional UserData *window;
   char buffer[1024];
-  _kernel_swi_regs regs;
-
-  regs.r[0] = FSControl_CanonicalisePath;
-  regs.r[1] = (intptr_t)(void *)filename;
-  regs.r[2] = (intptr_t)(void *)buffer;
-  regs.r[3] = 0;
-  regs.r[4] = 0;
-  regs.r[5] = sizeof(buffer);
+  _kernel_swi_regs regs = {
+    .r[0] = FSControl_CanonicalisePath,
+    .r[1] = (intptr_t)(void *)filename,
+    .r[2] = (intptr_t)(void *)buffer,
+    .r[3] = 0,
+    .r[4] = 0,
+    .r[5] = sizeof(buffer),
+  };
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
   assert(regs.r[5] >= 0);
 

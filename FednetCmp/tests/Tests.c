@@ -479,10 +479,10 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fet
         .your_ref = ram_fetch->hdr.my_ref,
         .action_code = Wimp_MRAMTransmit,
       },
-    },
-    .data.ram_transmit = {
-      .buffer = ram_fetch->data.ram_fetch.buffer,
-      .nbytes = nbytes,
+      .data.ram_transmit = {
+        .buffer = ram_fetch->data.ram_fetch.buffer,
+        .nbytes = nbytes,
+      },
     },
   };
   DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);

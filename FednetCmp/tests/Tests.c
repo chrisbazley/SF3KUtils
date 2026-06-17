@@ -531,21 +531,27 @@ static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size, int
      to our task rather than to an invalid handle or another task. */
   assert_no_error(toolbox_get_sys_info(Toolbox_GetSysInfo_TaskHandle, &regs));
 
-  poll_block->user_message.hdr.size = sizeof(*poll_block);
-  poll_block->user_message.hdr.sender = regs.r[0];
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
+  *poll_block = (WimpPollBlock){
+    .user_message = {
+      .hdr = {
+        .size = sizeof(*poll_block),
+        .sender = regs.r[0],
+        .my_ref = ++fake_ref,
+        .your_ref = 0,
+        .action_code = Wimp_MDataSave,
+      },
+      .data.data_save = {
+        .destination_window = -2,
+        .destination_icon = DestinationIcon,
+        .destination_x = DestinationX,
+        .destination_y = DestinationY,
+        .estimated_size = estimated_size,
+        .file_type = file_type,
+        .leaf_name = TEST_LEAFNAME,
+      },
+    },
+  };
   DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = 0;
-  poll_block->user_message.hdr.action_code = Wimp_MDataSave;
-
-  poll_block->user_message.data.data_save.destination_window = -2;
-  poll_block->user_message.data.data_save.destination_icon = DestinationIcon;
-  poll_block->user_message.data.data_save.destination_x = DestinationX;
-  poll_block->user_message.data.data_save.destination_y = DestinationY;
-  poll_block->user_message.data.data_save.estimated_size = estimated_size;
-  poll_block->user_message.data.data_save.file_type = file_type;
-  STRCPY_SAFE(poll_block->user_message.data.data_save.leaf_name, TEST_LEAFNAME);
-
   return poll_block->user_message.hdr.my_ref;
 }
 

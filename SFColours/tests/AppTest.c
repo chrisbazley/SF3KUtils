@@ -179,7 +179,6 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
   size_t n;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
-  GKeyParameters params;
   int estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;
@@ -192,12 +191,14 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
   comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
-  params.in_buffer = in_buffer;
-  params.in_size = in_size;
-  params.out_buffer = out_buffer;
-  params.out_size = sizeof(out_buffer);
-  params.prog_cb = (GKeyProgressFn *)NULL;
-  params.cb_arg = &params; // unused
+  GKeyParameters params = {
+    .in_buffer = in_buffer,
+    .in_size = in_size,
+    .out_buffer = out_buffer,
+    .out_size = sizeof out_buffer,
+    .prog_cb = (GKeyProgressFn *)NULL,
+    .cb_arg = &(int){0}, // unused
+  };
 
   do
   {
@@ -267,7 +268,6 @@ static void load_comp_file(char const *file_name, void *out_buffer, size_t out_s
 {
   char in_buffer[CompressionBufferSize];
   _Optional GKeyDecomp     *decomp;
-  GKeyParameters params;
   long int len;
   bool ok, in_pending = false;
   GKeyStatus status;
@@ -282,12 +282,14 @@ static void load_comp_file(char const *file_name, void *out_buffer, size_t out_s
   decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
 
-  params.in_buffer = in_buffer;
-  params.in_size = 0;
-  params.out_buffer = out_buffer;
-  params.out_size = out_size;
-  params.prog_cb = (GKeyProgressFn *)NULL;
-  params.cb_arg = &params; // unused
+  GKeyParameters params = {
+    .in_buffer = in_buffer,
+    .in_size = 0,
+    .out_buffer = out_buffer,
+    .out_size = out_size,
+    .prog_cb = (GKeyProgressFn *)NULL,
+    .cb_arg = &(int){0}, // unused
+};
 
   do
   {

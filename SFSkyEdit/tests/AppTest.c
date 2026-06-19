@@ -640,6 +640,13 @@ static bool object_is_on_menu(ObjectId id)
 
 static int fake_ref = 9999999;
 
+#define MEMCPY_SAFE(dst, src)                                                  \
+  do                                                                           \
+  {                                                                            \
+    assert(sizeof *(src) <= sizeof *(dst));                                    \
+    memcpy((dst), (src), sizeof *(src));                                       \
+  } while (0);
+
 static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
 {
   SaveAsSaveToFileEvent const sastfe = {
@@ -651,7 +658,7 @@ static void init_savetofile_event(WimpPollBlock *poll_block, unsigned int flags)
     },
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block->bytes, &sastfe, sizeof sastfe);
+  MEMCPY_SAFE(poll_block->bytes, &sastfe);
 }
 
 static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags, int size, _Optional char *address, int no_bytes)
@@ -667,7 +674,7 @@ static void init_fillbuffer_event(WimpPollBlock *poll_block, unsigned int flags,
     .address = address,
     .no_bytes = no_bytes,
   };
-  memcpy(poll_block->bytes, &safbe, sizeof safbe);
+  MEMCPY_SAFE(poll_block->bytes, &safbe);
 }
 
 static void init_savecompleted_event(WimpPollBlock *poll_block, unsigned int flags)
@@ -682,7 +689,7 @@ static void init_savecompleted_event(WimpPollBlock *poll_block, unsigned int fla
     .wimp_message_no = 0, /* as though no drag took place */
     .filename = TEST_DATA_OUT,
   };
-  memcpy(poll_block->bytes, &sasce, sizeof sasce);
+  MEMCPY_SAFE(poll_block->bytes, &sasce);
 }
 
 static void init_dcs_discard_event(WimpPollBlock *poll_block)
@@ -695,7 +702,7 @@ static void init_dcs_discard_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &dcsde, sizeof dcsde);
+  MEMCPY_SAFE(poll_block->bytes, &dcsde);
 }
 
 static void init_dcs_save_event(WimpPollBlock *poll_block)
@@ -708,7 +715,7 @@ static void init_dcs_save_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &dcsse, sizeof dcsse);
+  MEMCPY_SAFE(poll_block->bytes, &dcsse);
 }
 
 static void init_dcs_cancel_event(WimpPollBlock *poll_block)
@@ -721,7 +728,7 @@ static void init_dcs_cancel_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &dcsce, sizeof dcsce);
+  MEMCPY_SAFE(poll_block->bytes, &dcsce);
 }
 
 static void init_quit_cancel_event(WimpPollBlock *poll_block)
@@ -734,7 +741,7 @@ static void init_quit_cancel_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &qce, sizeof qce);
+  MEMCPY_SAFE(poll_block->bytes, &qce);
 }
 
 static void init_quit_quit_event(WimpPollBlock *poll_block)
@@ -747,7 +754,7 @@ static void init_quit_quit_event(WimpPollBlock *poll_block)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &qqe, sizeof qqe);
+  MEMCPY_SAFE(poll_block->bytes, &qqe);
 }
 
 static void init_custom_event(WimpPollBlock *poll_block, int event_code)
@@ -760,7 +767,7 @@ static void init_custom_event(WimpPollBlock *poll_block, int event_code)
       .flags = 0,
     },
   };
-  memcpy(poll_block->bytes, &ice, sizeof ice);
+  MEMCPY_SAFE(poll_block->bytes, &ice);
 }
 
 static void init_pal256_event(WimpPollBlock *poll_block, int colour_number)
@@ -774,7 +781,7 @@ static void init_pal256_event(WimpPollBlock *poll_block, int colour_number)
     },
     .colour_number = colour_number,
   };
-  memcpy(poll_block->bytes, &pcse, sizeof pcse);
+  MEMCPY_SAFE(poll_block->bytes, &pcse);
 }
 
 static int get_wa_origin(ObjectId id, int *x, int *y)
@@ -970,7 +977,7 @@ static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[],
   }
   assert(i < ARRAY_SIZE(dragging.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dragging, sizeof dragging);
+  MEMCPY_SAFE(poll_block->user_message.data.bytes, &dragging);
 
   return poll_block->user_message.hdr.my_ref;
 }
@@ -1129,7 +1136,7 @@ static int init_drag_claim_msg(WimpPollBlock *poll_block, unsigned int flags,
   }
   assert(i < ARRAY_SIZE(dc.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dc, sizeof dc);
+  MEMCPY_SAFE(poll_block->user_message.data.bytes, &dc);
 
   DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
@@ -1174,7 +1181,7 @@ static int init_data_request_msg(WimpPollBlock *poll_block, unsigned int flags,
   }
   assert(i < ARRAY_SIZE(dr.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dr, sizeof dr);
+  MEMCPY_SAFE(poll_block->user_message.data.bytes, &dr);
 
   return poll_block->user_message.hdr.my_ref;
 }
@@ -1197,7 +1204,7 @@ static int init_claim_entity_msg(WimpPollBlock *poll_block, unsigned int flags)
   };
 
   WimpClaimEntityMessage ce = {.flags = flags};
-  memcpy(poll_block->user_message.data.bytes, &ce, sizeof ce);
+  MEMCPY_SAFE(poll_block->user_message.data.bytes, &ce);
 
   return poll_block->user_message.hdr.my_ref;
 }

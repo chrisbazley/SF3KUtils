@@ -970,9 +970,7 @@ static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[],
   }
   assert(i < ARRAY_SIZE(dragging.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dragging,
-         offsetof(WimpDraggingMessage, file_types) +
-           ((i + 1) * sizeof dragging.file_types[0]));
+  memcpy(poll_block->user_message.data.bytes, &dragging, sizeof dragging);
 
   return poll_block->user_message.hdr.my_ref;
 }
@@ -1131,9 +1129,7 @@ static int init_drag_claim_msg(WimpPollBlock *poll_block, unsigned int flags,
   }
   assert(i < ARRAY_SIZE(dc.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dc,
-         offsetof(WimpDragClaimMessage, file_types) +
-           ((i + 1) * sizeof dc.file_types[0]));
+  memcpy(poll_block->user_message.data.bytes, &dc, sizeof dc);
 
   DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
@@ -1178,9 +1174,7 @@ static int init_data_request_msg(WimpPollBlock *poll_block, unsigned int flags,
   }
   assert(i < ARRAY_SIZE(dr.file_types));
 
-  memcpy(poll_block->user_message.data.bytes, &dr,
-         offsetof(WimpDataRequestMessage, file_types) +
-           ((i + 1) * sizeof dr.file_types[0]));
+  memcpy(poll_block->user_message.data.bytes, &dr, sizeof dr);
 
   return poll_block->user_message.hdr.my_ref;
 }

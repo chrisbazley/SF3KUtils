@@ -957,6 +957,7 @@ static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[],
         .xmax = DraggingBBoxMax,
         .ymax = DraggingBBoxMax,
       },
+    .file_types = {FileType_Null},
   };
 
   size_t i;
@@ -1098,86 +1099,142 @@ static int init_data_save_ack_msg(WimpPollBlock *poll_block, const WimpMessage *
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_drag_claim_msg(WimpPollBlock *poll_block, unsigned int flags, int const file_types[], int your_ref)
+static int init_drag_claim_msg(WimpPollBlock *poll_block, unsigned int flags,
+                               int const file_types[], int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpDragClaimMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MDragClaim;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data) + sizeof(WimpDragClaimMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MDragClaim,
+          },
+      },
+  };
 
-  WimpDragClaimMessage * const dc = (WimpDragClaimMessage *)poll_block->user_message.data.bytes;
-  dc->flags = flags;
+  WimpDragClaimMessage dc = (WimpDragClaimMessage){
+    .flags = flags,
+    .file_types = {FileType_Null},
+  };
 
   size_t i;
-  for (i = 0; i < ARRAY_SIZE(dc->file_types); ++i)
+  for (i = 0; i < ARRAY_SIZE(dc.file_types); ++i)
   {
-    DEBUGF("%zu: %d\n", i, dc->file_types[i]);
-    dc->file_types[i] = file_types[i];
+    DEBUGF("%zu: %d\n", i, file_types[i]);
+    dc.file_types[i] = file_types[i];
     if (file_types[i] == FileType_Null)
       break;
   }
-  assert(i < ARRAY_SIZE(dc->file_types));
+  assert(i < ARRAY_SIZE(dc.file_types));
 
+  memcpy(poll_block->user_message.data.bytes, &dc,
+         offsetof(WimpDragClaimMessage, file_types) +
+           ((i + 1) * sizeof dc.file_types[0]));
+
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_data_request_msg(WimpPollBlock *poll_block, unsigned int flags, int const file_types[], const WimpGetPointerInfoBlock *pointer_info, int your_ref)
+static int init_data_request_msg(WimpPollBlock *poll_block, unsigned int flags,
+                                 int const file_types[],
+                                 const WimpGetPointerInfoBlock *pointer_info,
+                                 int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpDataRequestMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MDataRequest;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data) + sizeof(WimpDataRequestMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MDataRequest,
+          },
+      },
+  };
 
-  WimpDataRequestMessage * const dr = (WimpDataRequestMessage *)poll_block->user_message.data.bytes;
-  dr->destination_window = pointer_info->window_handle;
-  dr->destination_icon = pointer_info->icon_handle;
-  dr->destination_x = pointer_info->x;
-  dr->destination_y = pointer_info->y;
-  dr->flags = flags;
+  WimpDataRequestMessage dr = {
+    .destination_window = pointer_info->window_handle,
+    .destination_icon = pointer_info->icon_handle,
+    .destination_x = pointer_info->x,
+    .destination_y = pointer_info->y,
+    .flags = flags,
+    .file_types = {FileType_Null},
+  };
 
   size_t i;
-  for (i = 0; i < ARRAY_SIZE(dr->file_types); ++i)
+  for (i = 0; i < ARRAY_SIZE(dr.file_types); ++i)
   {
-    DEBUGF("%zu: %d\n", i, dr->file_types[i]);
-    dr->file_types[i] = file_types[i];
+    DEBUGF("%zu: %d\n", i, file_types[i]);
+    dr.file_types[i] = file_types[i];
     if (file_types[i] == FileType_Null)
       break;
   }
-  assert(i < ARRAY_SIZE(dr->file_types));
+  assert(i < ARRAY_SIZE(dr.file_types));
+
+  memcpy(poll_block->user_message.data.bytes, &dr,
+         offsetof(WimpDataRequestMessage, file_types) +
+           ((i + 1) * sizeof dr.file_types[0]));
 
   return poll_block->user_message.hdr.my_ref;
 }
 
 static int init_claim_entity_msg(WimpPollBlock *poll_block, unsigned int flags)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpClaimEntityMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.your_ref = 0;
-  poll_block->user_message.hdr.action_code = Wimp_MClaimEntity;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data) + sizeof(WimpClaimEntityMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = 0,
+            .action_code = Wimp_MClaimEntity,
+          },
+      },
+  };
 
-  WimpClaimEntityMessage * const ce = (WimpClaimEntityMessage *)poll_block->user_message.data.bytes;
-  ce->flags = flags;
+  WimpClaimEntityMessage ce = {.flags = flags};
+  memcpy(poll_block->user_message.data.bytes, &ce, sizeof ce);
 
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_pre_quit_msg(WimpPollBlock *poll_block, bool desktop_shutdown, bool is_risc_os_3)
+static int init_pre_quit_msg(WimpPollBlock *poll_block, bool desktop_shutdown,
+                             bool is_risc_os_3)
 {
-  poll_block->user_message.hdr.size = sizeof(poll_block->user_message.hdr) + (is_risc_os_3 ? sizeof(poll_block->user_message.data.words[0]) : 0);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("size %d my_ref %d\n", poll_block->user_message.hdr.size, poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = 0;
-  poll_block->user_message.hdr.action_code = Wimp_MPreQuit;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data.words) +
+              (is_risc_os_3 ? sizeof(poll_block->user_message.data.words[0])
+                            : 0),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = 0,
+            .action_code = Wimp_MPreQuit,
+          },
+      },
+  };
+
   if (is_risc_os_3)
     poll_block->user_message.data.words[0] = desktop_shutdown ? 0 : 1;
   else
     assert(desktop_shutdown);
 
+  DEBUGF("size %d my_ref %d\n", poll_block->user_message.hdr.size,
+         poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 
@@ -4998,12 +5055,13 @@ static void iconize_deiconize(int window_handle)
   state.window_handle = window_handle;
   assert_no_error(wimp_get_window_state(&state));
 
-  WimpOpenWindowBlock show;
-  show.window_handle = window_handle;
-  show.visible_area = state.visible_area;
-  show.xscroll = state.xscroll;
-  show.yscroll = state.yscroll;
-  show.behind = Iconized;
+  WimpOpenWindowBlock show = {
+    .window_handle = window_handle,
+    .visible_area = state.visible_area,
+    .xscroll = state.xscroll,
+    .yscroll = state.yscroll,
+    .behind = Iconized,
+  };
 
 #undef wimp_open_window
   assert_no_error(wimp_open_window(&show));

@@ -452,8 +452,8 @@ static SFError tiles_to_sprites_conv(ConvertIter *const iter)
   assert(iter->pos < iter->count);
   assert(iter->count <= MapTileMax + 1);
 
-  char name[SpriteNameSize] = TILE_SPR_NAME;
   char numstr[16];
+  char name[sizeof TILE_SPR_NAME + sizeof numstr] = TILE_SPR_NAME;
   int nout = sprintf(numstr, "%" PRId32, iter->pos);
   assert(nout >= 0); /* no formatting error */
   NOT_USED(nout);

@@ -835,10 +835,15 @@ static void init_pointer_info_for_foreign(WimpGetPointerInfoBlock *pointer_info)
 
 static void init_userdrag_event(WimpPollBlock *poll_block, int x, int y)
 {
-  poll_block->user_drag_box.bbox.xmin = x - UDBSize;
-  poll_block->user_drag_box.bbox.xmax = x + UDBSize;
-  poll_block->user_drag_box.bbox.ymin = y - UDBSize;
-  poll_block->user_drag_box.bbox.ymax = y + UDBSize;
+  *poll_block = (WimpPollBlock){
+    .user_drag_box.bbox =
+      {
+        .xmin = x - UDBSize,
+        .xmax = x + UDBSize,
+        .ymin = y - UDBSize,
+        .ymax = y + UDBSize,
+      },
+  };
 }
 
 static void init_close_window_event(WimpPollBlock *poll_block, ObjectId id)
@@ -846,37 +851,60 @@ static void init_close_window_event(WimpPollBlock *poll_block, ObjectId id)
   assert_no_error(window_get_wimp_handle(0, id, &poll_block->close_window_request.window_handle));
 }
 
-static int init_ram_fetch_msg(WimpPollBlock *poll_block, char *buffer, int buffer_size, int your_ref)
+static int init_ram_fetch_msg(WimpPollBlock *poll_block, char *buffer,
+                              int buffer_size, int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpRAMFetchMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MRAMFetch;
-
-  poll_block->user_message.data.ram_fetch.buffer = buffer;
-  poll_block->user_message.data.ram_fetch.buffer_size = buffer_size;
-
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data) + sizeof(WimpRAMFetchMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MRAMFetch,
+          },
+        .data.ram_fetch =
+          {
+            .buffer = buffer,
+            .buffer_size = buffer_size,
+          },
+      },
+  };
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_ram_transmit_msg(WimpPollBlock *poll_block, const WimpMessage *ram_fetch, char const *data, int nbytes)
+static int init_ram_transmit_msg(WimpPollBlock *poll_block,
+                                 const WimpMessage *ram_fetch, char const *data,
+                                 int nbytes)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpRAMTransmitMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = ram_fetch->hdr.my_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MRAMTransmit;
-
-  char * const buffer = ram_fetch->data.ram_fetch.buffer;
+  char *const buffer = ram_fetch->data.ram_fetch.buffer;
   assert(nbytes <= ram_fetch->data.ram_fetch.buffer_size);
   for (int i = 0; i < nbytes; ++i)
     buffer[i] = data[i];
 
-  poll_block->user_message.data.ram_transmit.buffer = buffer;
-  poll_block->user_message.data.ram_transmit.nbytes = nbytes;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size =
+              offsetof(WimpMessage, data) + sizeof(WimpRAMTransmitMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = ram_fetch->hdr.my_ref,
+            .action_code = Wimp_MRAMTransmit,
+          },
+        .data.ram_transmit =
+          {
+            .buffer = buffer,
+            .nbytes = nbytes,
+          },
+      },
+  };
 
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 
@@ -912,23 +940,37 @@ static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[], 
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_data_load_msg(WimpPollBlock *poll_block, char *filename, int estimated_size, int file_type, const WimpGetPointerInfoBlock *pointer_info, int your_ref)
+static int init_data_load_msg(WimpPollBlock *poll_block, char *filename,
+                              int estimated_size, int file_type,
+                              const WimpGetPointerInfoBlock *pointer_info,
+                              int your_ref)
 {
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data.data_load.leaf_name) + WORD_ALIGN(strlen(filename)+1);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
-  poll_block->user_message.hdr.your_ref = your_ref;
-  poll_block->user_message.hdr.action_code = Wimp_MDataLoad;
-
-  poll_block->user_message.data.data_load.destination_window = pointer_info->window_handle;
-  poll_block->user_message.data.data_load.destination_icon = pointer_info->icon_handle;
-  poll_block->user_message.data.data_load.destination_x = pointer_info->x;
-  poll_block->user_message.data.data_load.destination_y = pointer_info->y;
-  poll_block->user_message.data.data_load.estimated_size = estimated_size;
-  poll_block->user_message.data.data_load.file_type = file_type;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data.data_load.leaf_name) +
+                    WORD_ALIGN(strlen(filename) + 1),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = your_ref,
+            .action_code = Wimp_MDataLoad,
+          },
+        .data.data_load =
+          {
+            .destination_window = pointer_info->window_handle,
+            .destination_icon = pointer_info->icon_handle,
+            .destination_x = pointer_info->x,
+            .destination_y = pointer_info->y,
+            .estimated_size = estimated_size,
+            .file_type = file_type,
+          },
+      },
+  };
   STRCPY_SAFE(poll_block->user_message.data.data_load.leaf_name, filename);
 
+  DEBUGF("my_ref %d\n", poll_block->user_message.hdr.my_ref);
   return poll_block->user_message.hdr.my_ref;
 }
 

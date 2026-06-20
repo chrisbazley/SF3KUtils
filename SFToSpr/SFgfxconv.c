@@ -164,7 +164,7 @@ static void write_sprite_area_hdr(int32_t const sprite_count,
 
 /* ----------------------------------------------------------------------- */
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__)
 #define NON_STRING __attribute__((nonstring))
 #else
 #define NON_STRING

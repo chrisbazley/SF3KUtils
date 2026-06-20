@@ -777,7 +777,7 @@ static inline void write_planets_ext(PlanetsHeader const *const hdr, Writer *con
 
 static inline SFError planet_to_sprite(Reader *const reader, Writer *const writer,
                                        PlanetsHeader const *const hdr,
-                                       uint8_t *const tmp, int const i)
+                                       uint8_t *const tmp, int32_t const i)
 {
   assert(hdr);
   assert(tmp);
@@ -2126,7 +2126,7 @@ SFError csv_to_sky(Reader *const reader, SkyHeader *const hdr)
 int sky_size(void)
 {
   int const size = SkyHeaderSize + SkyBitmapSize;
-  DEBUGF("Expected sky file size is %" PRId32 "\n", size);
+  DEBUGF("Expected sky file size is %d\n", size);
   return size;
 }
 

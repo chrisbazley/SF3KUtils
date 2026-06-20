@@ -1015,13 +1015,23 @@ static int init_data_load_msg(WimpPollBlock *poll_block, char *filename,
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_data_load_ack_msg(WimpPollBlock *poll_block, const WimpMessage *data_load)
+static int init_data_load_ack_msg(WimpPollBlock *poll_block,
+                                  const WimpMessage *data_load)
 {
-  poll_block->user_message = *data_load;
-  poll_block->user_message.hdr.action_code = Wimp_MDataLoadAck;
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.your_ref = data_load->hdr.my_ref;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = data_load->hdr.size,
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = data_load->hdr.my_ref,
+            .action_code = Wimp_MDataLoadAck,
+          },
+        .data.data_load_ack = data_load->data.data_load,
+      },
+  };
 
   return poll_block->user_message.hdr.my_ref;
 }
@@ -1091,15 +1101,27 @@ static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size,
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_data_save_ack_msg(WimpPollBlock *poll_block, const WimpMessage *data_save)
+static int init_data_save_ack_msg(WimpPollBlock *poll_block,
+                                  const WimpMessage *data_save)
 {
-  poll_block->user_message = *data_save;
-  poll_block->user_message.hdr.action_code = Wimp_MDataSaveAck;
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data.data_save_ack.leaf_name) + WORD_ALIGN(strlen(TEST_DATA_OUT)+1);
-  poll_block->user_message.hdr.your_ref = data_save->hdr.my_ref;
-  strcpy(poll_block->user_message.data.data_save_ack.leaf_name, TEST_DATA_OUT);
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .action_code = Wimp_MDataSaveAck,
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .size = offsetof(WimpMessage, data.data_save_ack.leaf_name) +
+                    WORD_ALIGN(strlen(TEST_DATA_OUT) + 1),
+            .your_ref = data_save->hdr.my_ref,
+          },
+        .data.data_save_ack = data_save->data.data_save,
+      },
+  };
+
+  STRCPY_SAFE(poll_block->user_message.data.data_save_ack.leaf_name,
+              TEST_DATA_OUT);
 
   return poll_block->user_message.hdr.my_ref;
 }

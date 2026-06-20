@@ -1717,6 +1717,7 @@ SFError tiles_to_csv(Reader *const reader, Writer *const writer)
               hdr.splash_anim_2[3]);
   assert(n >= 0);
   assert((unsigned)n < sizeof(buf));
+  NOT_USED(n);
   writer_fwrite(buf, strlen(buf), 1, writer);
 
   n = sprintf(buf, "%d,%d,%d,%d\n",
@@ -1726,6 +1727,8 @@ SFError tiles_to_csv(Reader *const reader, Writer *const writer)
               hdr.splash_2_triggers[3]);
   assert(n >= 0);
   assert((unsigned)n < sizeof(buf));
+  NOT_USED(n);
+
   writer_fwrite(buf, strlen(buf), 1, writer);
 
   return err;

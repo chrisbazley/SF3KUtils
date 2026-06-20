@@ -768,46 +768,69 @@ static int get_wa_origin(ObjectId id, int *x, int *y)
   return state.window_handle;
 }
 
-static void init_mouseclick_event(WimpPollBlock *poll_block, ObjectId id, unsigned int pos, int buttons)
+static void init_mouseclick_event(WimpPollBlock *poll_block, ObjectId id,
+                                  unsigned int pos, int buttons)
 {
-  WimpMouseClickEvent * const wmce = &poll_block->mouse_click;
-  wmce->window_handle = get_wa_origin(id, &wmce->mouse_x, &wmce->mouse_y);
+  WimpMouseClickEvent *const wmce = &poll_block->mouse_click;
+
+  int wa_origin_x = 0, wa_origin_y = 0,
+      window_handle = get_wa_origin(id, &wa_origin_x, &wa_origin_y);
+
   BBox bbox;
 #undef gadget_get_bbox
-  assert_no_error(gadget_get_bbox(0, id, FirstComponentId+pos, &bbox));
-  wmce->mouse_x += (bbox.xmin + bbox.xmax) / 2;
-  wmce->mouse_y += (bbox.ymin + bbox.ymax) / 2;
-  wmce->buttons = buttons;
-  wmce->icon_handle = WorkArea;
+  assert_no_error(gadget_get_bbox(0, id, FirstComponentId + pos, &bbox));
+
+  *wmce = (WimpMouseClickEvent){
+    .window_handle = window_handle,
+    .icon_handle = WorkArea,
+    .buttons = buttons,
+    .mouse_x = wa_origin_x + (bbox.xmin + bbox.xmax) / 2,
+    .mouse_y = wa_origin_y + (bbox.ymin + bbox.ymax) / 2,
+  };
 }
 
-static void init_pointer_info_for_win(WimpGetPointerInfoBlock *pointer_info, ObjectId id, unsigned int pos, int buttons)
+static void init_pointer_info_for_win(WimpGetPointerInfoBlock *pointer_info,
+                                      ObjectId id, unsigned int pos,
+                                      int buttons)
 {
-  pointer_info->window_handle = get_wa_origin(id, &pointer_info->x, &pointer_info->y);
-  pointer_info->icon_handle = WorkArea;
+  int wa_origin_x = 0, wa_origin_y = 0,
+      window_handle = get_wa_origin(id, &wa_origin_x, &wa_origin_y);
+
   BBox bbox;
-  assert_no_error(gadget_get_bbox(0, id, FirstComponentId+pos, &bbox));
-  pointer_info->x += (bbox.xmin + bbox.xmax) / 2;
-  pointer_info->y += (bbox.ymin + bbox.ymax) / 2;
-  pointer_info->button_state = buttons;
+  assert_no_error(gadget_get_bbox(0, id, FirstComponentId + pos, &bbox));
+
+  *pointer_info = (WimpGetPointerInfoBlock)
+  {
+    .window_handle = window_handle, .icon_handle = WorkArea,
+    .x = wa_origin_x + (bbox.xmin + bbox.xmax) / 2,
+    .y = wa_origin_y + (bbox.ymin + bbox.ymax) / 2,
+    .button_state = buttons,
+  };
 }
 
 static void init_pointer_info_for_icon(WimpGetPointerInfoBlock *pointer_info)
 {
-  pointer_info->x = DestinationX;
-  pointer_info->y = DestinationY;
-  pointer_info->button_state = 0;
-  pointer_info->window_handle = WimpWindow_Iconbar;
-  assert_no_error(iconbar_get_icon_handle(0, pseudo_toolbox_find_by_template_name("Iconbar"), &pointer_info->icon_handle));
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .x = DestinationX,
+    .y = DestinationY,
+    .button_state = 0,
+    .window_handle = WimpWindow_Iconbar,
+  };
+
+  assert_no_error(
+    iconbar_get_icon_handle(0, pseudo_toolbox_find_by_template_name("Iconbar"),
+                            &pointer_info->icon_handle));
 }
 
 static void init_pointer_info_for_foreign(WimpGetPointerInfoBlock *pointer_info)
 {
-  pointer_info->x = DestinationX;
-  pointer_info->y = DestinationY;
-  pointer_info->button_state = 0;
-  pointer_info->window_handle = DirViewerHandle;
-  pointer_info->icon_handle = 0;
+  *pointer_info = (WimpGetPointerInfoBlock){
+    .x = DestinationX,
+    .y = DestinationY,
+    .button_state = 0,
+    .window_handle = DirViewerHandle,
+    .icon_handle = 0,
+  };
 }
 
 static void init_userdrag_event(WimpPollBlock *poll_block, int x, int y)

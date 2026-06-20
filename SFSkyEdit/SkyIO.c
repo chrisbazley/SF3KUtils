@@ -977,6 +977,7 @@ static void sel_moved(int const file_type, _Optional char const *const file_path
   assert(edit_win != NULL);
   NOT_USED(datasave_ref);
   NOT_USED(file_type);
+  NOT_USED(file_path);
 
   DEBUGF("Selection moved to %s with DataSave message %d\n",
     file_path != NULL ? file_path : "unsafe destination", datasave_ref);

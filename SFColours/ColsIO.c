@@ -1127,6 +1127,7 @@ static void sel_saved(int const file_type, _Optional char const *const file_path
   assert(action_data->action == IOActionCode_Export);
   NOT_USED(datasave_ref);
   NOT_USED(file_type);
+  NOT_USED(file_path);
 
   DEBUGF("Selection saved to %s with DataSave message %d\n",
         file_path != NULL ? file_path : "unsafe destination", datasave_ref);

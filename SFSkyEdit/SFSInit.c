@@ -201,6 +201,7 @@ static int quit_msg(WimpMessage *const message, void *const handle)
   /* Quit application */
   assert(message != NULL);
   NOT_USED(handle);
+  NOT_USED(message);
 
   DEBUGF("Received Wimp quit message (ref. %d in reply to %d)\n",
         message->hdr.my_ref, message->hdr.your_ref);

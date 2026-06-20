@@ -1267,9 +1267,9 @@ void Preview_initialise(void)
 
 _Optional PreviewData *Preview_create(SkyFile *const file, char const *const title)
 {
-  const size_t sprite_area_size = sizeof(SpriteAreaHeader) +
-                                  sizeof(SpriteHeader) +
-                                  (Screen_Width * Screen_Height);
+  const int sprite_area_size = (int)sizeof(SpriteAreaHeader) +
+                               (int)sizeof(SpriteHeader) +
+                               (Screen_Width * Screen_Height);
 
   assert(file != NULL);
   assert(title != NULL);
@@ -1313,9 +1313,7 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
         }
         else
         {
-          int const ssize = (int)sprite_area_size;
-          assert(ssize == sprite_area_size);
-          if (!flex_alloc(&preview_data->cached_image, ssize))
+          if (!flex_alloc(&preview_data->cached_image, sprite_area_size))
           {
             RPT_ERR("NoMem");
           }

@@ -13,8 +13,8 @@ void App_tests(void);
 #ifdef FORTIFY
 #include "Fortify.h"
 #else
-#define Fortify_SetAllocationLimit(x)
-#define Fortify_SetNumAllocationsLimit(x)
+#define Fortify_SetAllocationLimit(x) ((void)(x))
+#define Fortify_SetNumAllocationsLimit(x) ((void)(x))
 #define Fortify_EnterScope()
 #define Fortify_LeaveScope()
 #define Fortify_OutputStatistics()

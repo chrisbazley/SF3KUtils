@@ -208,35 +208,51 @@ void set_button_colour(ObjectId const window, ComponentId const button,
 /* ----------------------------------------------------------------------- */
 
 bool claim_drag(const WimpMessage *const message, int const file_types[],
-  int *const my_ref)
+                int *const my_ref)
 {
   /* Claim a drag for ourselves */
   assert(message != NULL);
   assert(file_types != NULL);
   DEBUGF("Replying to message ref %d from task 0x%x with a DragClaim message\n",
-        message->hdr.my_ref, message->hdr.sender);
+         message->hdr.my_ref, message->hdr.sender);
 
-  WimpMessage reply = {
-    .hdr = {
-      .your_ref = message->hdr.my_ref,
-      .action_code = Wimp_MDragClaim,
-    },
+  WimpDragClaimMessage dragclaim = {
+    .flags = 0,
+    .file_types =
+      {
+        FileType_Null,
+      },
   };
 
-  WimpDragClaimMessage *const dragclaim = (WimpDragClaimMessage *)&reply.data;
-  dragclaim->flags = 0;
+  size_t const array_len =
+    copy_file_types(dragclaim.file_types, file_types,
+                    ARRAY_SIZE(dragclaim.file_types) - 1) +
+    1;
 
-  size_t const array_len = copy_file_types(dragclaim->file_types, file_types,
-    ARRAY_SIZE(dragclaim->file_types) - 1) + 1;
+  assert(array_len <= ARRAY_SIZE(dragclaim.file_types));
 
-  reply.hdr.size = WORD_ALIGN(sizeof(reply.hdr) +
-    offsetof(WimpDragClaimMessage, file_types) +
-    (sizeof(dragclaim->file_types[0]) * array_len));
+  size_t const dragclaim_size = offsetof(WimpDragClaimMessage, file_types) +
+                                (sizeof(dragclaim.file_types[0]) * array_len);
+
+  assert(dragclaim_size <= sizeof dragclaim);
+
+  WimpMessage reply = {
+    .hdr =
+      {
+        .size = offsetof(WimpMessage, data.bytes) + dragclaim_size,
+        .your_ref = message->hdr.my_ref,
+        .action_code = Wimp_MDragClaim,
+      },
+  };
+
+  assert(reply.hdr.size > 0 && (size_t)reply.hdr.size <= sizeof(WimpMessage));
+  assert(dragclaim_size <= sizeof reply.data.bytes);
+  memcpy(reply.data.bytes, &dragclaim, dragclaim_size);
 
   bool success = false;
 
-  if (!E(wimp_send_message(Wimp_EUserMessage, &reply, message->hdr.sender,
-       0, NULL)))
+  if (!E(wimp_send_message(Wimp_EUserMessage, &reply, message->hdr.sender, 0,
+                           NULL)))
   {
     success = true;
     DEBUGF("DragClaim message ref. is %d\n", reply.hdr.my_ref);

@@ -3101,7 +3101,6 @@ static void quit_with_confirm_core(bool desktop_shutdown, bool is_risc_os_3)
   {
     WimpPollBlock poll_block;
     _Optional const _kernel_oserror *err;
-    unsigned long limit;
     int prequit_ref = 0;
 
     pseudo_toolbox_reset();
@@ -3134,37 +3133,43 @@ static void quit_with_confirm_core(bool desktop_shutdown, bool is_risc_os_3)
 
     assert(!pseudo_toolbox_object_is_showing(prequit_id));
 
-    for (limit = 0; limit < FortifyAllocationLimit; ++limit)
     {
-      err_suppress_errors();
-      pseudo_wimp_reset();
-      Fortify_EnterScope();
+      unsigned long limit;
+      for (limit = 0; limit < FortifyAllocationLimit; ++limit)
+      {
+        err_suppress_errors();
+        pseudo_wimp_reset();
+        Fortify_EnterScope();
 
-      /* Try to quit the application */
-      prequit_ref = init_pre_quit_msg(&poll_block, desktop_shutdown, is_risc_os_3);
-      dispatch_event_with_error_sim(Wimp_EUserMessage, &poll_block, limit, true /* wait for about-to-be-shown */);
+        /* Try to quit the application */
+        prequit_ref =
+          init_pre_quit_msg(&poll_block, desktop_shutdown, is_risc_os_3);
+        dispatch_event_with_error_sim(Wimp_EUserMessage, &poll_block, limit,
+                                      true /* wait for about-to-be-shown */);
 
-      Fortify_LeaveScope();
-      err = err_dump_suppressed();
-      if (err == NULL)
-        break;
+        Fortify_LeaveScope();
+        err = err_dump_suppressed();
+        if (err == NULL)
+          break;
+      }
+      assert(limit != FortifyAllocationLimit);
     }
-    assert(limit != FortifyAllocationLimit);
 
     if (nwin)
     {
-      jmp_buf exit_target;
-
       /* Pre-quit dialogue should have been shown
          and the pre-quit message should have been acknowledged. */
       assert(pseudo_toolbox_object_is_showing(prequit_id));
       assert(check_pre_quit_ack_msg(prequit_ref, &poll_block.user_message));
 
+      // volatile to avoid warnings about its value being clobbered by longjmp
+      volatile unsigned long limit;
       for (limit = 0; limit < FortifyAllocationLimit; ++limit)
       {
         err_suppress_errors();
         Fortify_EnterScope();
 
+        jmp_buf exit_target;
         int status = setjmp(exit_target);
         if (status == 0)
         {

@@ -56,6 +56,12 @@
 #define SKY_SPR_NAME "sky"
 #define SKY_SPR_TAG "HEIG"
 
+#if defined(__GNUC__)
+#define NON_STRING __attribute__((nonstring))
+#else
+#define NON_STRING
+#endif
+
 /* Constant numeric values */
 enum
 {
@@ -86,7 +92,7 @@ enum
 typedef struct
 {
   int32_t size;
-  char name[SpriteNameSize];
+  char name[SpriteNameSize] NON_STRING;
   int32_t width;
   int32_t height;
   int32_t left_bit;
@@ -163,12 +169,6 @@ static void write_sprite_area_hdr(int32_t const sprite_count,
 }
 
 /* ----------------------------------------------------------------------- */
-
-#if defined(__GNUC__)
-#define NON_STRING __attribute__((nonstring))
-#else
-#define NON_STRING
-#endif
 
 static void write_spr_header(int32_t const sprite_size, char const *const name,
   int32_t const w, int32_t const h, Writer *const writer)

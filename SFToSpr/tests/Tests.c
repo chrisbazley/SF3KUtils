@@ -2466,7 +2466,9 @@ static void wait_for_stalled_ops(void)
   do
   {
     elapsed = clock() - start_time;
-    hourglass_percentage((elapsed * 100) / Timeout);
+    clock_t const perc = (elapsed * 100) / Timeout;
+    assert(perc >= 0);
+    hourglass_percentage(perc > 100 ? 100 : (int)perc);
   }
   while (elapsed < Timeout);
   hourglass_off();

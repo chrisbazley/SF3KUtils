@@ -908,34 +908,51 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block,
   return poll_block->user_message.hdr.my_ref;
 }
 
-static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[], const WimpGetPointerInfoBlock *pointer_info, unsigned int flags)
+static int init_dragging_msg(WimpPollBlock *poll_block, int const file_types[],
+                             const WimpGetPointerInfoBlock *pointer_info,
+                             unsigned int flags)
 {
-  WimpDraggingMessage *const dragging =
-    (WimpDraggingMessage *)poll_block->user_message.data.bytes;
+  *poll_block = (WimpPollBlock){
+    .user_message =
+      {
+        .hdr =
+          {
+            .size = offsetof(WimpMessage, data) + sizeof(WimpDraggingMessage),
+            .sender = ForeignTaskHandle,
+            .my_ref = ++fake_ref,
+            .your_ref = 0,
+            .action_code = Wimp_MDragging,
+          },
+      },
+  };
 
-  poll_block->user_message.hdr.size = offsetof(WimpMessage, data) + sizeof(WimpDraggingMessage);
-  poll_block->user_message.hdr.sender = ForeignTaskHandle;
-  poll_block->user_message.hdr.my_ref = ++fake_ref;
-  poll_block->user_message.hdr.your_ref = 0;
-  poll_block->user_message.hdr.action_code = Wimp_MDragging;
-
-  dragging->window_handle = pointer_info->window_handle;
-  dragging->icon_handle = pointer_info->icon_handle;
-  dragging->x = pointer_info->x;
-  dragging->y = pointer_info->y;
-  dragging->flags = flags;
-  dragging->bbox.xmin = dragging->bbox.ymin = DraggingBBoxMin;
-  dragging->bbox.xmax = dragging->bbox.ymax = DraggingBBoxMax;
+  WimpDraggingMessage dragging = {
+    .window_handle = pointer_info->window_handle,
+    .icon_handle = pointer_info->icon_handle,
+    .x = pointer_info->x,
+    .y = pointer_info->y,
+    .flags = flags,
+    .bbox =
+      {
+        .xmin = DraggingBBoxMin,
+        .ymin = DraggingBBoxMin,
+        .xmax = DraggingBBoxMax,
+        .ymax = DraggingBBoxMax,
+      },
+    .file_types = {FileType_Null},
+  };
 
   size_t i;
-  for (i = 0; i < ARRAY_SIZE(dragging->file_types); ++i)
+  for (i = 0; i < ARRAY_SIZE(dragging.file_types); ++i)
   {
-    DEBUGF("%zu: %d\n", i, dragging->file_types[i]);
-    dragging->file_types[i] = file_types[i];
+    DEBUGF("%zu: %d\n", i, file_types[i]);
+    dragging.file_types[i] = file_types[i];
     if (file_types[i] == FileType_Null)
       break;
   }
-  assert(i < ARRAY_SIZE(dragging->file_types));
+  assert(i < ARRAY_SIZE(dragging.file_types));
+
+  MEMCPY_SAFE(poll_block->user_message.data.bytes, &dragging);
 
   return poll_block->user_message.hdr.my_ref;
 }

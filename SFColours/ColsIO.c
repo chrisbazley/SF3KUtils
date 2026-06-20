@@ -895,7 +895,10 @@ message_handlers[] =
 
 /* ===================== CBLibrary client functions ====================== */
 
+#ifdef ACORN_C
 #pragma no_check_stack
+#endif
+
 static void DAO_render(intptr_t const cptr, intptr_t const pptr, intptr_t const sptr, intptr_t const ncols)
 {
   /* Function to render the selected colours for DragAnObject to use
@@ -923,7 +926,10 @@ static void DAO_render(intptr_t const cptr, intptr_t const pptr, intptr_t const 
       return; /* error! */
   }
 }
+
+#ifdef ACORN_C
 #pragma -s
+#endif
 
 /* ----------------------------------------------------------------------- */
 

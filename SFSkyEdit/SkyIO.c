@@ -766,7 +766,9 @@ message_handlers[] =
    whilst updating the screen during a drag operation. Must not call shared C
    library functions that may require access to the library's static data
    (not even via assert or DEBUG macros). See DragAnObj.h for details. */
+#ifdef ACORN_C
 #pragma no_check_stack
+#endif
 
 static void DAO_render(intptr_t const cptr, intptr_t const ncols)
 {
@@ -825,7 +827,9 @@ static void DAO_render(intptr_t const cptr, intptr_t const ncols)
       return;
   }
 }
+#ifdef ACORN_C
 #pragma -s
+#endif
 
 /* ----------------------------------------------------------------------- */
 

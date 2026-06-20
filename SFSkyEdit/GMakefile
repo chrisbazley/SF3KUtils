@@ -11,7 +11,7 @@ CCDebugFlags = $(CCCommonFlags) -g -DDEBUG_OUTPUT -DFORTIFY
 LinkCommonFlags = -LC: -mlibscl
 LinkFlags = $(LinkCommonFlags) $(addprefix -l,$(ReleaseLibs))
 LinkDebugFlags = $(LinkCommonFlags) $(addprefix -l,$(DebugLibs))
-ASFlags = -throwback -NoCache -depend !Depend -apcs 3/32
+ASFlags = -throwback -NoCache -depend !Depend -DACORN_C -apcs 3/32
 ASDebugFlags = -G $(ASFlags)
 LibFileFlags = -rcs $@
 

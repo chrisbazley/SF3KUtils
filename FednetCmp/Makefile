@@ -2,7 +2,7 @@
 
 
 # Toolflags:
-CCCommonFlags = -c -depend !Depend -IC: -throwback -apcs 3/32/fpe2/swst/fp/nofpr -memaccess -L22-S22-L41
+CCCommonFlags = -c -depend !Depend -IC: -throwback -DACORN_C -apcs 3/32/fpe2/swst/fp/nofpr -memaccess -L22-S22-L41
 CCflags = $(CCCommonFlags) -DNDEBUG -Otime 
 CCDebugFlags = $(CCCommonFlags) -g -DDEBUG_OUTPUT -DFORTIFY
 Linkflags = -aif

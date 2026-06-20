@@ -5,7 +5,7 @@ CC = cc
 Link = link
 
 # Toolflags:
-CCFlags =  -c -depend !Depend -IC: -I^ -throwback -fahi -apcs 3/32/fpe2/swst/fp/nofpr -memaccess -L22-S22-L41 -g -DDEBUG_OUTPUT -DDEBUG_DUMP -DFORTIFY -o $@
+CCFlags =  -c -depend !Depend -IC: -I^ -throwback -fahi -DACORN_C -apcs 3/32/fpe2/swst/fp/nofpr -memaccess -L22-S22-L41 -g -DDEBUG_OUTPUT -DDEBUG_DUMP -DFORTIFY -o $@
 LinkFlags = -aif -d -c++ -o $@ ^.debug.SFColEdLib C:debug.CBLib C:debug.CBOSLib C:debug.CBUtilLib C:debug.StreamLib C:debug.GKeyLib C:o.CBDebugLib C:o.toolboxlib C:o.eventlib C:o.wimplib Fortify:o.fortify C:o.stubs
 
 include MakeCommon

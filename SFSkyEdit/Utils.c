@@ -239,7 +239,7 @@ bool claim_drag(const WimpMessage *const message, int const file_types[],
   WimpMessage reply = {
     .hdr =
       {
-        .size = offsetof(WimpMessage, data.bytes) + dragclaim_size,
+        .size = (int)(offsetof(WimpMessage, data.bytes) + dragclaim_size),
         .your_ref = message->hdr.my_ref,
         .action_code = Wimp_MDragClaim,
       },

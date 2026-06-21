@@ -80,7 +80,7 @@ typedef enum {
 } EditResult;
 
 /* Change selected colours to a single value. */
-EditResult editor_set_plain(Editor *editor, int colour);
+EditResult editor_set_plain(Editor *editor, ColMapEntry colour);
 
 /* Interpolate between start and end of the selected region. */
 EditResult editor_interpolate(Editor *editor, PaletteEntry const palette[]);
@@ -115,6 +115,6 @@ int editor_get_num_selected(Editor const *editor);
 int editor_get_next_selected(Editor const *editor, int pos);
 
 /* Get the lowest selected colour */
-int editor_get_selected_colour(Editor const *editor);
+ColMapEntry editor_get_selected_colour(Editor const *editor);
 
 #endif

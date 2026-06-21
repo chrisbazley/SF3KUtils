@@ -24,13 +24,11 @@ enum
 };
 
 static inline void set_colour(ColMap *const colmap, int const pos,
-  int const colour)
+                              ColMapEntry const colour)
 {
   assert(colmap != NULL);
   assert(pos >= 0);
   assert(pos <= colmap->size);
-  assert(colour >= 0);
-  assert(colour < NPixelColours);
 
   DEBUG_VERBOSEF("Writing %d at %d in %p\n", colour, pos,
     (void *)colmap);
@@ -38,12 +36,12 @@ static inline void set_colour(ColMap *const colmap, int const pos,
   colmap->map[pos] = colour;
 }
 
-static inline int get_colour(ColMap const *const colmap, int const pos)
+static inline ColMapEntry get_colour(ColMap const *const colmap, int const pos)
 {
   assert(colmap != NULL);
   assert(pos >= 0);
   assert(pos < colmap->size);
-  int const colour = colmap->map[pos];
+  ColMapEntry const colour = colmap->map[pos];
 
   DEBUG_VERBOSEF("Reading %d at %d in %p\n", colour, pos,
     (void *)colmap);
@@ -63,12 +61,12 @@ void colmap_init(ColMap *const colmap, int const size)
   }
 }
 
-int colmap_get_colour(ColMap const *const colmap, int const pos)
+ColMapEntry colmap_get_colour(ColMap const *const colmap, int const pos)
 {
   return get_colour(colmap, pos);
 }
 
-void colmap_set_colour(ColMap *const colmap, int const pos, int colour)
+void colmap_set_colour(ColMap *const colmap, int const pos, ColMapEntry colour)
 {
   set_colour(colmap, pos, colour);
 }

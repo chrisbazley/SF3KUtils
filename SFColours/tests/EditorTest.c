@@ -69,7 +69,7 @@ static void pal_init(PaletteEntry (*const pal)[NumColours])
   }
 }
 
-static int get_colour(int i)
+static ColMapEntry get_colour(int i)
 {
   i %= NumColours;
   i = i % 2 ? i : MaxColour - i;
@@ -77,7 +77,7 @@ static int get_colour(int i)
   {
     i = 0;
   }
-  return i;
+  return (ColMapEntry)i;
 }
 
 static int entry_count;
@@ -756,7 +756,7 @@ static void test13(void)
 
     for (int pos = 0; pos < ColMap_MaxSize; ++pos)
     {
-      int const col = colmap_get_colour(colmap, pos);
+      ColMapEntry const col = colmap_get_colour(colmap, pos);
       if (pos == first)
       {
         assert(col == Colour);
@@ -791,7 +791,7 @@ static void test13(void)
     int expected = Colour;
     for (int pos = 0; pos < ColMap_MaxSize; ++pos)
     {
-      int const col = colmap_get_colour(colmap, pos);
+      ColMapEntry const col = colmap_get_colour(colmap, pos);
       if ((pos % SelectInterval) || pos < first || pos > last)
       {
         assert(col == get_colour(pos));
@@ -809,7 +809,7 @@ static void test13(void)
 
     for (int pos = 0; pos < ColMap_MaxSize; ++pos)
     {
-      int const col = colmap_get_colour(colmap, pos);
+      ColMapEntry const col = colmap_get_colour(colmap, pos);
       if (pos == first)
       {
         assert(col == Colour);
@@ -942,7 +942,7 @@ static void test14(void)
     {
       for (int pos = 0; pos < ColMap_MaxSize; ++pos)
       {
-        int const col = colmap_get_colour(colmap, pos);
+        ColMapEntry const col = colmap_get_colour(colmap, pos);
         int const src_index = pos / SelectInterval;
         if ((pos % SelectInterval) || (src_index >= sizes[size_index]))
         {
@@ -1006,7 +1006,7 @@ static void test15(void)
 
   for (int i = 0; i < ColMap_MaxSize; ++i)
   {
-    int const col = colmap_get_colour(colmap, i);
+    ColMapEntry const col = colmap_get_colour(colmap, i);
 
     if (i >= SelectStart && i < SelectStart + (int)ARRAY_SIZE(array))
     {

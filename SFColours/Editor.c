@@ -43,7 +43,7 @@ typedef struct EditRecord {
 } EditRecord;
 
 static bool set_and_redraw(EditColMap *const edit_colmap, int const pos,
-  int const colour, _Optional EditRecord *const rec)
+                           ColMapEntry const colour, _Optional EditRecord *const rec)
 
 {
   assert(edit_colmap != NULL);
@@ -406,7 +406,7 @@ bool editor_clear_selection(Editor *const editor)
   return editor_deselect(editor, 0, num_cols);
 }
 
-int editor_get_selected_colour(Editor const *const editor)
+ColMapEntry editor_get_selected_colour(Editor const *const editor)
 {
   assert(editor != NULL);
   assert(editor->num_selected > 0);
@@ -418,7 +418,7 @@ int editor_get_selected_colour(Editor const *const editor)
   {
     if (get_is_selected(editor, pos))
     {
-      int const colour = colmap_get_colour(colmap, pos);
+      ColMapEntry const colour = colmap_get_colour(colmap, pos);
       DEBUGF("Selected colour is %d at %d\n", colour, pos);
       return colour;
     }
@@ -465,7 +465,7 @@ int editor_get_next_selected(Editor const *const editor, int pos)
   return match;
 }
 
-EditResult editor_set_plain(Editor *const editor, int const colour)
+EditResult editor_set_plain(Editor *const editor, ColMapEntry const colour)
 {
   assert(editor != NULL);
 

@@ -37,6 +37,7 @@
 
 /* Local headers */
 #include "ExpColFile.h"
+#include "ColMap.h"
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"
@@ -54,9 +55,8 @@ enum
 
 typedef struct
 {
-  int x_offset;
-  int y_offset;
-  unsigned char colour;
+  int x_offset, y_offset;
+  ColMapEntry colour;
 }
 ExportColFileRecord;
 
@@ -93,7 +93,7 @@ void ExpColFile_destroy(ExpColFile *const file)
 
 /* ----------------------------------------------------------------------- */
 
-int ExpColFile_get_colour(ExpColFile const *const file, int const index,
+ColMapEntry ExpColFile_get_colour(ExpColFile const *const file, int const index,
   _Optional int *const x_offset, _Optional int *const y_offset)
 {
   DEBUGF("Reading record %d in export file %p\n", index, (void *)file);
@@ -109,10 +109,8 @@ int ExpColFile_get_colour(ExpColFile const *const file, int const index,
 
   int const x = record->x_offset;
   int const y = record->y_offset;
-  int const colour = record->colour;
-
+  ColMapEntry const colour = record->colour;
   DEBUGF("  Got colour %d at offset %d,%d\n", colour, x, y);
-  assert(colour >= 0 && colour < NumColours);
 
   if (x_offset != NULL)
   {
@@ -130,7 +128,7 @@ int ExpColFile_get_colour(ExpColFile const *const file, int const index,
 /* ----------------------------------------------------------------------- */
 
 bool ExpColFile_set_colour(ExpColFile *const file, int const index,
-  int const x_offset, int const y_offset, int const colour)
+  int const x_offset, int const y_offset, ColMapEntry const colour)
 {
   DEBUGF("Writing record %d in export file %p\n", index, (void *)file);
   assert(file != NULL);
@@ -141,11 +139,6 @@ bool ExpColFile_set_colour(ExpColFile *const file, int const index,
   }
 
   if (index < 0 || index >= file->num_cols)
-  {
-    return false;
-  }
-
-  if (colour < 0 || colour >= NumColours)
   {
     return false;
   }
@@ -280,7 +273,7 @@ void ExpColFile_write(ExpColFile const *const file,
   for (int index = 0; index < ncols && !writer_ferror(writer); ++index)
   {
     int x = 0, y = 0;
-    int const col = ExpColFile_get_colour(file, index, &x, &y);
+    ColMapEntry const col = ExpColFile_get_colour(file, index, &x, &y);
 
     writer_fwrite_int32(x, writer);
     writer_fwrite_int32(y, writer);
@@ -308,7 +301,7 @@ void ExpColFile_write_CSV(ExpColFile const *const file,
   int const ncols = file->num_cols;
   for (int index = 0; index < ncols && !writer_ferror(writer); ++index)
   {
-    int const col = ExpColFile_get_colour(file, index, NULL, NULL);
+    ColMapEntry const col = ExpColFile_get_colour(file, index, NULL, NULL);
     char buf[16];
     int const nchars = sprintf(buf, "%d", col);
     assert(nchars > 0);

@@ -1285,7 +1285,7 @@ static bool display_colour(EditWin *const edit_win, int const index)
   assert(index >= 0);
   assert(index < edit_win->file->num_cols);
 
-  int const colour = EditWin_get_colour(edit_win, index);
+  ColMapEntry const colour = EditWin_get_colour(edit_win, index);
   int fg_colour;
   char validation[sizeof("C000000/000000")];
 #ifdef WIMP_FORE_COLOUR
@@ -2053,14 +2053,14 @@ ColMapFile *EditWin_get_colmap(EditWin const *const edit_win)
 
 /* ----------------------------------------------------------------------- */
 
-int EditWin_get_colour(EditWin const *const edit_win, int const index)
+ColMapEntry EditWin_get_colour(EditWin const *const edit_win, int const index)
 {
   assert(edit_win != NULL);
   assert(index >= 0);
   assert(index < edit_win->file->num_cols);
 
   ColMap *const colmap = edit_colmap_get_colmap(&edit_win->file->edit_colmap);
-  int const colour = colmap_get_colour(colmap,
+  ColMapEntry const colour = colmap_get_colour(colmap,
     edit_win->file->start_editnum + index);
 
   DEBUGF("Got actual colour %d from logical colour %d in view %p\n",
@@ -2071,7 +2071,7 @@ int EditWin_get_colour(EditWin const *const edit_win, int const index)
 
 /* ----------------------------------------------------------------------- */
 
-void EditWin_colour_selected(EditWin *const edit_win, int const colour)
+void EditWin_colour_selected(EditWin *const edit_win, ColMapEntry const colour)
 {
   assert(edit_win != NULL);
   (void)handle_edit(edit_win, editor_set_plain(get_editor(edit_win), colour));
@@ -2356,8 +2356,8 @@ void EditWin_set_expcol(EditWin *const edit_win, int const x, int const y,
     /* Read a colour number and its position (relative to the target
        coordinates) from the file */
     IOCoords coords;
-    int const col_num = ExpColFile_get_colour(file, record_no,
-      &coords.x, &coords.y);
+    ColMapEntry const col_num =
+      ExpColFile_get_colour(file, record_no, &coords.x, &coords.y);
 
     /* Search for a display gadget beneath the imported colour */
     int const pos = index_from_coords(edit_win, coords.x + x, coords.y + y);
@@ -2435,7 +2435,7 @@ bool EditWin_get_expcol(EditWin *const edit_win,
     x_offset -= x;
     y_offset -= y;
 
-    int const colour = EditWin_get_colour(edit_win, c);
+    ColMapEntry const colour = EditWin_get_colour(edit_win, c);
     (void)ExpColFile_set_colour(export_file, s++,
       x_offset, y_offset, colour);
   }

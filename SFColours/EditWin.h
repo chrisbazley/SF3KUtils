@@ -47,8 +47,8 @@ bool ColMapFile_export(ColMapFile *file, Writer *writer);
 
 void EditWin_initialise(void);
 ColMapFile *EditWin_get_colmap(EditWin const *edit_win);
-int EditWin_get_colour(EditWin const *edit_win, int index);
-void EditWin_colour_selected(EditWin *edit_win, int colour);
+ColMapEntry EditWin_get_colour(EditWin const *edit_win, int index);
+void EditWin_colour_selected(EditWin *edit_win, ColMapEntry colour);
 void EditWin_file_saved(EditWin *edit_win, _Optional char *save_path);
 void EditWin_show_parent_dir(EditWin const *edit_win);
 int EditWin_get_next_selected(EditWin *edit_win, int index);
@@ -70,8 +70,6 @@ void EditWin_stop_auto_scroll(EditWin const *edit_win);
 void EditWin_coords_from_index(EditWin const *edit_win, int index,
   int *x, int *y);
 void EditWin_bbox_from_index(EditWin const *edit_win, int index, BBox *bbox);
-
-void EditWin_colour_selected(EditWin *edit_win, int colour);
 
 bool EditWin_export(EditWin *edit_win, Writer *writer);
 bool EditWin_set_array(EditWin *edit_win, int x, int y, int number,

@@ -25,8 +25,8 @@ typedef struct
 ColMap;
 
 void colmap_init(ColMap *colmap, int size);
-int colmap_get_colour(ColMap const *colmap, int pos);
-void colmap_set_colour(ColMap *colmap, int pos, int colour);
+ColMapEntry colmap_get_colour(ColMap const *colmap, int pos);
+void colmap_set_colour(ColMap *colmap, int pos, ColMapEntry colour);
 
 int colmap_get_size(ColMap const *file);
 

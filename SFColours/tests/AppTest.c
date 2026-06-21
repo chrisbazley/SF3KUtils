@@ -66,6 +66,7 @@
 #include "../Picker.h"
 #include "../OurEvents.h"
 #include "../Utils.h"
+#include "../ColMap.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"
@@ -234,7 +235,7 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
   return (int)estimated_size;
 }
 
-static int make_hill_cols_file(char const *file_name, int (*compute_colour)(int index))
+static int make_hill_cols_file(char const *file_name, ColMapEntry (*compute_colour)(int index))
 {
   SFHillColours cols;
 
@@ -244,7 +245,7 @@ static int make_hill_cols_file(char const *file_name, int (*compute_colour)(int 
   return make_comp_file(file_name, &cols, sizeof(cols));
 }
 
-static int make_object_cols_file(char const *file_name, int (*compute_colour)(int index))
+static int make_object_cols_file(char const *file_name, ColMapEntry (*compute_colour)(int index))
 {
   SFObjectColours cols;
 
@@ -326,7 +327,7 @@ static void load_comp_file(char const *file_name, void *out_buffer, size_t out_s
   fclose(f);
 }
 
-static void check_hill_cols_file(char const *file_name, int (*compute_colour)(int index))
+static void check_hill_cols_file(char const *file_name, ColMapEntry (*compute_colour)(int index))
 {
   SFHillColours out_buffer;
 
@@ -334,7 +335,7 @@ static void check_hill_cols_file(char const *file_name, int (*compute_colour)(in
 
   for (int i = 0; i < (int)ARRAY_SIZE(out_buffer); ++i)
   {
-    int const colour = compute_colour(i);
+    ColMapEntry const colour = compute_colour(i);
     if (out_buffer[i] != colour)
     {
       DEBUGF("Got %d at [%d], expected %d\n", out_buffer[i], i, colour);
@@ -343,7 +344,7 @@ static void check_hill_cols_file(char const *file_name, int (*compute_colour)(in
   }
 }
 
-static void check_object_cols_file(char const *file_name, int (*compute_colour)(int index))
+static void check_object_cols_file(char const *file_name, ColMapEntry (*compute_colour)(int index))
 {
   SFObjectColours out_buffer;
 
@@ -351,7 +352,7 @@ static void check_object_cols_file(char const *file_name, int (*compute_colour)(
 
   for (int i = 0; i < (int)ARRAY_SIZE(out_buffer.colour_mappings); ++i)
   {
-    int const colour =
+    ColMapEntry const colour =
       i < (int)ARRAY_SIZE(out_buffer.areas.static_colours)
         ? i
         : compute_colour(i - (int)ARRAY_SIZE(out_buffer.areas.static_colours));
@@ -364,51 +365,51 @@ static void check_object_cols_file(char const *file_name, int (*compute_colour)(
   }
 }
 
-static int colour_black(int index)
+static ColMapEntry colour_black(int index)
 {
   NOT_USED(index);
   return 0;
 }
 
-static int colour_identity(int index)
+static ColMapEntry colour_identity(int index)
 {
-  return index ^ Magic;
+  return (ColMapEntry)(index ^ Magic);
 }
 
-static int colour_dropped_csv_on_sel(int index)
+static ColMapEntry colour_dropped_csv_on_sel(int index)
 {
   return ((index >= SelectionStart) && (index < SelectionStart + TestDataSize)) ?
     colour_identity(index - SelectionStart) : 0;
 }
 
-static int colour_dropped_cols(int index)
+static ColMapEntry colour_dropped_cols(int index)
 {
   return (index >= DropPosition) ? colour_identity(index - DropPosition) : 0;
 }
 
-static int colour_dropped_csv(int index)
+static ColMapEntry colour_dropped_csv(int index)
 {
   return ((index >= DropPosition) && (index < DropPosition + TestDataSize)) ?
     colour_identity(index - DropPosition) : 0;
 }
 
-static int colour_csv(int index)
+static ColMapEntry colour_csv(int index)
 {
   return (index < TestDataSize) ? colour_identity(index) : 0;
 }
 
-static int colour_selection(int index)
+static ColMapEntry colour_selection(int index)
 {
   return (index < (SelectionEnd - SelectionStart)) ? SelectionColour : 0;
 }
 
-static int colour_edited(int index)
+static ColMapEntry colour_edited(int index)
 {
   return ((index >= SelectionStart) && (index < SelectionEnd)) ?
     SelectionColour : NonSelectionColour;
 }
 
-static int colour_edited_dragged(int index)
+static ColMapEntry colour_edited_dragged(int index)
 {
   return (((index >= SelectionStart) && (index < SelectionEnd)) ||
           ((index >= DropPosition) &&
@@ -416,7 +417,7 @@ static int colour_edited_dragged(int index)
          SelectionColour : NonSelectionColour;
 }
 
-static int make_csv_file(char const *file_name, int (*compute_colour)(int index))
+static int make_csv_file(char const *file_name, ColMapEntry (*compute_colour)(int index))
 {
   int total = 0;
   FILE * const f = test_fopen(file_name, "wb");
@@ -435,13 +436,13 @@ static int make_csv_file(char const *file_name, int (*compute_colour)(int index)
   return total;
 }
 
-static int estimate_csv_size(int (*compute_colour)(int index), int ncols)
+static int estimate_csv_size(ColMapEntry (*compute_colour)(int index), int ncols)
 {
   NOT_USED(compute_colour);
   return ncols * 4;
 }
 
-static void check_data_file(char const *file_name, int (*compute_colour)(int index), int ncols)
+static void check_data_file(char const *file_name, ColMapEntry (*compute_colour)(int index), int ncols)
 {
   FILE *f = test_fopen(file_name, "r");
   BBox coverage = {INT_MAX,INT_MAX,INT_MIN,INT_MIN};
@@ -472,7 +473,7 @@ static void check_data_file(char const *file_name, int (*compute_colour)(int ind
   assert(coverage.ymax - coverage.ymin <= MaxSelectionHeight);
 }
 
-static void check_csv_file(char const *file_name, int (*compute_colour)(int index), int ncols)
+static void check_csv_file(char const *file_name, ColMapEntry (*compute_colour)(int index), int ncols)
 {
   FILE *f = test_fopen(file_name, "r");
 
@@ -505,7 +506,7 @@ static void check_csv_file(char const *file_name, int (*compute_colour)(int inde
   fclose(f);
 }
 
-static void check_out_file(int file_type, int (*compute_colour)(int index), int ncols)
+static void check_out_file(int file_type, ColMapEntry (*compute_colour)(int index), int ncols)
 {
   switch(file_type)
   {
@@ -526,7 +527,7 @@ static int estimate_data_size(int ncols)
   return (ncols * sizeof(ExportColoursFileRecord)) + sizeof(ExportColoursFile);
 }
 
-static int estimate_file_size(int file_type, int (*compute_colour)(int index), int ncols)
+static int estimate_file_size(int file_type, ColMapEntry (*compute_colour)(int index), int ncols)
 {
   int estimated_size;
 

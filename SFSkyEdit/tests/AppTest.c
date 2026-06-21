@@ -163,13 +163,13 @@ FILE *test_fopen(char const *file_name, char const *mode)
   return &*f;
 }
 
-static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
+static int make_sky_file(char const *file_name, uint8_t (*compute_colour)(int band))
 {
   size_t n;
   SFSky in_buffer;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
-  int estimated_size = sizeof(int32_t);
+  size_t estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;
 
@@ -237,8 +237,8 @@ static int make_sky_file(char const *file_name, int (*compute_colour)(int band))
 
   fclose(f);
   assert_no_error(os_file_set_type(file_name, FileType_SFSkyCol));
-
-  return estimated_size;
+  assert(estimated_size <= INT_MAX);
+  return (int)estimated_size;
 }
 
 static void assert_file_has_type(char const *file_name, int file_type)
@@ -251,7 +251,7 @@ static void assert_file_has_type(char const *file_name, int file_type)
 }
 
 static void check_sky_file(char const *file_name,
-  int (*compute_colour)(int band))
+                           uint8_t (*compute_colour)(int band))
 {
   char in_buffer[CompressionBufferSize];
   SFSky out_buffer;
@@ -333,63 +333,67 @@ static void check_sky_file(char const *file_name,
   }
 }
 
-static int colour_black(int band)
+static uint8_t colour_black(int band)
 {
   NOT_USED(band);
   return 0;
 }
 
-static int colour_non_selection(int band)
+static uint8_t colour_non_selection(int band)
 {
   NOT_USED(band);
   return NonSelectionColour;
 }
 
-static int colour_dropped_sky(int band)
+static uint8_t colour_dropped_sky(int band)
 {
   return (band >= DropPosition) ? (band - DropPosition) : 0;
 }
 
-static int colour_identity(int band)
+static uint8_t colour_identity(int band)
 {
   return band;
 }
 
-static int colour_dropped_csv_on_sel(int band)
+static uint8_t colour_dropped_csv_on_sel(int band)
 {
-  return ((band >= SelectionStart) && (band < SelectionStart + TestDataSize)) ? (band - SelectionStart) : 0;
+  return ((band >= SelectionStart) && (band < SelectionStart + TestDataSize))
+           ? (band - SelectionStart)
+           : 0;
 }
 
-static int colour_dropped_csv(int band)
+static uint8_t colour_dropped_csv(int band)
 {
-  return ((band >= DropPosition) && (band < DropPosition + TestDataSize)) ? (band - DropPosition) : 0;
+  return ((band >= DropPosition) && (band < DropPosition + TestDataSize))
+           ? (band - DropPosition)
+           : 0;
 }
 
-static int colour_csv(int band)
+static uint8_t colour_csv(int band)
 {
   return (band < TestDataSize) ? band : 0;
 }
 
-static int colour_selection(int band)
+static uint8_t colour_selection(int band)
 {
   return (band < (SelectionEnd - SelectionStart)) ? SelectionColour : 0;
 }
 
-static int colour_edited(int band)
+static uint8_t colour_edited(int band)
 {
   return ((band >= SelectionStart) &&
           (band < SelectionEnd)) ?
             SelectionColour : NonSelectionColour;
 }
 
-static int colour_edited_dragged(int band)
+static uint8_t colour_edited_dragged(int band)
 {
   return ((band >= SelectionStart + DropPosition - SelectionEnd) &&
           (band < DropPosition)) ?
            SelectionColour : NonSelectionColour;
 }
 
-static int make_csv_file(char const *file_name, int (*compute_colour)(int band))
+static int make_csv_file(char const *file_name, uint8_t (*compute_colour)(int band))
 {
   int total = 0;
   FILE *f = test_fopen(file_name, "wb");
@@ -409,13 +413,13 @@ static int make_csv_file(char const *file_name, int (*compute_colour)(int band))
   return total;
 }
 
-static int estimate_csv_size(int (*compute_colour)(int band), int ncols)
+static int estimate_csv_size(uint8_t (*compute_colour)(int band), int ncols)
 {
   NOT_USED(compute_colour);
   return ncols * 4;
 }
 
-static void check_csv_file(char const *file_name, int (*compute_colour)(int band), int ncols)
+static void check_csv_file(char const *file_name, uint8_t (*compute_colour)(int band), int ncols)
 {
   FILE * const f = test_fopen(file_name, "rb");
   int i = 0;
@@ -447,7 +451,7 @@ static void check_csv_file(char const *file_name, int (*compute_colour)(int band
   fclose(f);
 }
 
-static void check_sprite_file(char const *file_name, int (*compute_colour)(int band), int ncols)
+static void check_sprite_file(char const *file_name, uint8_t (*compute_colour)(int band), int ncols)
 {
   int i;
   unsigned char row[4];
@@ -497,7 +501,7 @@ static void check_sprite_file(char const *file_name, int (*compute_colour)(int b
   fclose(f);
 }
 
-static void check_out_file(int file_type, int (*compute_colour)(int band), int ncols)
+static void check_out_file(int file_type, uint8_t (*compute_colour)(int band), int ncols)
 {
   switch(file_type)
   {
@@ -518,7 +522,7 @@ static int estimate_sprite_size(int ncols)
   return (4 * ncols) + sizeof(SpriteAreaHeader) - offsetof(SpriteAreaHeader, sprite_count) + sizeof(SpriteHeader);
 }
 
-static int estimate_file_size(int file_type, int (*compute_colour)(int band), int ncols)
+static int estimate_file_size(int file_type, uint8_t (*compute_colour)(int band), int ncols)
 {
   int estimated_size;
 
@@ -2295,7 +2299,7 @@ static void save_sky_file(unsigned int flags, DataTransferMethod method)
   activate_savebox(pseudo_toolbox_find_by_template_name("SaveFile"), flags, method);
 }
 
-static void save_close_and_check(ObjectId id, int (*compute_colour)(int band))
+static void save_close_and_check(ObjectId id, uint8_t (*compute_colour)(int band))
 {
   WimpPollBlock poll_block;
   ObjectId const savebox_id = pseudo_toolbox_find_by_template_name("SaveFile");

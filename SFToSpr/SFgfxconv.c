@@ -253,8 +253,8 @@ static inline bool fix_tiles_anim(MapTilesHeader *const hdr)
     {
       DEBUGF("Forcing 1st splash animation frame %zu within bounds (was %d)\n",
              i, hdr->splash_anim_1[i]);
-
-      hdr->splash_anim_1[i] = hdr->last_tile_num;
+      assert(hdr->last_tile_num <= UINT8_MAX);
+      hdr->splash_anim_1[i] = (uint8_t)hdr->last_tile_num;
       fixed = true;
     }
   }
@@ -265,8 +265,8 @@ static inline bool fix_tiles_anim(MapTilesHeader *const hdr)
     {
       DEBUGF("Forcing 2nd splash animation frame %zu within bounds (was %d)\n",
              i, hdr->splash_anim_2[i]);
-
-      hdr->splash_anim_2[i] = hdr->last_tile_num;
+      assert(hdr->last_tile_num <= UINT8_MAX);
+      hdr->splash_anim_2[i] = (uint8_t)hdr->last_tile_num;
       fixed = true;
     }
   }
@@ -1619,10 +1619,13 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
       DEBUGF("Forcing 1st splash animation frame %zu within bounds (was %d)\n",
              frame, array[frame]);
       out_of_range = true;
-      hdr->splash_anim_1[frame] = array[frame] < 0 ? 0 : hdr->last_tile_num;
+      assert(hdr->last_tile_num <= UINT8_MAX);
+      hdr->splash_anim_1[frame] =
+        (uint8_t)(array[frame] < 0 ? 0 : hdr->last_tile_num);
     }
     else
     {
+      assert(array[frame] <= UINT8_MAX);
       hdr->splash_anim_1[frame] = array[frame];
     }
   } /* next frame */
@@ -1644,10 +1647,13 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
         DEBUGF("Forcing 2nd splash animation frame %zu within bounds (was %d)\n",
                frame, array[frame]);
         out_of_range = true;
-        hdr->splash_anim_2[frame] = array[frame] < 0 ? 0 : hdr->last_tile_num;
+        assert(hdr->last_tile_num <= UINT8_MAX);
+        hdr->splash_anim_2[frame] =
+          (uint8_t)(array[frame] < 0 ? 0 : hdr->last_tile_num);
       }
       else
       {
+        assert(array[frame] <= UINT8_MAX);
         hdr->splash_anim_2[frame] = array[frame];
       }
     } /* next frame */
@@ -1666,7 +1672,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
       if (array[frame] < 0 || array[frame] > UINT8_MAX)
       {
         out_of_range = true;
-        hdr->splash_2_triggers[frame] = (array[frame] < 0 ? 0 : UINT8_MAX);
+        hdr->splash_2_triggers[frame] = (uint8_t)(array[frame] < 0 ? 0 : UINT8_MAX);
       }
       else
       {

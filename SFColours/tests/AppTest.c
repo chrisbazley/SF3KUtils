@@ -179,12 +179,12 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
   size_t n;
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp *comp;
-  int estimated_size = sizeof(int32_t);
+  size_t estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;
 
   f = test_fopen(file_name, "wb");
-
+  assert(in_size <= INT32_MAX);
   ok = fwrite_int32le(in_size, f);
   assert(ok);
 
@@ -230,8 +230,8 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
 
   fclose(f);
   assert_no_error(os_file_set_type(file_name, FileType_Fednet));
-
-  return estimated_size;
+  assert(estimated_size <= INT_MAX);
+  return (int)estimated_size;
 }
 
 static int make_hill_cols_file(char const *file_name, int (*compute_colour)(int index))

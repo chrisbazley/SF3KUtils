@@ -15,10 +15,12 @@ enum
   ColMap_MaxSize = 320
 };
 
+typedef unsigned char ColMapEntry;
+
 typedef struct
 {
   int size;
-  unsigned char map[ColMap_MaxSize];
+  ColMapEntry map[ColMap_MaxSize];
 }
 ColMap;
 

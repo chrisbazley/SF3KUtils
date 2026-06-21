@@ -1333,8 +1333,8 @@ static int init_data_load_msg(WimpPollBlock *poll_block, char *filename,
       {
         .hdr =
           {
-            .size = offsetof(WimpMessage, data.data_load.leaf_name) +
-                    WORD_ALIGN(strlen(filename) + 1),
+            .size = (int)(offsetof(WimpMessage, data.data_load.leaf_name) +
+                          WORD_ALIGN_SZ(strlen(filename) + 1)),
             .sender = ForeignTaskHandle,
             .my_ref = ++fake_ref,
             .your_ref = your_ref,
@@ -1379,8 +1379,8 @@ static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size,
       {
         .hdr =
           {
-            .size = offsetof(WimpMessage, data.data_save.leaf_name) +
-                    WORD_ALIGN(strlen(TEST_LEAFNAME) + 1),
+            .size = (int)(offsetof(WimpMessage, data.data_save.leaf_name) +
+                          WORD_ALIGN_SZ(strlen(TEST_LEAFNAME) + 1)),
             .sender = ForeignTaskHandle,
             .my_ref = ++fake_ref,
             .your_ref = your_ref,
@@ -1450,7 +1450,9 @@ static bool check_data_load_ack_msg(int dl_ref, char *filename, int estimated_si
 
       assert(poll_block.user_message.hdr.your_ref == dl_ref);
       assert(poll_block.user_message.hdr.size >= 0);
-      assert((size_t)poll_block.user_message.hdr.size == offsetof(WimpMessage, data.data_load_ack.leaf_name) + WORD_ALIGN(strlen(filename)+1));
+      assert((size_t)poll_block.user_message.hdr.size ==
+             offsetof(WimpMessage, data.data_load_ack.leaf_name) +
+               WORD_ALIGN_SZ(strlen(filename) + 1));
       assert(poll_block.user_message.hdr.sender == th);
       assert(poll_block.user_message.hdr.my_ref != 0);
       assert(poll_block.user_message.data.data_load_ack.destination_window == pointer_info->window_handle);
@@ -1492,7 +1494,9 @@ static bool check_data_save_ack_msg(int ds_ref, WimpMessage *data_save_ack, cons
 
       const char * const filename = "<Wimp$Scrap>";
       assert(poll_block.user_message.hdr.size >= 0);
-      assert((size_t)poll_block.user_message.hdr.size == offsetof(WimpMessage, data.data_save_ack.leaf_name) + WORD_ALIGN(strlen(filename)+1));
+      assert((size_t)poll_block.user_message.hdr.size ==
+             offsetof(WimpMessage, data.data_save_ack.leaf_name) +
+               WORD_ALIGN_SZ(strlen(filename) + 1));
       assert(poll_block.user_message.data.data_save_ack.destination_window == pointer_info->window_handle);
       assert(poll_block.user_message.data.data_save_ack.destination_icon == pointer_info->icon_handle);
       assert(poll_block.user_message.data.data_save_ack.destination_x == pointer_info->x);

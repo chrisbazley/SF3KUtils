@@ -618,7 +618,7 @@ static int user_drag(int const event_code, WimpPollBlock *const event,
     {
       BBox *gadget_bbox = &edit_win->file->gadget_bboxes[index];
 
-      DEBUGF("Bounding box %u is %d <= x < %d, %d <= y < %d\n", index,
+      DEBUGF("Bounding box %d is %d <= x < %d, %d <= y < %d\n", index,
             gadget_bbox->xmin, gadget_bbox->xmax, gadget_bbox->ymin,
             gadget_bbox->ymax);
 
@@ -1334,7 +1334,7 @@ static bool display_colour(EditWin *const edit_win, int const index)
   if (get_selected(edit_win, index))
   {
     char number[16];
-    sprintf(number, "%u", colour);
+    sprintf(number, "%d", colour);
     if (E(button_set_value(0, edit_win->window_id,
       ComponentId_First_Button + index, number)))
     {
@@ -1460,7 +1460,7 @@ static int index_from_coords(EditWin const *const edit_win, int x, int y)
   {
     BBox const * const gadget_bbox = &edit_win->file->gadget_bboxes[index];
 
-    DEBUGF("Bounding box %u is %d,%d,%d,%d\n",
+    DEBUGF("Bounding box %d is %d,%d,%d,%d\n",
           start_editnum + index,
           gadget_bbox->xmin, gadget_bbox->ymin,
           gadget_bbox->xmax, gadget_bbox->ymax);
@@ -1475,7 +1475,7 @@ static int index_from_coords(EditWin const *const edit_win, int x, int y)
   }
   if (found >= 0)
   {
-    DEBUGF("Found logical colour %u\n", found);
+    DEBUGF("Found logical colour %d\n", found);
   }
   else
   {
@@ -2063,7 +2063,7 @@ int EditWin_get_colour(EditWin const *const edit_win, int const index)
   int const colour = colmap_get_colour(colmap,
     edit_win->file->start_editnum + index);
 
-  DEBUGF("Got actual colour %u from logical colour %u in view %p\n",
+  DEBUGF("Got actual colour %d from logical colour %d in view %p\n",
         colour, edit_win->file->start_editnum + index, (void *)edit_win);
 
   return colour;
@@ -2234,7 +2234,7 @@ void EditWin_set_hint(EditWin *const edit_win,
   edit_win->last_mouseover = hint_num;
 
   /* Set the status bar info text */
-  DEBUGF("Updating hint text to %u\n", hint_num);
+  DEBUGF("Updating hint text to %d\n", hint_num);
   char *value;
 
   if (hint_num < Hint_First || hint_num > Hint_Last)
@@ -2244,7 +2244,7 @@ void EditWin_set_hint(EditWin *const edit_win,
   else
   {
     char token[HintTokenMaxLen + 1];
-    sprintf(token, "hint%u", hint_num);
+    sprintf(token, "hint%d", hint_num);
     value = msgs_lookup(token);
   }
 
@@ -2625,7 +2625,7 @@ bool EditWin_export(EditWin *const edit_win, Writer *const writer)
 
 void EditWin_coords_from_index(EditWin const *const edit_win, int index, int *x, int *y)
 {
-  DEBUGF("Getting coordinates of logical colour %u in view %p\n", index, (void *)edit_win);
+  DEBUGF("Getting coordinates of logical colour %d in view %p\n", index, (void *)edit_win);
   assert(edit_win != NULL);
   assert(index < edit_win->file->num_cols);
 
@@ -2651,7 +2651,7 @@ void EditWin_coords_from_index(EditWin const *const edit_win, int index, int *x,
 
 void EditWin_bbox_from_index(EditWin const *const edit_win, int index, BBox *bbox)
 {
-  DEBUGF("Getting bbox of logical colour %u in view %p\n", index, (void *)edit_win);
+  DEBUGF("Getting bbox of logical colour %d in view %p\n", index, (void *)edit_win);
   assert(edit_win != NULL);
   assert(index < edit_win->file->num_cols);
   assert(bbox != NULL);

@@ -422,7 +422,7 @@ static int make_csv_file(char const *file_name, int (*compute_colour)(int index)
 
   for (int i = 0; i < TestDataSize; ++i)
   {
-    int n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
+    int n = fprintf(f, "%d%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
     assert(n <= INT_MAX - total);
     total += n;
@@ -480,8 +480,8 @@ static void check_csv_file(char const *file_name, int (*compute_colour)(int inde
   {
     int colour = 0;
     char sep = 0;
-    int n = fscanf(f, "%u%c", &colour, &sep);
-    DEBUGF("%u: Read %d items\n", i, n);
+    int n = fscanf(f, "%d%c", &colour, &sep);
+    DEBUGF("%d: Read %d items\n", i, n);
     if (n > 0)
     {
       assert(i < ncols);

@@ -1019,7 +1019,7 @@ static bool generate_persp(void)
     return false; /* failure */
   }
 
-  DEBUGF("Making reciprocal table with %u entries\n", PerspTableLen);
+  DEBUGF("Making reciprocal table with %d entries\n", PerspTableLen);
   int divisor = PerspDivisorBase;
 
   for (int r = 0; r < PerspTableLen; r++)

@@ -156,7 +156,7 @@ bool ExpColFile_set_colour(ExpColFile *const file, int const index,
   record->x_offset = x_offset;
   record->y_offset = y_offset;
   record->colour = colour;
-  DEBUGF("  Put colour %u at offset %d,%d\n", colour, x_offset, y_offset);
+  DEBUGF("  Put colour %d at offset %d,%d\n", colour, x_offset, y_offset);
 
   return true;
 }

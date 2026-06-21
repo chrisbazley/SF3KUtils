@@ -87,14 +87,16 @@ ColMapState colmap_read_file(ColMap *const colmap, Reader *const reader)
   assert(reader != NULL);
   assert(!reader_ferror(reader));
 
-  colmap->size = reader_fread(colmap->map, 1, ColMap_MaxSize, reader);
+  size_t const size = reader_fread(colmap->map, 1, ColMap_MaxSize, reader);
+  assert(size <= ColMap_MaxSize);
 
   /* We should have reached the end of the file */
-  if (colmap->size == ColMap_MaxSize && reader_fgetc(reader) != EOF)
+  if (size == ColMap_MaxSize && reader_fgetc(reader) != EOF)
   {
     return ColMapState_BadLen; /* File is too long */
   }
 
+  colmap->size = (int)size;
   return reader_feof(reader) ? ColMapState_OK : ColMapState_ReadFail;
 }
 

@@ -1626,7 +1626,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
     else
     {
       assert(array[frame] <= UINT8_MAX);
-      hdr->splash_anim_1[frame] = array[frame];
+      hdr->splash_anim_1[frame] = (uint8_t)array[frame];
     }
   } /* next frame */
 
@@ -1654,7 +1654,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
       else
       {
         assert(array[frame] <= UINT8_MAX);
-        hdr->splash_anim_2[frame] = array[frame];
+        hdr->splash_anim_2[frame] = (uint8_t)array[frame];
       }
     } /* next frame */
   } /* endif (text_ptr != NULL) */
@@ -1676,7 +1676,7 @@ SFError csv_to_tiles(Reader *const reader, MapTilesHeader * const hdr)
       }
       else
       {
-        hdr->splash_2_triggers[frame] = array[frame];
+        hdr->splash_2_triggers[frame] = (uint8_t)array[frame];
       }
     } /* next frame */
   } /* endif (text_ptr != NULL) */

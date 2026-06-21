@@ -347,31 +347,33 @@ static uint8_t colour_non_selection(int band)
 
 static uint8_t colour_dropped_sky(int band)
 {
-  return (band >= DropPosition) ? (band - DropPosition) : 0;
+  return (uint8_t)((band >= DropPosition) ? (band - DropPosition) : 0);
 }
 
 static uint8_t colour_identity(int band)
 {
-  return band;
+  return (uint8_t)band;
 }
 
 static uint8_t colour_dropped_csv_on_sel(int band)
 {
-  return ((band >= SelectionStart) && (band < SelectionStart + TestDataSize))
-           ? (band - SelectionStart)
-           : 0;
+  return (uint8_t)(((band >= SelectionStart) &&
+                    (band < SelectionStart + TestDataSize))
+                     ? (band - SelectionStart)
+                     : 0);
 }
 
 static uint8_t colour_dropped_csv(int band)
 {
-  return ((band >= DropPosition) && (band < DropPosition + TestDataSize))
-           ? (band - DropPosition)
-           : 0;
+  return (uint8_t)(((band >= DropPosition) &&
+                    (band < DropPosition + TestDataSize))
+                     ? (band - DropPosition)
+                     : 0);
 }
 
 static uint8_t colour_csv(int band)
 {
-  return (band < TestDataSize) ? band : 0;
+  return (uint8_t)((band < TestDataSize) ? band : 0);
 }
 
 static uint8_t colour_selection(int band)

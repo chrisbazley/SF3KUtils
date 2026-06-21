@@ -608,7 +608,8 @@ static int make_uncompressed_file(const char *const file_name, const void *const
 
   assert_no_error(os_file_set_type(file_name, file_type));
 
-  return size;
+  assert(size <= INT_MAX);
+  return (int)size;
 }
 
 static int make_uncompressed_planets_file(const char *const file_name, const int n, bool metadata)

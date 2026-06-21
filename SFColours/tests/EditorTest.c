@@ -835,7 +835,7 @@ static void test14(void)
 {
   /* Set array */
   int array[ColMap_MaxSize];
-  for (size_t i = 0; i < ARRAY_SIZE(array); ++i)
+  for (int i = 0; i < (int)ARRAY_SIZE(array); ++i)
   {
     array[i] = get_colour(i);
   }

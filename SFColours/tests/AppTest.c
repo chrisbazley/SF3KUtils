@@ -234,23 +234,25 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
   return estimated_size;
 }
 
-static int make_hill_cols_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
+static int make_hill_cols_file(char const *file_name, int (*compute_colour)(int index))
 {
   SFHillColours cols;
 
-  for (size_t i = 0; i < ARRAY_SIZE(cols); ++i)
+  for (int i = 0; i < (int)ARRAY_SIZE(cols); ++i)
     cols[i] = compute_colour(i);
 
   return make_comp_file(file_name, &cols, sizeof(cols));
 }
 
-static int make_object_cols_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
+static int make_object_cols_file(char const *file_name, int (*compute_colour)(int index))
 {
   SFObjectColours cols;
 
-  for (size_t i = 0; i < ARRAY_SIZE(cols.colour_mappings); ++i)
-    cols.colour_mappings[i] = i < ARRAY_SIZE(cols.areas.static_colours) ? i :
-                              compute_colour(i - ARRAY_SIZE(cols.areas.static_colours));
+  for (int i = 0; i < (int)ARRAY_SIZE(cols.colour_mappings); ++i)
+    cols.colour_mappings[i] =
+      i < (int)ARRAY_SIZE(cols.areas.static_colours)
+        ? i
+        : compute_colour(i - ARRAY_SIZE(cols.areas.static_colours));
 
   return make_comp_file(file_name, &cols, sizeof(cols));
 }
@@ -323,88 +325,89 @@ static void load_comp_file(char const *file_name, void *out_buffer, size_t out_s
   fclose(f);
 }
 
-static void check_hill_cols_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
+static void check_hill_cols_file(char const *file_name, int (*compute_colour)(int index))
 {
   SFHillColours out_buffer;
 
   load_comp_file(file_name, &out_buffer, sizeof(out_buffer));
 
-  for (size_t i = 0; i < ARRAY_SIZE(out_buffer); ++i)
+  for (int i = 0; i < (int)ARRAY_SIZE(out_buffer); ++i)
   {
-    unsigned int const colour = compute_colour(i);
+    int const colour = compute_colour(i);
     if (out_buffer[i] != colour)
     {
-      DEBUGF("Got %u at [%zu], expected %u\n",
-             out_buffer[i], i, colour);
+      DEBUGF("Got %d at [%d], expected %d\n", out_buffer[i], i, colour);
       abort();
     }
   }
 }
 
-static void check_object_cols_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
+static void check_object_cols_file(char const *file_name, int (*compute_colour)(int index))
 {
   SFObjectColours out_buffer;
 
   load_comp_file(file_name, &out_buffer, sizeof(out_buffer));
 
-  for (size_t i = 0; i < ARRAY_SIZE(out_buffer.colour_mappings); ++i)
+  for (int i = 0; i < (int)ARRAY_SIZE(out_buffer.colour_mappings); ++i)
   {
-    unsigned int const colour = i < ARRAY_SIZE(out_buffer.areas.static_colours) ? i:
-                                compute_colour(i - ARRAY_SIZE(out_buffer.areas.static_colours));
+    int const colour =
+      i < (int)ARRAY_SIZE(out_buffer.areas.static_colours)
+        ? i
+        : compute_colour(i - (int)ARRAY_SIZE(out_buffer.areas.static_colours));
     if (out_buffer.colour_mappings[i] != colour)
     {
-      DEBUGF("Got %u at [%zu], expected %u\n",
-             out_buffer.colour_mappings[i], i, colour);
+      DEBUGF("Got %d at [%d], expected %d\n", out_buffer.colour_mappings[i], i,
+             colour);
       abort();
     }
   }
 }
 
-static unsigned int colour_black(unsigned int index)
+static int colour_black(int index)
 {
   NOT_USED(index);
   return 0;
 }
 
-static unsigned int colour_identity(unsigned int index)
+static int colour_identity(int index)
 {
   return index ^ Magic;
 }
 
-static unsigned int colour_dropped_csv_on_sel(unsigned int index)
+static int colour_dropped_csv_on_sel(int index)
 {
   return ((index >= SelectionStart) && (index < SelectionStart + TestDataSize)) ?
     colour_identity(index - SelectionStart) : 0;
 }
 
-static unsigned int colour_dropped_cols(unsigned int index)
+static int colour_dropped_cols(int index)
 {
   return (index >= DropPosition) ? colour_identity(index - DropPosition) : 0;
 }
 
-static unsigned int colour_dropped_csv(unsigned int index)
+static int colour_dropped_csv(int index)
 {
   return ((index >= DropPosition) && (index < DropPosition + TestDataSize)) ?
     colour_identity(index - DropPosition) : 0;
 }
 
-static unsigned int colour_csv(unsigned int index)
+static int colour_csv(int index)
 {
   return (index < TestDataSize) ? colour_identity(index) : 0;
 }
 
-static unsigned int colour_selection(unsigned int index)
+static int colour_selection(int index)
 {
   return (index < (SelectionEnd - SelectionStart)) ? SelectionColour : 0;
 }
 
-static unsigned int colour_edited(unsigned int index)
+static int colour_edited(int index)
 {
   return ((index >= SelectionStart) && (index < SelectionEnd)) ?
     SelectionColour : NonSelectionColour;
 }
 
-static unsigned int colour_edited_dragged(unsigned int index)
+static int colour_edited_dragged(int index)
 {
   return (((index >= SelectionStart) && (index < SelectionEnd)) ||
           ((index >= DropPosition) &&
@@ -412,12 +415,12 @@ static unsigned int colour_edited_dragged(unsigned int index)
          SelectionColour : NonSelectionColour;
 }
 
-static int make_csv_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index))
+static int make_csv_file(char const *file_name, int (*compute_colour)(int index))
 {
   int total = 0;
   FILE * const f = test_fopen(file_name, "wb");
 
-  for (unsigned int i = 0; i < TestDataSize; ++i)
+  for (int i = 0; i < TestDataSize; ++i)
   {
     int n = fprintf(f, "%u%s", compute_colour(i), i == (TestDataSize - 1) ? "\n" : ",");
     assert(n >= 1);
@@ -431,13 +434,13 @@ static int make_csv_file(char const *file_name, unsigned int (*compute_colour)(u
   return total;
 }
 
-static int estimate_csv_size(unsigned int (*compute_colour)(unsigned int index), unsigned int ncols)
+static int estimate_csv_size(int (*compute_colour)(int index), int ncols)
 {
   NOT_USED(compute_colour);
   return ncols * 4;
 }
 
-static void check_data_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index), unsigned int ncols)
+static void check_data_file(char const *file_name, int (*compute_colour)(int index), int ncols)
 {
   FILE *f = test_fopen(file_name, "r");
   BBox coverage = {INT_MAX,INT_MAX,INT_MIN,INT_MIN};
@@ -449,7 +452,7 @@ static void check_data_file(char const *file_name, unsigned int (*compute_colour
   assert(header.tag == ExportColoursFile_Tag);
   assert(header.version == ExportColoursFile_Version);
   assert(header.num_cols == ncols);
-  for (uint32_t i = 0; i < header.num_cols ; ++i)
+  for (int32_t i = 0; i < header.num_cols ; ++i)
   {
     ExportColoursFileRecord body;
     n = fread(&body, sizeof(body), 1, f);
@@ -468,14 +471,14 @@ static void check_data_file(char const *file_name, unsigned int (*compute_colour
   assert(coverage.ymax - coverage.ymin <= MaxSelectionHeight);
 }
 
-static void check_csv_file(char const *file_name, unsigned int (*compute_colour)(unsigned int index), unsigned int ncols)
+static void check_csv_file(char const *file_name, int (*compute_colour)(int index), int ncols)
 {
   FILE *f = test_fopen(file_name, "r");
 
-  unsigned int i = 0;
+  int i = 0;
   do
   {
-    unsigned int colour = 0;
+    int colour = 0;
     char sep = 0;
     int n = fscanf(f, "%u%c", &colour, &sep);
     DEBUGF("%u: Read %d items\n", i, n);
@@ -501,7 +504,7 @@ static void check_csv_file(char const *file_name, unsigned int (*compute_colour)
   fclose(f);
 }
 
-static void check_out_file(int file_type, unsigned int (*compute_colour)(unsigned int index), unsigned int ncols)
+static void check_out_file(int file_type, int (*compute_colour)(int index), int ncols)
 {
   switch(file_type)
   {
@@ -517,12 +520,12 @@ static void check_out_file(int file_type, unsigned int (*compute_colour)(unsigne
   }
 }
 
-static int estimate_data_size(unsigned int ncols)
+static int estimate_data_size(int ncols)
 {
   return (ncols * sizeof(ExportColoursFileRecord)) + sizeof(ExportColoursFile);
 }
 
-static int estimate_file_size(int file_type, unsigned int (*compute_colour)(unsigned int index), unsigned int ncols)
+static int estimate_file_size(int file_type, int (*compute_colour)(int index), int ncols)
 {
   int estimated_size;
 
@@ -739,7 +742,7 @@ static void init_custom_event(WimpPollBlock *poll_block, int event_code)
 }
 
 static void init_pal256_event(WimpPollBlock *poll_block,
-                              unsigned int colour_number)
+                              int colour_number)
 {
   Pal256ColourSelectedEvent const pcse = {
     .hdr =
@@ -769,7 +772,7 @@ static int get_wa_origin(ObjectId id, int *x, int *y)
 }
 
 static void init_mouseclick_event(WimpPollBlock *poll_block, ObjectId id,
-                                  unsigned int pos, int buttons)
+                                  int pos, int buttons)
 {
   WimpMouseClickEvent *const wmce = &poll_block->mouse_click;
 
@@ -790,7 +793,7 @@ static void init_mouseclick_event(WimpPollBlock *poll_block, ObjectId id,
 }
 
 static void init_pointer_info_for_win(WimpGetPointerInfoBlock *pointer_info,
-                                      ObjectId id, unsigned int pos,
+                                      ObjectId id, int pos,
                                       int buttons)
 {
   int wa_origin_x = 0, wa_origin_y = 0,
@@ -1272,8 +1275,8 @@ static void dispatch_event_internal(int event_code, WimpPollBlock *poll_block,
   }
 
   /* Deliver any outgoing broadcasts back to the sender */
-  unsigned int count = pseudo_wimp_get_message_count();
-  for (unsigned int i = 0; i < count; ++i)
+  int count = pseudo_wimp_get_message_count();
+  for (int i = 0; i < count; ++i)
   {
     int msg_code, handle;
     WimpPollBlock msg_block;
@@ -1325,7 +1328,7 @@ static void dispatch_event_suppress_with_error_sim(int event_code,
   DEBUGF("exit %s\n", __func__ );
 }
 
-static void set_colour(ObjectId id, unsigned int colour_number)
+static void set_colour(ObjectId id, int colour_number)
 {
   WimpPollBlock poll_block;
   ObjectId const picker_id = pseudo_toolbox_find_by_template_name("Picker");
@@ -1341,12 +1344,12 @@ static void set_colour(ObjectId id, unsigned int colour_number)
   dispatch_event(Wimp_EToolboxEvent, &poll_block);
 }
 
-static void mouse_select(ObjectId id, unsigned int start, unsigned int end)
+static void mouse_select(ObjectId id, int start, int end)
 {
   /* Simulate a mouseclick selection */
   WimpPollBlock poll_block;
   int buttons = Wimp_MouseButtonSelect * 256;
-  for (unsigned int pos = start; pos < end; ++pos)
+  for (int pos = start; pos < end; ++pos)
   {
     init_mouseclick_event(&poll_block, id, pos, buttons);
     buttons = Wimp_MouseButtonAdjust * 256;
@@ -1355,7 +1358,7 @@ static void mouse_select(ObjectId id, unsigned int start, unsigned int end)
   }
 }
 
-static void mouse_drag(ObjectId id, unsigned int pos)
+static void mouse_drag(ObjectId id, int pos)
 {
   /* Simulate a mouse drag */
   WimpPollBlock poll_block;
@@ -2866,7 +2869,7 @@ static void test13(void)
   Fortify_LeaveScope();
 }
 
-static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_types[], unsigned int ftype_idx, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, unsigned int flags)
+static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_types[], int ftype_idx, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, unsigned int flags)
 {
   WimpPollBlock poll_block;
   _Optional const _kernel_oserror *err;
@@ -2914,7 +2917,7 @@ static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_type
   return err;
 }
 
-static _Optional const _kernel_oserror *paste_internal_core(_Optional int const file_types[], unsigned int ftype_idx, int estimated_size, ObjectId id, DataTransferMethod method)
+static _Optional const _kernel_oserror *paste_internal_core(_Optional int const file_types[], int ftype_idx, int estimated_size, ObjectId id, DataTransferMethod method)
 {
   WimpPollBlock poll_block;
   _Optional const _kernel_oserror *err;
@@ -3162,7 +3165,7 @@ static void test21(void)
 {
   /* Bring windows to the front */
   ObjectId const iconbar_id = pseudo_toolbox_find_by_template_name("Iconbar");
-  for (unsigned int nwin = 0; nwin <= MaxNumWindows; ++nwin)
+  for (int nwin = 0; nwin <= MaxNumWindows; ++nwin)
   {
     WimpPollBlock poll_block;
     _Optional const _kernel_oserror *err;
@@ -3170,7 +3173,7 @@ static void test21(void)
 
     Fortify_EnterScope();
 
-    for (unsigned int w = 0; w < nwin; ++w)
+    for (int w = 0; w < nwin; ++w)
       create_window(EventCode_CreateObjColours);
 
     for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -3191,7 +3194,7 @@ static void test21(void)
     assert(limit != FortifyAllocationLimit);
 
     /* Close the editing windows created earlier */
-    for (unsigned int w = 0; w < nwin; ++w)
+    for (int w = 0; w < nwin; ++w)
       close_window(pseudo_toolbox_find_by_template_name("EditColmap"));
 
     Fortify_LeaveScope();

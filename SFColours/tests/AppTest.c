@@ -185,7 +185,7 @@ static int make_comp_file(char const *file_name, const void *in_buffer, size_t i
 
   f = test_fopen(file_name, "wb");
   assert(in_size <= INT32_MAX);
-  ok = fwrite_int32le(in_size, f);
+  ok = fwrite_int32le((int32_t)in_size, f);
   assert(ok);
 
   comp = gkeycomp_make(FednetHistoryLog2);

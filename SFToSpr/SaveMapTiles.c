@@ -102,19 +102,25 @@ static bool read_anims(ObjectId win, MapTilesHeader *const tiles_data)
         0, win, ComponentId_Splash1_NumRange + byte, &value)))
       return false;
 
-    tiles_data->splash_anim_1[byte] = value;
+    assert(value >= 0);
+    assert(value <= INT8_MAX);
+    tiles_data->splash_anim_1[byte] = (uint8_t)value;
 
     if (E(numberrange_get_value(0,
         win, ComponentId_Splash2_NumRange + byte, &value)))
       return false;
 
-    tiles_data->splash_anim_2[byte] = value;
+    assert(value >= 0);
+    assert(value <= INT8_MAX);
+    tiles_data->splash_anim_2[byte] = (uint8_t)value;
 
     if (E(numberrange_get_value(
         0, win, ComponentId_S2TriggerA_NumRange + byte, &value)))
       return false;
 
-    tiles_data->splash_2_triggers[byte] = value;
+    assert(value >= 0);
+    assert(value <= INT8_MAX);
+    tiles_data->splash_2_triggers[byte] = (uint8_t)value;
   }
   return true;
 }

@@ -140,7 +140,7 @@ static int make_compressed_file(char const *file_name)
   char test_data[TestDataSize], out_buffer[CompressionBufferSize];
   _Optional GKeyComp      *comp;
   unsigned int i;
-  int estimated_size = sizeof(int32_t);
+  size_t estimated_size = sizeof(int32_t);
   bool ok;
   GKeyStatus status;
 
@@ -192,8 +192,8 @@ static int make_compressed_file(char const *file_name)
 
   fclose(f);
   assert_no_error(os_file_set_type(file_name, TestCompressedFileType));
-
-  return estimated_size;
+  assert(estimated_size <= INT_MAX);
+  return (int)estimated_size;
 }
 
 static void check_compressed_file(char const *file_name)

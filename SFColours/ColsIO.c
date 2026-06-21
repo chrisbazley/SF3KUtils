@@ -977,7 +977,7 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
 
       unsigned char colours[EditWin_MaxSize];
       IOCoords pos[ARRAY_SIZE(colours)];
-      IOCoords size;
+      IOCoords size = {0,0};
       bool got_size = false;
       int const x_pix = 1 << x_eigen;
       int const y_pix = 1 << y_eigen;

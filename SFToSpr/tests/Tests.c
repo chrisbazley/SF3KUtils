@@ -224,12 +224,13 @@ static int make_compressed_file(const char *const file_name, void *const data, c
 
   char out_buffer[CompressionBufferSize];
   _Optional GKeyComp      *comp;
-  int estimated_size = sizeof(int32_t);
+  size_t estimated_size = sizeof(int32_t);
   GKeyStatus status;
 
   FILE *const f = test_fopen(file_name, "wb");
 
-  bool const ok = fwrite_int32le(size, f);
+  assert(size <= INT32_MAX);
+  bool const ok = fwrite_int32le((int32_t)size, f);
   assert(ok);
 
   comp = gkeycomp_make(FednetHistoryLog2);
@@ -274,8 +275,8 @@ static int make_compressed_file(const char *const file_name, void *const data, c
 
   fclose(f);
   assert_no_error(os_file_set_type(file_name, file_type));
-
-  return estimated_size;
+  assert(estimated_size <= INT_MAX);
+  return (int)estimated_size;
 }
 
 static int make_compressed_planets_file(const char *const file_name, const int n, bool metadata)
@@ -1791,17 +1792,17 @@ static void activate_savebox(ObjectId saveas_id, ComponentId radio, unsigned int
             dispatch_event(Wimp_EToolboxEvent, &poll_block);
             err = err_dump_suppressed();
 
-            unsigned int flags;
+            unsigned int bf_flags;
             int nbytes;
             const ObjectId quoted_id = pseudo_saveas_get_buffer_filled(
-                                       &flags, buffer, sizeof(buffer), &nbytes);
+              &bf_flags, buffer, sizeof(buffer), &nbytes);
             if (quoted_id != NULL_ObjectId)
             {
               total_bytes += nbytes;
 
               assert(nbytes <= size);
               assert(quoted_id == saveas_id);
-              assert(flags == 0);
+              assert(bf_flags == 0);
 
               const size_t n = fwrite(buffer, nbytes, 1, f);
               assert(n == 1);
@@ -2038,7 +2039,7 @@ static void test7(void)
       break;
 
     /* The window may have been created even if an error occurred. */
-    ObjectId const id = pseudo_toolbox_find_by_template_name("SaveDir");
+    id = pseudo_toolbox_find_by_template_name("SaveDir");
     if (id != NULL_ObjectId) {
       dialogue_completed(id);
     }

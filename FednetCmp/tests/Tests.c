@@ -474,7 +474,7 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fet
     .user_message = {
       .hdr = {
         .size = sizeof(*poll_block),
-        .sender = regs.r[0],
+        .sender = (int)regs.r[0],
         .my_ref = ++fake_ref,
         .your_ref = ram_fetch->hdr.my_ref,
         .action_code = Wimp_MRAMTransmit,
@@ -502,7 +502,7 @@ static int init_data_load_msg(WimpPollBlock *poll_block, char *filename, int est
     .user_message = {
       .hdr = {
         .size = sizeof(*poll_block),
-        .sender = regs.r[0],
+        .sender = (int)regs.r[0],
         .my_ref = ++fake_ref,
         .your_ref = your_ref,
         .action_code = Wimp_MDataLoad,
@@ -535,7 +535,7 @@ static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size, int
     .user_message = {
       .hdr = {
         .size = sizeof(*poll_block),
-        .sender = regs.r[0],
+        .sender = (int)regs.r[0],
         .my_ref = ++fake_ref,
         .your_ref = 0,
         .action_code = Wimp_MDataSave,

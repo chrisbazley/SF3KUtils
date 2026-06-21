@@ -73,9 +73,9 @@ void parse_arguments(int argc, char *argv[])
       else if (stricmp(argv[i], "-timeslice") == 0 && i + 1 < argc)
       {
         const char *decimal = argv[++i];
-        const int len = strlen(decimal);
+        const size_t len = strlen(decimal);
 
-        for (int c = 0; c < len; c++)
+        for (size_t c = 0; c < len; c++)
         {
           if (!isdigit(decimal[c]))
           {

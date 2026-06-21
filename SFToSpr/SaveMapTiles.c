@@ -94,7 +94,7 @@ static bool read_anims(ObjectId win, MapTilesHeader *const tiles_data)
         (void *)tiles_data, win);
 
   /* Read animations data from text fields */
-  for (size_t byte = 0; byte < ARRAY_SIZE(tiles_data->splash_anim_1); byte++)
+  for (int byte = 0; byte < (int)ARRAY_SIZE(tiles_data->splash_anim_1); byte++)
   {
     int value;
 
@@ -128,7 +128,7 @@ static bool write_anims(ObjectId win, MapTilesHeader const *const tiles_data)
   DEBUG("Showing animations anchored at %p in window %d",
         (void *)tiles_data, win);
 
-  for (size_t byte = 0; byte < ARRAY_SIZE(tiles_data->splash_anim_1); byte++)
+  for (int byte = 0; byte < (int)ARRAY_SIZE(tiles_data->splash_anim_1); byte++)
   {
     int temp;
 
@@ -161,7 +161,7 @@ static bool set_limits(ObjectId win, int last_tile)
   assert(last_tile >= 0 && last_tile < 255);
   DEBUG("Limiting number ranges to %d in window %d", last_tile, win);
 
-  for (size_t byte = 0; byte < ARRAY_SIZE(((MapTilesHeader *)0)->splash_anim_1); byte++)
+  for (int byte = 0; byte < (int)ARRAY_SIZE(((MapTilesHeader *)0)->splash_anim_1); byte++)
   {
     if (E(numberrange_set_bounds(NumberRange_UpperBound, win,
                                  ComponentId_Splash1_NumRange + byte,

@@ -250,9 +250,10 @@ static int make_object_cols_file(char const *file_name, int (*compute_colour)(in
 
   for (int i = 0; i < (int)ARRAY_SIZE(cols.colour_mappings); ++i)
     cols.colour_mappings[i] =
-      i < (int)ARRAY_SIZE(cols.areas.static_colours)
-        ? i
-        : compute_colour(i - ARRAY_SIZE(cols.areas.static_colours));
+      (uint8_t)(i < (int)ARRAY_SIZE(cols.areas.static_colours)
+                  ? i
+                  : compute_colour(i -
+                                   (int)ARRAY_SIZE(cols.areas.static_colours)));
 
   return make_comp_file(file_name, &cols, sizeof(cols));
 }

@@ -180,7 +180,7 @@ typedef enum
 }
 DataTransferMethod;
 
-static int th;
+static intptr_t th;
 
 static void wipe(const char *path_name)
 {

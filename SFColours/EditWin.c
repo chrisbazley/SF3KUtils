@@ -1408,16 +1408,16 @@ static bool read_bboxes(EditWin * const edit_win)
   static BBox obj_gadget_bboxes[EditWin_MaxSize];
 
   bool *bboxes_read;
-  size_t num_cols;
+  int num_cols;
   if (file->hillcols)
   {
-    num_cols = ARRAY_SIZE(hill_gadget_bboxes);
+    num_cols = (int)ARRAY_SIZE(hill_gadget_bboxes);
     file->gadget_bboxes = hill_gadget_bboxes;
     bboxes_read = &hgbb_cached;
   }
   else
   {
-    num_cols = ARRAY_SIZE(obj_gadget_bboxes);
+    num_cols = EditWin_MaxSize;
     file->gadget_bboxes = obj_gadget_bboxes;
     bboxes_read = &ogbb_cached;
   }
@@ -1429,7 +1429,7 @@ static bool read_bboxes(EditWin * const edit_win)
 
   ObjectId const window_id = edit_win->window_id;
 
-  for (size_t index = 0; index < num_cols; index++)
+  for (int index = 0; index < num_cols; index++)
   {
     if (E(gadget_get_bbox(0, window_id,
            ComponentId_First_Button + index,

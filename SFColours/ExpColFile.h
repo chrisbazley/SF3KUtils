@@ -42,8 +42,8 @@ void ExpColFile_destroy(ExpColFile *file);
 ColMapEntry ExpColFile_get_colour(ExpColFile const *file, int index,
   _Optional int *x_offset, _Optional int *y_offset);
 
-bool ExpColFile_set_colour(ExpColFile *file, int index,
-  int x_offset, int y_offset, ColMapEntry colour);
+void ExpColFile_set_colour(ExpColFile *file, int index, int x_offset,
+                           int y_offset, ColMapEntry colour);
 
 int ExpColFile_get_size(ExpColFile const *file);
 ExpColFileState ExpColFile_read(ExpColFile *file, Reader *reader);

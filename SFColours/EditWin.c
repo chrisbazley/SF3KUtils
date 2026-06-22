@@ -2436,8 +2436,7 @@ bool EditWin_get_expcol(EditWin *const edit_win,
     y_offset -= y;
 
     ColMapEntry const colour = EditWin_get_colour(edit_win, c);
-    (void)ExpColFile_set_colour(export_file, s++,
-      x_offset, y_offset, colour);
+    ExpColFile_set_colour(export_file, s++, x_offset, y_offset, colour);
   }
 
   return true;

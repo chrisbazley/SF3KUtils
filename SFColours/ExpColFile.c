@@ -127,31 +127,30 @@ ColMapEntry ExpColFile_get_colour(ExpColFile const *const file, int const index,
 
 /* ----------------------------------------------------------------------- */
 
-bool ExpColFile_set_colour(ExpColFile *const file, int const index,
+void ExpColFile_set_colour(ExpColFile *const file, int const index,
   int const x_offset, int const y_offset, ColMapEntry const colour)
 {
   DEBUGF("Writing record %d in export file %p\n", index, (void *)file);
   assert(file != NULL);
+  assert(index >= 0);
+  assert(index < file->num_cols);
+
   if (file->num_cols > 0)
   {
     assert(flex_size(&file->records) >=
       file->num_cols * (int)sizeof(ExportColFileRecord));
   }
 
-  if (index < 0 || index >= file->num_cols)
-  {
-    return false;
-  }
-
   ExportColFileRecord *const record =
     (ExportColFileRecord *)file->records + index;
 
-  record->x_offset = x_offset;
-  record->y_offset = y_offset;
-  record->colour = colour;
-  DEBUGF("  Put colour %d at offset %d,%d\n", colour, x_offset, y_offset);
+  *record = (ExportColFileRecord){
+    .x_offset = x_offset,
+    .y_offset = y_offset,
+    .colour = colour,
+  };
 
-  return true;
+  DEBUGF("  Put colour %d at offset %d,%d\n", colour, x_offset, y_offset);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -172,6 +171,7 @@ static ExpColFileState read_body(ExpColFile *const file, Reader *const reader)
   for (int index = 0; index < num_cols; ++index)
   {
     int32_t x, y, col;
+
     if (!reader_fread_int32(&x, reader) ||
         !reader_fread_int32(&y, reader) ||
         !reader_fread_int32(&col, reader))
@@ -180,10 +180,12 @@ static ExpColFileState read_body(ExpColFile *const file, Reader *const reader)
         ExpColFileState_BadLen : ExpColFileState_ReadFail;
     }
 
-    if (!ExpColFile_set_colour(file, index, x, y, col))
+    if (col < 0 || col >= NumColours)
     {
       return ExpColFileState_BadCol;
     }
+
+    ExpColFile_set_colour(file, index, x, y, (ColMapEntry)col);
   }
 
   /* We should have reached the end of the file */

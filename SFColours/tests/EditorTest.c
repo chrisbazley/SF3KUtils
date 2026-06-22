@@ -724,7 +724,7 @@ static void test13(void)
   editor_set_plain(&editor, Colour);
 
   editor_exc_select(&editor, last);
-  editor_set_plain(&editor, Colour + steps);
+  editor_set_plain(&editor, (ColMapEntry)(Colour + steps));
 
   editor_clear_selection(&editor);
   for (int pos = first; pos < SelectEnd; ++pos)

@@ -69,7 +69,9 @@ static int selhandler(int const event_code, ToolboxEvent *const event,
   if (!E(toolbox_get_client_handle(0, id_block->ancestor_id, &client_handle)))
   {
     /* Remap selected logical colours to the actual colour picked */
-    EditWin_colour_selected(client_handle, pcse->colour_number);
+    ColMapEntry const colour = (ColMapEntry)pcse->colour_number;
+    assert(colour == pcse->colour_number);
+    EditWin_colour_selected(client_handle, colour);
   }
   return 1; /* claim event */
 }

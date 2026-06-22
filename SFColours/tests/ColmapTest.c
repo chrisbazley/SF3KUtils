@@ -64,10 +64,10 @@ static void test1(void)
   }
 }
 
-static int get_colour(int i)
+static ColMapEntry get_colour(int i)
 {
-  i %= NumColours;
-  return i % 2 ? i : MaxColour - i;
+  ColMapEntry colour = (ColMapEntry)(i % NumColours);
+  return i % 2 ? colour : MaxColour - colour;
 }
 
 static void test2(void)

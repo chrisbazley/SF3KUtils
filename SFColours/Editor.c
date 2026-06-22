@@ -31,8 +31,7 @@ enum
 
 typedef struct {
   int pos;
-  unsigned char old;
-  unsigned char rep;
+  ColMapEntry old, rep;
 } EditSubrecord;
 
 
@@ -52,7 +51,7 @@ static bool set_and_redraw(EditColMap *const edit_colmap, int const pos,
 
   bool changed = false;
 
-  int const old = colmap_get_colour(&edit_colmap->colmap, pos);
+  ColMapEntry const old = colmap_get_colour(&edit_colmap->colmap, pos);
   if (old != colour)
   {
     if (rec)
@@ -552,17 +551,17 @@ EditResult editor_interpolate(Editor *const editor,
     first_BGR0 = palette[colmap_get_colour(colmap, first)],
     last_BGR0 = palette[colmap_get_colour(colmap, last)];
 
-  int const r = PALETTE_GET_RED(first_BGR0);
+  uint8_t const r = PALETTE_GET_RED(first_BGR0);
   int const red_diff = PALETTE_GET_RED(last_BGR0) - r;
   float red_component = r;
   float const red_inc = (float)red_diff / steps;
 
-  int const g = PALETTE_GET_GREEN(first_BGR0);
+  uint8_t const g = PALETTE_GET_GREEN(first_BGR0);
   int const green_diff = PALETTE_GET_GREEN(last_BGR0) - g;
   float green_component = g;
   float const green_inc = (float)green_diff / steps;
 
-  int const b = PALETTE_GET_BLUE(first_BGR0);
+  uint8_t const b = PALETTE_GET_BLUE(first_BGR0);
   int const blue_diff = PALETTE_GET_BLUE(last_BGR0) - b;
   float blue_component = b;
   float const blue_inc = (float)blue_diff / steps;
@@ -585,7 +584,11 @@ EditResult editor_interpolate(Editor *const editor,
       palette, NPixelColours, (int)(red_component + 0.5f),
       (int)(green_component + 0.5f), (int)(blue_component + 0.5f));
 
-    if (set_and_redraw(editor->edit_colmap, pos, nearest_colour, &*rec))
+    assert(nearest_colour >= 0);
+    assert(nearest_colour < NPixelColours);
+
+    if (set_and_redraw(editor->edit_colmap, pos, (ColMapEntry)nearest_colour,
+                       &*rec))
     {
       changed = EditResult_Changed;
     }
@@ -632,7 +635,7 @@ EditResult editor_set_array(Editor *const editor, int const *const colours,
       *is_valid = false;
     }
 
-    if (set_and_redraw(editor->edit_colmap, pos, colour, &*rec))
+    if (set_and_redraw(editor->edit_colmap, pos, (ColMapEntry)colour, &*rec))
     {
       changed = EditResult_Changed;
     }

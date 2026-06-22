@@ -354,7 +354,7 @@ static void check_object_cols_file(char const *file_name, ColMapEntry (*compute_
   {
     ColMapEntry const colour =
       i < (int)ARRAY_SIZE(out_buffer.areas.static_colours)
-        ? i
+        ? (ColMapEntry)i
         : compute_colour(i - (int)ARRAY_SIZE(out_buffer.areas.static_colours));
     if (out_buffer.colour_mappings[i] != colour)
     {

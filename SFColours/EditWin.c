@@ -1917,7 +1917,9 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
     /* Populate the initial part of the palette (static colours) */
     for (int pos = 0; pos < file->start_editnum; ++pos)
     {
-      colmap_set_colour(colmap, pos, pos);
+      ColMapEntry const colour = (ColMapEntry)pos;
+      assert(colour == pos);
+      colmap_set_colour(colmap, pos, colour);
     }
 
 #if !PER_VIEW_SELECT
@@ -2325,8 +2327,8 @@ void EditWin_set_colmap(EditWin *const edit_win, int const x, int const y,
 /* ----------------------------------------------------------------------- */
 
 typedef struct {
-  unsigned short position;
-  unsigned short colour;
+  int position;
+  ColMapEntry colour;
 } ColourWithPos;
 
 int compare(const void *a, const void *b)

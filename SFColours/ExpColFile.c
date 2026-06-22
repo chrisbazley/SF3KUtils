@@ -98,11 +98,8 @@ ColMapEntry ExpColFile_get_colour(ExpColFile const *const file, int const index,
 {
   DEBUGF("Reading record %d in export file %p\n", index, (void *)file);
   assert(file != NULL);
-
-  if (index < 0 || index >= file->num_cols)
-  {
-    return -1;
-  }
+  assert(index >= 0);
+  assert(index < file->num_cols);
 
   const ExportColFileRecord *const record =
     (ExportColFileRecord *)file->records + index;

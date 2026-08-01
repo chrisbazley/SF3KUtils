@@ -66,7 +66,6 @@ enum
   WindowHandle_IconBar = -2, /* Pseudo window handle (icon bar) */
 };
 
-static ObjectId Iconbar_id = NULL_ObjectId;
 static bool multi_saveboxes = false;
 static _Optional SFTSaveBox *last_savebox = NULL;
 
@@ -383,8 +382,7 @@ static int dataload_message(WimpMessage *const message, void *const handle)
 
 void Iconbar_initialise(ObjectId id)
 {
-  Iconbar_id = id;
-
+  NOT_USED(id);
   /* Register Wimp message handlers to load files dropped on iconbar icon */
   EF(event_register_message_handler(Wimp_MDataSave, datasave_message, (void *)NULL));
   EF(event_register_message_handler(Wimp_MDataLoad, dataload_message, (void *)NULL));

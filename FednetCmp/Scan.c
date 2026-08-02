@@ -129,7 +129,7 @@ typedef struct
   /* preserved data for retry */
   unsigned int retry_num_checked;
   unsigned int retry_num_output;
-  FILE *_Optional *file_op;
+  _Optional FILE *_Optional *file_op;
   char return_action[MaxActionLen + 1];
   StringBuffer load_path, save_path;
   size_t make_path_offset; /* avoids creating directories that should already exist */
@@ -369,7 +369,7 @@ static _Optional const _kernel_oserror *append_to_string_buffer(
                                StringBuffer *const sb,
                                DirIterator *const it,
                                size_t (*get_string)(const DirIterator *it,
-                                                    char *buffer,
+                                                    _Optional char *buffer,
                                                     size_t buff_size))
 {
   _Optional const _kernel_oserror *e = NULL;

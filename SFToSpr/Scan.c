@@ -494,7 +494,7 @@ static _Optional const _kernel_oserror *append_to_string_buffer(
                                StringBuffer *sb,
                                DirIterator *it,
                                size_t (*get_string)(const DirIterator *it,
-                                                    char *buffer,
+                                                    _Optional char *buffer,
                                                     size_t buff_size))
 {
   _Optional const _kernel_oserror *e = NULL;

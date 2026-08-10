@@ -11,24 +11,6 @@ FetchContent_Declare(SF3K GIT_REPOSITORY https://github.com/chrisbazley/SF3KLib.
 
 FetchContent_MakeAvailable(CBUtil CB CBDebug OptionalAcornC SF3K)
 
-option(USE_OPTIONAL "Enable the _Optional qualifier" OFF)
-option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
-
-if(USE_OPTIONAL)
-    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
-        message(FATAL_ERROR
-            "USE_OPTIONAL requires Christopher Bazley's Clang fork")
-    endif()
-
-    add_compile_definitions(USE_OPTIONAL)
-
-    if(CMAKE_GENERATOR STREQUAL "Xcode")
-        set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
-        set(CMAKE_XCODE_ATTRIBUTE_CLANG_ANALYZER_OTHER_FLAGS
-            "-analyzer-checker optionality,core -analyzer-max-loop 32")
-    endif()
-endif()
-
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
 
@@ -40,29 +22,25 @@ else()
     add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)
 endif()
 
-if(ENABLE_CLANG_TIDY)
-    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
-        message(FATAL_ERROR "ENABLE_CLANG_TIDY requires Clang")
-    endif()
-
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
     find_program(CLANG_TIDY_EXE
         NAMES clang-tidy
         HINTS "/opt/homebrew/opt/llvm/bin"
     )
 
-    if(NOT CLANG_TIDY_EXE)
-        message(FATAL_ERROR
-            "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found")
+    if(CLANG_TIDY_EXE)
+        set(CLANG_TIDY_ARGS "${CLANG_TIDY_EXE};-checks=-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.*")
+
+        if(APPLE)
+            execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE MAC_SDK_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+            list(APPEND CLANG_TIDY_ARGS "--extra-arg=-isysroot" "--extra-arg=${MAC_SDK_PATH}")
+        endif()
+
+        set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_ARGS}")
+        message(STATUS "Clang-Tidy Static Analyzer enabled automatically.")
+    else()
+        message(STATUS "clang-tidy binary not found. Skipping analysis pass.")
     endif()
-
-    set(CMAKE_C_CLANG_TIDY
-        "${CLANG_TIDY_EXE}"
-        "--checks=-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.*"
-        "--warnings-as-errors=clang-analyzer-optionality.*"
-    )
-
-    message(STATUS "clang-tidy: ${CLANG_TIDY_EXE}")
-    message(STATUS "_Optional static analysis enabled")
 endif()
 
 set(SOURCES

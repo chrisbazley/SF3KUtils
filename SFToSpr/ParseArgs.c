@@ -77,7 +77,7 @@ void parse_arguments(int argc, char *argv[])
 
         for (size_t c = 0; c < len; c++)
         {
-          if (!isdigit(decimal[c]))
+          if (!isdigit((unsigned char)(decimal[c])))
           {
             err_complain_fatal(DUMMY_ERRNO, msgs_lookup("BadParm"));
           }

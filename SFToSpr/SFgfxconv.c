@@ -407,7 +407,7 @@ static inline int parse_tile_sprite_name(char const *const name)
   long int tile_num = -1;
 
   if (strncmp(name, TILE_SPR_NAME, sizeof(TILE_SPR_NAME)-1) == 0 &&
-      isdigit(name[sizeof(TILE_SPR_NAME)-1]))
+      isdigit((unsigned char)(name[sizeof(TILE_SPR_NAME)-1])))
   {
     char *endp;
     tile_num = strtol(name + sizeof(TILE_SPR_NAME)-1, &endp, 10);
@@ -932,7 +932,7 @@ static inline int parse_planet_sprite_name(char const *const name)
   long int image_num = -1;
 
   if (strncmp(name, PLANET_SPR_NAME, sizeof(PLANET_SPR_NAME)-1) == 0 &&
-      isdigit(name[sizeof(PLANET_SPR_NAME)-1]))
+      isdigit((unsigned char)(name[sizeof(PLANET_SPR_NAME)-1])))
   {
     char *endp;
     image_num = strtol(name + sizeof(PLANET_SPR_NAME)-1, &endp, 10);

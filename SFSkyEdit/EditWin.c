@@ -2491,7 +2491,7 @@ void EditWin_show_parent_dir(EditWin const *const edit_win)
   /* Opens the parent directory of a file that is being edited */
   assert(edit_win != NULL);
   char const * const path = userdata_get_file_name(&edit_win->file->list_node);
-  char const * const last_dot = strrchr(path, '.');
+  _Optional char const * const last_dot = strrchr(path, '.');
   if (last_dot == NULL)
   {
     return;

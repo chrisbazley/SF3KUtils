@@ -133,14 +133,18 @@ void quick_view(const char *const read_filename, int const file_type)
   }
 
   char cmd[sizeof(COMMAND_PREFIX) + L_tmpnam] = COMMAND_PREFIX;
-  char const *const write_filename = tmpnam(cmd + sizeof(COMMAND_PREFIX) - 1);
+  _Optional char const *const write_filename = tmpnam(cmd + sizeof(COMMAND_PREFIX) - 1);
+  if (!write_filename)
+  {
+    return;
+  }
 
   hourglass_on();
-  SFError const err = try_convert(read_filename, write_filename, file_type);
+  SFError const err = try_convert(read_filename, &*write_filename, file_type);
   hourglass_off();
 
-  if (!handle_error(err, read_filename, write_filename) &&
-      !E(set_file_type(write_filename, FileType_Sprite)))
+  if (!handle_error(err, read_filename, &*write_filename) &&
+      !E(set_file_type(&*write_filename, FileType_Sprite)))
   {
     /* Open temporary Sprite file (e.g. in Paint) */
     if (_kernel_oscli(cmd) == _kernel_ERROR)

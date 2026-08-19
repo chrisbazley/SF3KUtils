@@ -1534,7 +1534,7 @@ void Scan_create(char *const load_root, const char *const save_root,
      but not any of its ancestors.
    e.g. save_root = "RAM::0.$.Landscapes", last_sep = ".Landscapes", make_path_offset = 9
         makes "RAM::0.$.Landscapes" and any descendants */
-  const char * const last_sep = strrchr(save_root, '.');
+  _Optional const char * const last_sep = strrchr(save_root, '.');
   scan_data->state.make_path_offset = (last_sep == NULL) ? 0 : last_sep - save_root + 1;
 
   stringbuffer_init(&scan_data->state.load_path);

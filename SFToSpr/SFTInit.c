@@ -232,7 +232,7 @@ static int object_auto_created(const int event_code, ToolboxEvent *const event,
       PreQuit_initialise
     }
   };
-  const ObjectInitInfo *match;
+  _Optional const ObjectInitInfo *match;
 
   NOT_USED(event_code);
   assert(event != NULL);

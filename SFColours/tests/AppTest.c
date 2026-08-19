@@ -499,7 +499,7 @@ static void check_csv_file(char const *file_name, ColMapEntry (*compute_colour)(
       ++i;
     }
   }
-  while (!feof(f));
+  while (!feof(f) && !ferror(f));
 
   assert(i == ncols);
 

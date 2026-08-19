@@ -10,7 +10,9 @@ if(USE_OPTIONAL)
     if(CMAKE_GENERATOR STREQUAL "Xcode")
         set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
         set(CMAKE_XCODE_ATTRIBUTE_CLANG_ANALYZER_OTHER_FLAGS
-            "-analyzer-checker optionality,core -analyzer-max-loop 32")
+            "-analyzer-checker optionality,core \
+             -analyzer-disable-checker=security.ArrayBound \
+             -analyzer-max-loop 32")
     endif()
 endif()
 

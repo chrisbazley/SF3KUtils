@@ -497,6 +497,8 @@ static void check_csv_file(char const *file_name, ColMapEntry (*compute_colour)(
           assert(sep == ',');
       }
       ++i;
+    } else {
+      break;
     }
   }
   while (!feof(f) && !ferror(f));

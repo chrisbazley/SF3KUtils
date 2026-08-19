@@ -444,6 +444,8 @@ static void check_csv_file(char const *file_name, uint8_t (*compute_colour)(int 
           assert(sep == ',');
       }
       ++i;
+    } else {
+      break;
     }
   }
   while (!feof(f) && !ferror(f));
@@ -495,6 +497,8 @@ static void check_sprite_file(char const *file_name, uint8_t (*compute_colour)(i
       for (size_t p = 0; p < sizeof(row); ++p)
         assert(compute_colour(i) == row[p]);
       ++i;
+    } else {
+      break;
     }
   }
   while (!feof(f) && !ferror(f));
@@ -583,6 +587,8 @@ static void check_preview_file(char const *file_name, int colour)
           uniform++;
       assert(uniform >= sizeof(row)*9/10);
       ++i;
+    } else {
+      break;
     }
   }
   while (!feof(f) && !ferror(f));

@@ -715,12 +715,7 @@ static bool redraw_bbox_cb(EditWin *const edit_win, void *const arg)
   assert(bbox->xmin <= bbox->xmax);
   assert(bbox->ymin <= bbox->ymax);
 
-#if defined(__clang__) && __has_attribute(suppress)
-  __attribute__((suppress))
-#endif
-  {
-    ON_ERR_RPT(window_force_redraw(0, edit_win->window_id, bbox));
-  }
+  ON_ERR_RPT(window_force_redraw(0, edit_win->window_id, bbox));
 
   return false; /* continue */
 }

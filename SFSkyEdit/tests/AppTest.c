@@ -446,7 +446,7 @@ static void check_csv_file(char const *file_name, uint8_t (*compute_colour)(int 
       ++i;
     }
   }
-  while (!feof(f));
+  while (!feof(f) && !ferror(f));
 
   assert(i == ncols);
 
@@ -497,7 +497,7 @@ static void check_sprite_file(char const *file_name, uint8_t (*compute_colour)(i
       ++i;
     }
   }
-  while (!feof(f));
+  while (!feof(f) && !ferror(f));
   assert(i == ncols);
 
   fclose(f);
@@ -585,7 +585,7 @@ static void check_preview_file(char const *file_name, int colour)
       ++i;
     }
   }
-  while (!feof(f));
+  while (!feof(f) && !ferror(f));
   assert(i == PrevHeight);
 
   fclose(f);

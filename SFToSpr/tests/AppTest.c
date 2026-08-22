@@ -1,6 +1,5 @@
 /*
- *  SFToSpr - Star Fighter 3000 graphics converter
- *  Unit tests
+ *  SFToSpr test: Top level
  *  Copyright (C) 2017 Christopher Bazley
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -58,17 +57,11 @@
 #include "FileRWInt.h"
 
 /* Local header files */
+#include "Tests.h"
 #include "../SFTInit.h"
 
 #ifdef FORTIFY
 #include "Fortify.h"
-#else
-#define Fortify_SetAllocationLimit(x) ((void)(x))
-#define Fortify_SetNumAllocationsLimit(x) ((void)(x))
-#define Fortify_EnterScope()
-#define Fortify_LeaveScope()
-#define Fortify_OutputStatistics()
-#define Fortify_CheckAllMemory()
 #endif
 
 #ifdef USE_OPTIONAL
@@ -3265,16 +3258,8 @@ static void fortify_output(char const *text)
 }
 #endif
 
-int main(int argc, char *argv[])
+void App_tests(void)
 {
-  NOT_USED(argc);
-  NOT_USED(argv);
-
-  DEBUG_SET_OUTPUT(DebugOutput_FlushedFile, "SFtoSprLog");
-#ifdef FORTIFY
-  Fortify_SetOutputFunc(fortify_output);
-  atexit(fortify_check);
-#endif
   static const struct
   {
     const char *test_name;
@@ -3375,6 +3360,4 @@ int main(int argc, char *argv[])
   }
 
   wipe(TEST_DATA_DIR);
-  Fortify_OutputStatistics();
-  return EXIT_SUCCESS;
 }

@@ -1,20 +1,39 @@
-file(GLOB SOURCES "*.c")
-file(GLOB PRIVATE_HEADERS "*.h")
+set(CORESOURCES
+    ConvTest.c
+)
 
-string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
+file(GLOB PUBLIC_HEADERS "*.h")
 
-if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
-  # RISC OS: The only platform where it links and runs
-  add_executable(SFToSprTests ${SOURCES} ${PRIVATE_HEADERS})
-  add_test(NAME "SFToSprTests" COMMAND SFToSprTests)
-else()
-  # Other platforms: Compile only (no linking) to catch errors
-  add_library(SFToSprTests OBJECT ${SOURCES} ${PRIVATE_HEADERS})
-endif()
+add_library(SFToSprCoreTestsLib OBJECT ${CORESOURCES} ${PUBLIC_HEADERS})
+target_link_libraries(SFToSprCoreTestsLib PUBLIC SFToSpr)
 
-target_include_directories(SFToSprTests PRIVATE
+set_target_properties(SFToSprCoreTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
+
+set(APPSOURCES
+    AppTest.c
+)
+
+add_library(SFToSprAppTestsLib OBJECT ${APPSOURCES} ${PUBLIC_HEADERS})
+target_link_libraries(SFToSprAppTestsLib PUBLIC SFToSpr)
+
+set_target_properties(SFToSprAppTestsLib PROPERTIES
+    PUBLIC_HEADER "${PUBLIC_HEADERS}"
+)
+
+target_include_directories(SFToSprAppTestsLib PRIVATE
     $<TARGET_PROPERTY:Stream,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:GKey,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-target_link_libraries(SFToSprTests PRIVATE SFToSpr)
+string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
+
+add_executable(SFToSprTests Main.c)
+target_link_libraries(SFToSprTests PRIVATE SFToSprCoreTestsLib)
+add_test(NAME "SFToSprTests" COMMAND SFToSprTests)
+
+if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
+  target_compile_definitions(SFToSprTests PRIVATE ACORN_C)
+  target_link_libraries(SFToSprTests PRIVATE SFToSprAppTestsLib)
+endif()

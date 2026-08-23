@@ -975,6 +975,96 @@ static void test_negative_planet_extension_count(void)
   check_scan_error(area, (size_t)area_size, SFError_BadNumGFX);
 }
 
+#ifdef FORTIFY
+static void check_to_sprites_alloc_failure(ToSpritesFn *const convert)
+{
+  uint8_t input[1] = {0}, output[1];
+  Reader reader;
+  Writer writer;
+  assert(reader_mem_init(&reader, input, sizeof input));
+  assert(writer_mem_init(&writer, output, sizeof output));
+  Fortify_SetMallocFailRate(100);
+  assert(convert(&reader, &writer) == SFError_NoMem);
+  Fortify_SetMallocFailRate(0);
+  assert(finish_writer(&writer) == 0);
+  reader_destroy(&reader);
+}
+
+static void check_from_sprites_alloc_failure(FromSpritesFn *const convert)
+{
+  uint8_t input[1] = {0}, output[1];
+  Reader reader;
+  Writer writer;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof context);
+  assert(reader_mem_init(&reader, input, sizeof input));
+  assert(writer_mem_init(&writer, output, sizeof output));
+  Fortify_SetMallocFailRate(100);
+  assert(convert(&reader, &writer, &context) == SFError_NoMem);
+  Fortify_SetMallocFailRate(0);
+  assert(finish_writer(&writer) == 0);
+  reader_destroy(&reader);
+}
+
+static void test_scan_alloc_failure(void)
+{
+  uint8_t input[1] = {0};
+  Reader reader;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof context);
+  assert(reader_mem_init(&reader, input, sizeof input));
+  Fortify_SetMallocFailRate(100);
+  assert(scan_sprite_file(&reader, &context) == SFError_NoMem);
+  Fortify_SetMallocFailRate(0);
+  reader_destroy(&reader);
+}
+
+static void test_tiles_to_sprites_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(tiles_to_sprites);
+}
+
+static void test_tiles_to_sprites_ext_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(tiles_to_sprites_ext);
+}
+
+static void test_planets_to_sprites_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(planets_to_sprites);
+}
+
+static void test_planets_to_sprites_ext_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(planets_to_sprites_ext);
+}
+
+static void test_sky_to_sprites_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(sky_to_sprites);
+}
+
+static void test_sky_to_sprites_ext_alloc_failure(void)
+{
+  check_to_sprites_alloc_failure(sky_to_sprites_ext);
+}
+
+static void test_sprites_to_tiles_alloc_failure(void)
+{
+  check_from_sprites_alloc_failure(from_tiles);
+}
+
+static void test_sprites_to_planets_alloc_failure(void)
+{
+  check_from_sprites_alloc_failure(from_planets);
+}
+
+static void test_sprites_to_sky_alloc_failure(void)
+{
+  check_from_sprites_alloc_failure(from_sky);
+}
+#endif
+
 void Conv_tests(void)
 {
   static const struct
@@ -1028,6 +1118,27 @@ void Conv_tests(void)
     { "Repair a sky sprite extension", test_repair_sky_extension },
     { "Reject a negative planet extension count",
       test_negative_planet_extension_count },
+#ifdef FORTIFY
+    { "Fail to allocate a sprite scanner", test_scan_alloc_failure },
+    { "Fail to allocate a map tile-to-sprite converter",
+      test_tiles_to_sprites_alloc_failure },
+    { "Fail to allocate an extended map tile-to-sprite converter",
+      test_tiles_to_sprites_ext_alloc_failure },
+    { "Fail to allocate a planet-to-sprite converter",
+      test_planets_to_sprites_alloc_failure },
+    { "Fail to allocate an extended planet-to-sprite converter",
+      test_planets_to_sprites_ext_alloc_failure },
+    { "Fail to allocate a sky-to-sprite converter",
+      test_sky_to_sprites_alloc_failure },
+    { "Fail to allocate an extended sky-to-sprite converter",
+      test_sky_to_sprites_ext_alloc_failure },
+    { "Fail to allocate a sprite-to-map tile converter",
+      test_sprites_to_tiles_alloc_failure },
+    { "Fail to allocate a sprite-to-planet converter",
+      test_sprites_to_planets_alloc_failure },
+    { "Fail to allocate a sprite-to-sky converter",
+      test_sprites_to_sky_alloc_failure },
+#endif
   };
 
   for (size_t count = 0; count < ARRAY_SIZE(unit_tests); ++count)

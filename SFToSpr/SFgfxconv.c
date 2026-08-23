@@ -739,6 +739,12 @@ static SFError read_planets_ext(ScanSpritesContext *const context, int32_t const
       return read_fail(reader);
     }
 
+    if (ncoords < 0 ||
+        (uint32_t)ncoords > ARRAY_SIZE(context->planets.hdr.paint_coords))
+    {
+      return SFError_BadNumGFX;
+    }
+
     if (ext_size >= PlanetSprExtDataHdrSize + (ncoords * PlanetSprExtDataOffsetSize))
     {
       context->planets.got_hdr = true;
@@ -746,11 +752,6 @@ static SFError read_planets_ext(ScanSpritesContext *const context, int32_t const
       if (!read_planets_coords(&context->planets.hdr, ncoords, reader))
       {
         return read_fail(reader);
-      }
-
-      if (ncoords < 0 || (uint32_t)ncoords > ARRAY_SIZE(context->planets.hdr.paint_coords))
-      {
-        return SFError_BadNumGFX;
       }
 
       for (int32_t i = 0; i < ncoords; i++)

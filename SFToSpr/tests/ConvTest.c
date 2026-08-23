@@ -96,10 +96,10 @@ static SFError csv_to_sky_adapter(Reader *const reader, void *const header)
   return csv_to_sky(reader, header);
 }
 
-static long int make_sprite_area(void *const buffer, size_t const size,
+static long int make_sprite_area(uint8_t *const buffer, size_t const size,
                                  int32_t const count, int32_t const first,
                                  int32_t const used,
-                                 _Optional void const *const extension,
+                                 _Optional uint8_t const *const extension,
                                  size_t const extension_size)
 {
   Writer writer;

@@ -71,6 +71,82 @@ static void check_bytes(void const *const expected, size_t const expected_size,
   reader_destroy(&actual_reader);
 }
 
+static void check_csv_result(char const *const csv, SFError const expected,
+                             SFError (*const convert)(Reader *, void *),
+                             void *const header)
+{
+  Reader reader;
+  assert(reader_mem_init(&reader, csv, strlen(csv)));
+  assert(convert(&reader, header) == expected);
+  reader_destroy(&reader);
+}
+
+static SFError csv_to_tiles_adapter(Reader *const reader, void *const header)
+{
+  return csv_to_tiles(reader, header);
+}
+
+static SFError csv_to_planets_adapter(Reader *const reader, void *const header)
+{
+  return csv_to_planets(reader, header);
+}
+
+static SFError csv_to_sky_adapter(Reader *const reader, void *const header)
+{
+  return csv_to_sky(reader, header);
+}
+
+static long int make_sprite_area(void *const buffer, size_t const size,
+                                 int32_t const count, int32_t const first,
+                                 int32_t const used,
+                                 _Optional void const *const extension,
+                                 size_t const extension_size)
+{
+  Writer writer;
+  assert(writer_mem_init(&writer, buffer, size));
+  assert(writer_fwrite_int32(count, &writer));
+  assert(writer_fwrite_int32(first, &writer));
+  assert(writer_fwrite_int32(used, &writer));
+  if (extension)
+  {
+    assert(writer_fwrite(&*extension, extension_size, 1, &writer) == 1);
+  }
+  return finish_writer(&writer);
+}
+
+static long int make_one_tile_sprite(void *const buffer, size_t const size,
+                                     char const *const name, int32_t const type,
+                                     int32_t const width, int32_t const height,
+                                     int32_t const left_bit,
+                                     int32_t const right_bit)
+{
+  enum { HeaderSize = 44, AreaHeaderSize = 16 };
+  int32_t const sprite_size = HeaderSize + MapTileBitmapSize;
+  char name_buffer[12];
+  Writer writer;
+
+  assert(strlen(name) <= sizeof(name_buffer));
+  strncpy(name_buffer, name, sizeof(name_buffer));
+  assert(writer_mem_init(&writer, buffer, size));
+  assert(writer_fwrite_int32(1, &writer));
+  assert(writer_fwrite_int32(AreaHeaderSize, &writer));
+  assert(writer_fwrite_int32(AreaHeaderSize + sprite_size, &writer));
+  assert(writer_fwrite_int32(sprite_size, &writer));
+  assert(writer_fwrite(name_buffer, sizeof(name_buffer), 1, &writer) == 1);
+  assert(writer_fwrite_int32(width, &writer));
+  assert(writer_fwrite_int32(height, &writer));
+  assert(writer_fwrite_int32(left_bit, &writer));
+  assert(writer_fwrite_int32(right_bit, &writer));
+  assert(writer_fwrite_int32(HeaderSize, &writer));
+  assert(writer_fwrite_int32(HeaderSize, &writer));
+  assert(writer_fwrite_int32(type, &writer));
+  for (int i = 0; i < MapTileBitmapSize; ++i)
+  {
+    assert(writer_fputc(i, &writer) != EOF);
+  }
+  return finish_writer(&writer);
+}
+
 static uint8_t pixel(int const image, int const x, int const y)
 {
   return (uint8_t)(17 + image * 53 + x * 7 + y * 11);
@@ -227,6 +303,7 @@ static void check_round_trip(void const *const source, size_t const source_size,
   long int const sprites_size = finish_writer(&writer);
   reader_destroy(&reader);
 
+  memset(context, 0xa5, sizeof(*context));
   assert(reader_mem_init(&reader, sprites, (size_t)sprites_size));
   assert(scan_sprite_file(&reader, context) == SFError_OK);
   reader_destroy(&reader);
@@ -256,6 +333,7 @@ static void check_nonextended_round_trip(
   long int const sprites_size = finish_writer(&writer);
   reader_destroy(&reader);
 
+  memset(&context, 0xa5, sizeof(context));
   assert(reader_mem_init(&reader, sprites, (size_t)sprites_size));
   assert(scan_sprite_file(&reader, &context) == SFError_OK);
   reader_destroy(&reader);
@@ -380,6 +458,7 @@ static void test_incremental_conversion(void)
   check_bytes(expected_sprites, (size_t)expected_size,
               actual_sprites, (size_t)actual_size);
 
+  memset(&context, 0xa5, sizeof(context));
   assert(reader_mem_init(&reader, actual_sprites, (size_t)actual_size));
   assert(scan_sprite_file_init(&scan_iter, &reader, &context) == SFError_OK);
   assert(scan_iter.super.pos == 0);
@@ -498,6 +577,7 @@ static void test_scan_truncated_sprite_area(void)
   Reader reader;
   ScanSpritesContext context;
 
+  memset(&context, 0xa5, sizeof(context));
   assert(reader_mem_init(&reader, sprite_data, 0));
   assert(scan_sprite_file(&reader, &context) == SFError_Trunc);
   reader_destroy(&reader);
@@ -529,9 +609,370 @@ static void test_scan_negative_sprite_count(void)
   assert(writer_fwrite_int32(0, &writer));
   assert(writer_fwrite_int32(0, &writer));
   long int const len = finish_writer(&writer);
+  memset(&context, 0xa5, sizeof(context));
   assert(reader_mem_init(&reader, sprite_data, (size_t)len));
   assert(scan_sprite_file(&reader, &context) == SFError_BadNumGFX);
   reader_destroy(&reader);
+}
+
+static void check_scan_error(void const *const data, size_t const size,
+                             SFError const expected)
+{
+  Reader reader;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof(context));
+  assert(reader_mem_init(&reader, data, size));
+  assert(scan_sprite_file(&reader, &context) == expected);
+  reader_destroy(&reader);
+}
+
+static void test_bad_sprite_area_offsets(void)
+{
+  uint8_t data[32];
+  long int size = make_sprite_area(data, sizeof(data), 0, 15, 15, NULL, 0);
+  check_scan_error(data, (size_t)size, SFError_BadDataOff);
+
+  size = make_sprite_area(data, sizeof(data), 0, 17, 16, NULL, 0);
+  check_scan_error(data, (size_t)size, SFError_BadDataOff);
+}
+
+static void test_truncated_sprite_area_fields(void)
+{
+  uint8_t data[32];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  long int size = finish_writer(&writer);
+  check_scan_error(data, (size_t)size, SFError_Trunc);
+
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(16, &writer));
+  size = finish_writer(&writer);
+  check_scan_error(data, (size_t)size, SFError_Trunc);
+}
+
+static void test_empty_sprite_area(void)
+{
+  uint8_t data[32];
+  long int const size = make_sprite_area(data, sizeof(data), 0, 16, 16,
+                                         NULL, 0);
+  Reader reader;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof(context));
+  assert(reader_mem_init(&reader, data, (size_t)size));
+  assert(scan_sprite_file(&reader, &context) == SFError_OK);
+  assert(count_spr_types(&context) == 0);
+  assert(!context.bad_sprite);
+  reader_destroy(&reader);
+}
+
+static void test_unrecognised_sprite(void)
+{
+  uint8_t data[MapTileBitmapSize + 64];
+  long int const size = make_one_tile_sprite(
+                                             data, sizeof(data), "not_a_tile", 13, MapTileWidth / 4 - 1,
+                                             MapTileHeight - 1, 0, 31);
+  Reader reader;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof(context));
+  assert(reader_mem_init(&reader, data, (size_t)size));
+  assert(scan_sprite_file(&reader, &context) == SFError_OK);
+  assert(context.bad_sprite);
+  assert(strcmp(context.bad_name, "not_a_tile") == 0);
+  assert(count_spr_types(&context) == 0);
+  reader_destroy(&reader);
+}
+
+static void test_sparse_tiles(void)
+{
+  uint8_t sprites[MapTileBitmapSize + 64], tiles[BufferSize];
+  long int const sprites_size = make_one_tile_sprite(
+                                                     sprites, sizeof(sprites), "tile_1", 13, MapTileWidth / 4 - 1,
+                                                     MapTileHeight - 1, 0, 31);
+  Reader reader;
+  Writer writer;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof(context));
+  assert(reader_mem_init(&reader, sprites, (size_t)sprites_size));
+  assert(scan_sprite_file(&reader, &context) == SFError_OK);
+  reader_destroy(&reader);
+  assert(context.tiles.count == 1);
+  assert(context.tiles.hdr.last_tile_num == 1);
+
+  assert(reader_mem_init(&reader, sprites, (size_t)sprites_size));
+  assert(writer_mem_init(&writer, tiles, sizeof(tiles)));
+  assert(sprites_to_tiles(&reader, &writer, &context.tiles) == SFError_OK);
+  long int const tiles_size = finish_writer(&writer);
+  reader_destroy(&reader);
+  assert(tiles_size == 16 + 2 * MapTileBitmapSize);
+
+  Reader tiles_reader;
+  assert(reader_mem_init(&tiles_reader, tiles, (size_t)tiles_size));
+  assert(reader_fseek(&tiles_reader, 16, SEEK_SET) == 0);
+  for (int i = 0; i < MapTileBitmapSize; ++i)
+  {
+    assert(reader_fgetc(&tiles_reader) == 0);
+  }
+  reader_destroy(&tiles_reader);
+}
+
+static void test_tiles_csv_repairs(void)
+{
+  MapTilesHeader tiles = {.last_tile_num = NumTiles - 1};
+  check_csv_result("-1,3,1,2\n9,-2,1,0\n-1,256,2,3\n",
+                   SFError_ForceAnim, csv_to_tiles_adapter, &tiles);
+  assert(tiles.splash_anim_1[0] == 0);
+  assert(tiles.splash_anim_1[1] == NumTiles - 1);
+  assert(tiles.splash_anim_2[0] == NumTiles - 1);
+  assert(tiles.splash_anim_2[1] == 0);
+  assert(tiles.splash_2_triggers[0] == 0);
+  assert(tiles.splash_2_triggers[1] == UINT8_MAX);
+}
+
+static void test_planets_csv_repairs(void)
+{
+  PlanetsHeader planets = {.last_image_num = 1};
+  check_csv_result("1,-37\n-37,1\n", SFError_ForceOff,
+                   csv_to_planets_adapter, &planets);
+  assert(planets.paint_coords[0].x_offset == 0);
+  assert(planets.paint_coords[0].y_offset == -PlanetHeight);
+  assert(planets.paint_coords[1].x_offset == -PlanetWidth);
+  assert(planets.paint_coords[1].y_offset == 0);
+}
+
+static void test_sky_csv_repairs(void)
+{
+  SkyHeader sky = {0};
+  check_csv_result("-1,2049\n", SFError_ForceSky,
+                   csv_to_sky_adapter, &sky);
+  assert(sky.render_offset == 0);
+  assert(sky.min_stars_height == 2048);
+  check_csv_result("2049,-32769\n", SFError_ForceSky,
+                   csv_to_sky_adapter, &sky);
+  assert(sky.render_offset == 2048);
+  assert(sky.min_stars_height == -32768);
+}
+
+static void test_tiles_csv_overflow(void)
+{
+  char csv[256];
+  memset(csv, '0', sizeof(csv));
+  MapTilesHeader tiles = {.last_tile_num = 0};
+  Reader reader;
+
+  assert(reader_mem_init(&reader, csv, sizeof(csv)));
+  assert(csv_to_tiles(&reader, &tiles) == SFError_StrOFlo);
+  reader_destroy(&reader);
+}
+
+static void test_planets_csv_overflow(void)
+{
+  char csv[256];
+  memset(csv, '0', sizeof(csv));
+  PlanetsHeader planets = {.last_image_num = 0};
+  Reader reader;
+  assert(reader_mem_init(&reader, csv, sizeof(csv)));
+  assert(csv_to_planets(&reader, &planets) == SFError_StrOFlo);
+  reader_destroy(&reader);
+}
+
+static void test_sky_csv_overflow(void)
+{
+  char csv[256];
+  memset(csv, '0', sizeof(csv));
+  SkyHeader sky = {0};
+  Reader reader;
+  assert(reader_mem_init(&reader, csv, sizeof(csv)));
+  assert(csv_to_sky(&reader, &sky) == SFError_StrOFlo);
+  reader_destroy(&reader);
+}
+
+static void test_convert_advance_done(void)
+{
+  ConvertIter iter = {.pos = 0, .count = 0};
+  assert(convert_advance(&iter) == SFError_Done);
+  assert(convert_finish(&iter) == SFError_OK);
+}
+
+static void check_to_sprites_error(void const *const data, size_t const size,
+                                   ToSpritesFn *const convert,
+                                   SFError const expected)
+{
+  uint8_t sprites[BufferSize];
+  Reader reader;
+  Writer writer;
+  assert(reader_mem_init(&reader, data, size));
+  assert(writer_mem_init(&writer, sprites, sizeof(sprites)));
+  assert(convert(&reader, &writer) == expected);
+  finish_writer(&writer);
+  reader_destroy(&reader);
+}
+
+static void test_negative_tile_count(void)
+{
+  uint8_t data[64];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(-1, &writer));
+  long int size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, tiles_to_sprites,
+                         SFError_BadNumGFX);
+}
+
+static void test_excessive_tile_count(void)
+{
+  uint8_t data[64];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(MapTileMax + 1, &writer));
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, tiles_to_sprites,
+                         SFError_BadNumGFX);
+}
+
+static void test_bad_tile_animation(void)
+{
+  uint8_t data[64];
+  Writer writer;
+  uint8_t const bad_animation[MapAnimFrameCount] = {0, 1, 3, 0},
+                good_animation[MapAnimFrameCount] = {0, 1, 2, 0},
+                triggers[MapAnimTriggerCount] = {0};
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(2, &writer));
+  assert(writer_fwrite(bad_animation, sizeof(bad_animation), 1, &writer) == 1);
+  assert(writer_fwrite(good_animation, sizeof(good_animation), 1, &writer) == 1);
+  assert(writer_fwrite(triggers, sizeof(triggers), 1, &writer) == 1);
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, tiles_to_sprites,
+                         SFError_BadAnims);
+}
+
+static void test_bad_sky_render_offset(void)
+{
+  uint8_t data[16];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(-1, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  long int size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, sky_to_sprites, SFError_BadRend);
+}
+
+static void test_bad_sky_stars_height(void)
+{
+  uint8_t data[16];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(2049, &writer));
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, sky_to_sprites, SFError_BadStar);
+}
+
+static void test_truncated_sky_header(void)
+{
+  uint8_t data[16];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, sky_to_sprites, SFError_Trunc);
+}
+
+static void test_excessive_planet_count(void)
+{
+  uint8_t data[128];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(PlanetMax + 1, &writer));
+  long int size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, planets_to_sprites,
+                         SFError_BadNumGFX);
+}
+
+static void test_bad_planet_paint_offset(void)
+{
+  uint8_t data[128];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(1, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, planets_to_sprites,
+                         SFError_BadPaintOff);
+}
+
+static void test_bad_planet_data_offset(void)
+{
+  uint8_t data[128];
+  Writer writer;
+  assert(writer_mem_init(&writer, data, sizeof(data)));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(0, &writer));
+  assert(writer_fwrite_int32(35, &writer));
+  assert(writer_fwrite_int32(35 + PlanetBitmapSize, &writer));
+  long int const size = finish_writer(&writer);
+  check_to_sprites_error(data, (size_t)size, planets_to_sprites,
+                         SFError_BadDataOff);
+}
+
+static void test_unknown_sprite_extension(void)
+{
+  uint8_t extension[32], area[64];
+  Writer writer;
+  assert(writer_mem_init(&writer, extension, sizeof(extension)));
+  assert(writer_fwrite("????", 4, 1, &writer) == 1);
+  long int extension_size = finish_writer(&writer);
+  long int area_size = make_sprite_area(area, sizeof(area), 0,
+                                        16 + (int32_t)extension_size, 16 + (int32_t)extension_size,
+                                        extension, (size_t)extension_size);
+  check_scan_error(area, (size_t)area_size, SFError_OK);
+}
+
+static void test_repair_sky_extension(void)
+{
+  uint8_t extension[32], area[64];
+  Writer writer;
+  assert(writer_mem_init(&writer, extension, sizeof(extension)));
+  assert(writer_fwrite("HEIG", 4, 1, &writer) == 1);
+  assert(writer_fwrite_int32(-1, &writer));
+  assert(writer_fwrite_int32(2049, &writer));
+  long int const extension_size = finish_writer(&writer);
+  long int const area_size = make_sprite_area(area, sizeof(area), 0,
+                                              16 + (int32_t)extension_size, 16 + (int32_t)extension_size,
+                                              extension, (size_t)extension_size);
+  Reader reader;
+  ScanSpritesContext context;
+  memset(&context, 0xa5, sizeof(context));
+  assert(reader_mem_init(&reader, area, (size_t)area_size));
+  assert(scan_sprite_file(&reader, &context) == SFError_OK);
+  assert(context.sky.got_hdr);
+  assert(context.sky.fixed_render);
+  assert(context.sky.fixed_stars);
+  assert(context.sky.hdr.render_offset == 0);
+  assert(context.sky.hdr.min_stars_height == 2048);
+  reader_destroy(&reader);
+}
+
+static void test_negative_planet_extension_count(void)
+{
+  uint8_t extension[32], area[64];
+  Writer writer;
+  assert(writer_mem_init(&writer, extension, sizeof(extension)));
+  assert(writer_fwrite("OFFS", 4, 1, &writer) == 1);
+  assert(writer_fwrite_int32(-1, &writer));
+  long int const extension_size = finish_writer(&writer);
+  long int const area_size = make_sprite_area(area, sizeof(area), 0,
+                                              16 + (int32_t)extension_size, 16 + (int32_t)extension_size,
+                                              extension, (size_t)extension_size);
+  check_scan_error(area, (size_t)area_size, SFError_BadNumGFX);
 }
 
 void Conv_tests(void)
@@ -562,6 +1003,31 @@ void Conv_tests(void)
     { "Scan truncated sprite area", test_scan_truncated_sprite_area },
     { "Convert truncated sky", test_convert_truncated_sky },
     { "Scan negative sprite count", test_scan_negative_sprite_count },
+    { "Reject bad sprite area offsets", test_bad_sprite_area_offsets },
+    { "Reject truncated sprite area fields", test_truncated_sprite_area_fields },
+    { "Scan an empty sprite area", test_empty_sprite_area },
+    { "Record an unrecognised sprite", test_unrecognised_sprite },
+    { "Reconstruct a missing tile as black", test_sparse_tiles },
+    { "Repair out-of-range map tile CSV values", test_tiles_csv_repairs },
+    { "Repair out-of-range planet CSV values", test_planets_csv_repairs },
+    { "Repair out-of-range sky CSV values", test_sky_csv_repairs },
+    { "Reject oversized map tile CSV data", test_tiles_csv_overflow },
+    { "Reject oversized planet CSV data", test_planets_csv_overflow },
+    { "Reject oversized sky CSV data", test_sky_csv_overflow },
+    { "Advance an already-complete iterator", test_convert_advance_done },
+    { "Reject a negative map tile count", test_negative_tile_count },
+    { "Reject an excessive map tile count", test_excessive_tile_count },
+    { "Reject a bad map tile animation", test_bad_tile_animation },
+    { "Reject a bad sky render offset", test_bad_sky_render_offset },
+    { "Reject a bad sky stars height", test_bad_sky_stars_height },
+    { "Reject a truncated sky header", test_truncated_sky_header },
+    { "Reject an excessive planet count", test_excessive_planet_count },
+    { "Reject a bad planet paint offset", test_bad_planet_paint_offset },
+    { "Reject a bad planet data offset", test_bad_planet_data_offset },
+    { "Ignore an unknown sprite extension", test_unknown_sprite_extension },
+    { "Repair a sky sprite extension", test_repair_sky_extension },
+    { "Reject a negative planet extension count",
+      test_negative_planet_extension_count },
   };
 
   for (size_t count = 0; count < ARRAY_SIZE(unit_tests); ++count)

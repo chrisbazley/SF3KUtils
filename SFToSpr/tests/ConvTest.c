@@ -983,9 +983,9 @@ static void check_to_sprites_alloc_failure(ToSpritesFn *const convert)
   Writer writer;
   assert(reader_mem_init(&reader, input, sizeof input));
   assert(writer_mem_init(&writer, output, sizeof output));
-  Fortify_SetMallocFailRate(100);
+  Fortify_SetFailRate(100);
   assert(convert(&reader, &writer) == SFError_NoMem);
-  Fortify_SetMallocFailRate(0);
+  Fortify_SetFailRate(0);
   assert(finish_writer(&writer) == 0);
   reader_destroy(&reader);
 }
@@ -999,9 +999,9 @@ static void check_from_sprites_alloc_failure(FromSpritesFn *const convert)
   memset(&context, 0xa5, sizeof context);
   assert(reader_mem_init(&reader, input, sizeof input));
   assert(writer_mem_init(&writer, output, sizeof output));
-  Fortify_SetMallocFailRate(100);
+  Fortify_SetFailRate(100);
   assert(convert(&reader, &writer, &context) == SFError_NoMem);
-  Fortify_SetMallocFailRate(0);
+  Fortify_SetFailRate(0);
   assert(finish_writer(&writer) == 0);
   reader_destroy(&reader);
 }
@@ -1013,9 +1013,9 @@ static void test_scan_alloc_failure(void)
   ScanSpritesContext context;
   memset(&context, 0xa5, sizeof context);
   assert(reader_mem_init(&reader, input, sizeof input));
-  Fortify_SetMallocFailRate(100);
+  Fortify_SetFailRate(100);
   assert(scan_sprite_file(&reader, &context) == SFError_NoMem);
-  Fortify_SetMallocFailRate(0);
+  Fortify_SetFailRate(0);
   reader_destroy(&reader);
 }
 

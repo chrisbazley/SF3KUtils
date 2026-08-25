@@ -10,7 +10,7 @@ void Conv_tests(void);
 void App_tests(void);
 
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #else
 #define Fortify_SetAllocationLimit(x) ((void)(x))
 #define Fortify_SetNumAllocationsLimit(x) ((void)(x))

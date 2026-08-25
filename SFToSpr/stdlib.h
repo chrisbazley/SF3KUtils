@@ -1,4 +1,4 @@
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #endif
 #include "PseudoExit.h"

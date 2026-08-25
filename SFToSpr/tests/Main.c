@@ -25,7 +25,7 @@
 #include <string.h>
 
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #endif
 
 /* CBLibrary headers */
@@ -36,7 +36,7 @@
 #include "Tests.h"
 
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #endif
 
 #include "msgtrans.h"

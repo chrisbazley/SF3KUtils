@@ -22,7 +22,7 @@
 #include "stdlib.h"
 #ifdef FORTIFY
 #include <string.h>
-#include "Fortify.h"
+#include "fortify.h"
 #endif
 
 /* RISC OS library files */

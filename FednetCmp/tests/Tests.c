@@ -59,7 +59,7 @@
 #include "../FNCSaveBox.h"
 
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #else
 #define Fortify_SetAllocationLimit(x) ((void)(x))
 #define Fortify_SetNumAllocationsLimit(x) ((void)(x))

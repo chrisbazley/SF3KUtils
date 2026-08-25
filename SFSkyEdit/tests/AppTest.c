@@ -58,7 +58,7 @@
 #include "../OurEvents.h"
 
 #ifdef FORTIFY
-#include "Fortify.h"
+#include "fortify.h"
 #endif
 
 #ifdef USE_OPTIONAL

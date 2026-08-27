@@ -2005,7 +2005,7 @@ EditWin *ColMapFile_get_win(ColMapFile *const file)
   assert(file != NULL);
   _Optional LinkedListItem *const node = linkedlist_get_head(&file->views);
   assert(node != NULL);
-  return CONTAINER_OF(node, EditWin, node);
+  return CONTAINER_OF((LinkedListItem *)node, EditWin, node);
 }
 
 /* ----------------------------------------------------------------------- */

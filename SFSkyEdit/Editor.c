@@ -1542,7 +1542,10 @@ bool editor_redo(Editor *const editor, PaletteEntry const palette[])
   assert(edit_sky != NULL);
   _Optional LinkedListItem *const redo_item = get_redo_item(edit_sky);
   assert(redo_item != NULL);
-  EditRecord *const rec = CONTAINER_OF(redo_item, EditRecord, link);
+  if (!redo_item) {
+    return false;
+  }
+  EditRecord *const rec = CONTAINER_OF(&*redo_item, EditRecord, link);
   edit_sky->next_undo = redo_item;
 
   bool changed = false;

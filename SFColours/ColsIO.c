@@ -456,7 +456,7 @@ static bool drag_or_paste_read(Reader *const reader, int const estimated_size,
   int const file_type, char const *const filename, void *const client_handle)
 {
   /* This function is called to deliver clipboard contents or dragged data */
-  _Optional IOActionData *const action_data = client_handle;
+  IOActionData *const action_data = client_handle;
   assert(action_data != NULL);
   assert(action_data->action == IOActionCode_PasteClip ||
          action_data->action == IOActionCode_Import);

@@ -245,7 +245,10 @@ bool editor_redo(Editor const *const editor)
   assert(edit_colmap != NULL);
   _Optional LinkedListItem *const redo_item = get_redo_item(edit_colmap);
   assert(redo_item != NULL);
-  EditRecord *const redo = CONTAINER_OF(redo_item, EditRecord, link);
+  if (!redo_item) {
+    return false;
+  }
+  EditRecord *const redo = CONTAINER_OF(&*redo_item, EditRecord, link);
   edit_colmap->next_undo = redo_item;
 
   bool changed = false;

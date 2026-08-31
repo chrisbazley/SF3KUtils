@@ -992,7 +992,7 @@ static void check_uncompressed_sprites_file(const char *const file_name, const i
     for (int y = 0; y < SFMapTile_Height; ++y) {
       i += nwords;
       for (int x = 0; x < SFMapTile_Width; ++x) {
-        bm[(y * (nwords * WORD_SIZE)) + x] = p++;
+        assert(bm[(y * (nwords * WORD_SIZE)) + x] == p++);
       }
     }
   }

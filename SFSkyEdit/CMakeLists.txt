@@ -22,7 +22,11 @@ else()
     add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)
 endif()
 
-if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+if(ENABLE_CLANG_TIDY)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+        message(FATAL_ERROR "ENABLE_CLANG_TIDY requires Clang")
+    endif()
+
     find_program(CLANG_TIDY_EXE
         NAMES clang-tidy
         HINTS "/opt/homebrew/opt/llvm/bin"
@@ -61,7 +65,7 @@ target_link_libraries(SFSkyEdit PUBLIC
     SF3K
 )
 
-target_compile_definitions(SFSkyEdit PUBLIC
+target_compile_definitions(SFSkyEdit PRIVATE
     $<$<CONFIG:Debug>:DEBUG_OUTPUT>
 )
 
@@ -72,7 +76,7 @@ if(SYSTEM_NAME_UPPER STREQUAL "RISCOS")
   add_executable(SFSkyEditApp Main.c)
 else()
   # Other platforms: Compile only (no linking) to catch errors
-  add_library(SFSkyEditApp Main.c)
+  add_library(SFSkyEditApp OBJECT Main.c)
 endif()
 
 target_link_libraries(SFSkyEditApp PRIVATE

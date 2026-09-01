@@ -3271,29 +3271,6 @@ static void test48(void)
   quit_with_confirm_core(true, true);
 }
 
-#ifdef FORTIFY
-static bool fortify_detected = false;
-
-static void fortify_check(void)
-{
-  Fortify_CheckAllMemory();
-  assert(!fortify_detected);
-}
-
-static void fortify_output(char const *text)
-{
-  DEBUGF("%s", text);
-  if (strstr(text, "Fortify"))
-  {
-    assert(!fortify_detected);
-  }
-  if (strstr(text, "detected"))
-  {
-    fortify_detected = true;
-  }
-}
-#endif
-
 void App_tests(void)
 {
   static const struct

@@ -55,6 +55,8 @@
 #include "msgtrans.h"
 #include "Hourglass.h"
 #include "FileRWInt.h"
+#include "ReaderMem.h"
+#include "WriterMem.h"
 
 /* Local header files */
 #include "Tests.h"
@@ -280,38 +282,50 @@ static int make_compressed_planets_file(const char *const file_name, const int n
   assert(n > 0);
   assert(n <= 2);
 
-  uint8_t test_data[PlanetsHdrSize + ((PaddingSize + PlanetBitmapSize) * 2 * 2)];
+  uint8_t test_data[PlanetsHdrSize + ((PaddingSize + PlanetBitmapSize) * 2 * 2)] = {0};
+  static uint8_t const padding[PaddingSize] = {0};
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
 
-  size_t i = 0;
-  ((int32_t *)test_data)[i++] = n-1;
-  ((int32_t *)test_data)[i++] = PlanetPaintX0;
-  ((int32_t *)test_data)[i++] = PlanetPaintY0;
-  ((int32_t *)test_data)[i++] = PlanetPaintX1;
-  ((int32_t *)test_data)[i++] = PlanetPaintY1;
+  writer_fwrite_int32(n - 1, &writer);
+  writer_fwrite_int32(PlanetPaintX0, &writer);
+  writer_fwrite_int32(PlanetPaintY0, &writer);
+  writer_fwrite_int32(PlanetPaintX1, &writer);
+  writer_fwrite_int32(PlanetPaintY1, &writer);
 
-  ((int32_t *)test_data)[i++] = PlanetsHdrSize + PaddingSize;
-  ((int32_t *)test_data)[i++] = PlanetsHdrSize + PaddingSize + PlanetBitmapSize + PaddingSize;
-  ((int32_t *)test_data)[i++] = PlanetsHdrSize + PaddingSize + (PlanetBitmapSize + PaddingSize) * 2;
-  ((int32_t *)test_data)[i++] = PlanetsHdrSize + PaddingSize + (PlanetBitmapSize + PaddingSize) * 3;
-
-  uint8_t p = PlanetMagic;
-  for (int j = 0; j < n; ++j) {
-    uint8_t *const bm = (uint8_t *)test_data +
-                        ((int32_t *)test_data)[5 + (j*2)];
-    uint8_t *const bm2 = (uint8_t *)test_data +
-                         ((int32_t *)test_data)[6 + (j*2)];
-
-    memset(bm, 0, PlanetBitmapSize);
-    memset(bm2, 0, PlanetBitmapSize);
-
-    for (int y = 0; y < SFPlanet_Height; ++y) {
-      for (int x = 0; x < (SFPlanet_Width - PlanetBorder); ++x) {
-        bm[(y * SFPlanet_Width) + x] = p;
-        bm2[(y * SFPlanet_Width) + x + PlanetBorder] = p++;
-      }
-    }
+  for (int image = 0; image < 4; ++image)
+  {
+    writer_fwrite_int32(PlanetsHdrSize + PaddingSize +
+                        (PlanetBitmapSize + PaddingSize) * image,
+                        &writer);
   }
 
+  uint8_t p = PlanetMagic;
+  for (int j = 0; j < n; ++j)
+  {
+    uint8_t q = p;
+    writer_fwrite(padding, sizeof(padding), 1, &writer);
+    for (int y = 0; y < SFPlanet_Height; ++y)
+    {
+      for (int x = 0; x < SFPlanet_Width; ++x)
+      {
+        writer_fputc(x < SFPlanet_Width - PlanetBorder ? q++ : 0, &writer);
+      }
+    }
+
+    q = p;
+    writer_fwrite(padding, sizeof(padding), 1, &writer);
+    for (int y = 0; y < SFPlanet_Height; ++y)
+    {
+      for (int x = 0; x < SFPlanet_Width; ++x)
+      {
+        writer_fputc(x < PlanetBorder ? 0 : q++, &writer);
+      }
+    }
+    p = q;
+  }
+
+  assert(writer_destroy(&writer) >= 0);
   return make_compressed_file(file_name, test_data, sizeof(test_data), FileType_SFSkyPic);
 }
 
@@ -323,20 +337,20 @@ static int make_compressed_sky_file(const char *const file_name, int const n, bo
   assert(*file_name != '\0');
 
   uint8_t test_data[SkyHdrSize + SkyBitmapSize];
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
 
-  size_t i = 0;
-  ((int32_t *)test_data)[i++] = SkyPaintOffset;
-  ((int32_t *)test_data)[i++] = SkyStarsHeight;
+  writer_fwrite_int32(SkyPaintOffset, &writer);
+  writer_fwrite_int32(SkyStarsHeight, &writer);
 
   uint8_t p = SkyMagic;
-  uint8_t *const bm = test_data + SkyHdrSize;
-
-  for (int y = 0; y < SFSky_Height; ++y) {
-    for (int x = 0; x < SFSky_Width; ++x) {
-      bm[(y * SFSky_Width) + x] = p++;
-    }
+  for (int y = 0; y < SFSky_Height; ++y)
+  {
+    for (int x = 0; x < SFSky_Width; ++x)
+      writer_fputc(p++, &writer);
   }
 
+  assert(writer_destroy(&writer) >= 0);
   return make_compressed_file(file_name, test_data, sizeof(test_data), FileType_SFSkyCol);
 }
 
@@ -348,38 +362,29 @@ static int make_compressed_sprites_file(const char *const file_name, const int n
   assert(n > 0);
   assert(n < 256);
 
-  uint8_t test_data[TilesHdrSize + (TileBitmapSize * 255)];
+  uint8_t test_data[TilesHdrSize + (TileBitmapSize * 255)] = {0};
+  static uint8_t const anims[] = {
+    TileAnim0, TileAnim1, TileAnim2, TileAnim3,
+    TileBAnim0, TileBAnim1, TileBAnim2, TileBAnim3,
+    TileBTrig0, TileBTrig1, TileBTrig2, TileBTrig3
+  };
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
 
-  *((int32_t *)test_data) = n-1;
-
-  size_t i = 0;
-  ((int8_t *)test_data + 4)[i++] = TileAnim0;
-  ((int8_t *)test_data + 4)[i++] = TileAnim1;
-  ((int8_t *)test_data + 4)[i++] = TileAnim2;
-  ((int8_t *)test_data + 4)[i++] = TileAnim3;
-
-  ((int8_t *)test_data + 4)[i++] = TileBAnim0;
-  ((int8_t *)test_data + 4)[i++] = TileBAnim1;
-  ((int8_t *)test_data + 4)[i++] = TileBAnim2;
-  ((int8_t *)test_data + 4)[i++] = TileBAnim3;
-
-  ((int8_t *)test_data + 4)[i++] = TileBTrig0;
-  ((int8_t *)test_data + 4)[i++] = TileBTrig1;
-  ((int8_t *)test_data + 4)[i++] = TileBTrig2;
-  ((int8_t *)test_data + 4)[i++] = TileBTrig3;
+  writer_fwrite_int32(n - 1, &writer);
+  writer_fwrite(anims, sizeof(anims), 1, &writer);
 
   uint8_t p = TileMagic;
-  for (int j = 0; j < n; ++j) {
-    uint8_t *const bm = test_data + TilesHdrSize +
-                        (TileBitmapSize * j);
-
-    for (int y = 0; y < SFMapTile_Height; ++y) {
-      for (int x = 0; x < SFMapTile_Width; ++x) {
-        bm[(y * SFMapTile_Width) + x] = p++;
-      }
+  for (int j = 0; j < n; ++j)
+  {
+    for (int y = 0; y < SFMapTile_Height; ++y)
+    {
+      for (int x = 0; x < SFMapTile_Width; ++x)
+        writer_fputc(p++, &writer);
     }
   }
 
+  assert(writer_destroy(&writer) >= 0);
   return make_compressed_file(file_name, test_data, sizeof(test_data), FileType_SFMapGfx);
 }
 
@@ -458,37 +463,49 @@ static void check_planets_file(const void *const test_data, const int n)
   assert(n > 0);
   assert(n <= 2);
 
-  size_t i = 0;
-  assert(((int32_t *)test_data)[i++] == n - 1);
-  assert(((int32_t *)test_data)[i++] == PlanetPaintX0);
-  assert(((int32_t *)test_data)[i++] == PlanetPaintY0);
-  assert(((int32_t *)test_data)[i++] == PlanetPaintX1);
-  assert(((int32_t *)test_data)[i++] == PlanetPaintY1);
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data,
+                         PlanetsHdrSize + (PlanetBitmapSize * 2 * 2)));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == n - 1);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == PlanetPaintX0);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == PlanetPaintY0);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == PlanetPaintX1);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == PlanetPaintY1);
+
+  int32_t offsets[4];
+  for (size_t i = 0; i < ARRAY_SIZE(offsets); ++i)
+    assert(reader_fread_int32(&offsets[i], &reader));
 
   uint8_t p = PlanetMagic;
   for (int j = 0; j < n; ++j)
   {
-    const uint8_t *const bm = (uint8_t *)test_data +
-                              ((int32_t *)test_data)[5 + (j*2)];
-    const uint8_t *const bm2 = (uint8_t *)test_data +
-                               ((int32_t *)test_data)[6 + (j*2)];
-
-    for (int y = 0; y < SFPlanet_Height; ++y)
+    for (int image = 0; image < 2; ++image)
     {
-      for (int x = 0; x < (SFPlanet_Width - PlanetBorder); ++x)
+      assert(reader_fseek(&reader, offsets[j * 2 + image], SEEK_SET) == 0);
+      uint8_t q = p;
+      for (int y = 0; y < SFPlanet_Height; ++y)
       {
-        DEBUGF("y %d x %x expected %d got %d\n", y, x, p,
-               bm[(y * SFPlanet_Width) + x]);
-        assert(bm[(y * SFPlanet_Width) + x] == p);
-        assert(bm2[(y * SFPlanet_Width) + x + 2] == p++);
+        for (int x = 0; x < SFPlanet_Width; ++x)
+        {
+          int const got = reader_fgetc(&reader);
+          int const expected = image == 0 ?
+            (x < SFPlanet_Width - PlanetBorder ? q++ : 0) :
+            (x < PlanetBorder ? 0 : q++);
+          assert(got == expected);
+        }
       }
-      for (int x = 0; x < PlanetBorder; ++x)
-      {
-        assert(bm[(y * SFPlanet_Width) + (SFPlanet_Width - PlanetBorder) + x] == 0);
-        assert(bm2[(y * SFPlanet_Width) + x] == 0);
-      }
+      if (image == 1)
+        p = q;
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_compressed_planets_file(const char *const file_name, const int n)
@@ -506,23 +523,27 @@ static void check_sky_file(const void *const test_data)
 {
   assert(test_data != NULL);
 
-  size_t i = 0;
-  assert(((int32_t *)test_data)[i++] == SkyPaintOffset);
-  assert(((int32_t *)test_data)[i++] == SkyStarsHeight);
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data, SkyHdrSize + SkyBitmapSize));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SkyPaintOffset);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SkyStarsHeight);
 
   uint8_t p = SkyMagic;
-  const uint8_t *const bm = (uint8_t *)test_data + SkyHdrSize;
-
   for (int y = 0; y < SFSky_Height; ++y)
   {
     for (int x = 0; x < SFSky_Width; ++x)
     {
-      DEBUGF("y %d x %d expected %d got %d\n",
-             y, x, p, bm[(y * SFSky_Width) + x]);
-      assert(bm[(y * SFSky_Width) + x] == p);
+      int const got = reader_fgetc(&reader);
+      DEBUGF("y %d x %d expected %d got %d\n", y, x, p, got);
+      assert(got == p);
       ++p;
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_compressed_sky_file(const char *const file_name)
@@ -540,39 +561,34 @@ static void check_sprites_file(const void *const test_data, const int n)
   assert(n > 0);
   assert(n < 256);
 
-  assert(((int32_t *)test_data)[0] == n - 1);
-
-  size_t i = 0;
-  assert(((int8_t *)test_data + 4)[i++] == TileAnim0);
-  assert(((int8_t *)test_data + 4)[i++] == TileAnim1);
-  assert(((int8_t *)test_data + 4)[i++] == TileAnim2);
-  assert(((int8_t *)test_data + 4)[i++] == TileAnim3);
-
-  assert(((int8_t *)test_data + 4)[i++] == TileBAnim0);
-  assert(((int8_t *)test_data + 4)[i++] == TileBAnim1);
-  assert(((int8_t *)test_data + 4)[i++] == TileBAnim2);
-  assert(((int8_t *)test_data + 4)[i++] == TileBAnim3);
-
-  assert(((int8_t *)test_data + 4)[i++] == TileBTrig0);
-  assert(((int8_t *)test_data + 4)[i++] == TileBTrig1);
-  assert(((int8_t *)test_data + 4)[i++] == TileBTrig2);
-  assert(((int8_t *)test_data + 4)[i++] == TileBTrig3);
+  static uint8_t const anims[] = {
+    TileAnim0, TileAnim1, TileAnim2, TileAnim3,
+    TileBAnim0, TileBAnim1, TileBAnim2, TileBAnim3,
+    TileBTrig0, TileBTrig1, TileBTrig2, TileBTrig3
+  };
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data,
+                         TilesHdrSize + (TileBitmapSize * 255)));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == n - 1);
+  for (size_t i = 0; i < sizeof(anims); ++i)
+    assert(reader_fgetc(&reader) == anims[i]);
 
   uint8_t p = TileMagic;
   for (int j = 0; j < n; ++j)
   {
-    const uint8_t *const bm = (uint8_t *)test_data +
-                              TilesHdrSize + (TileBitmapSize * j);
-
     for (int y = 0; y < SFMapTile_Height; ++y)
     {
       for (int x = 0; x < SFMapTile_Width; ++x)
       {
-        assert(bm[(y * SFMapTile_Width) + x] == p);
+        assert(reader_fgetc(&reader) == p);
         ++p;
       }
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_compressed_sprites_file(const char *const file_name, const int n)
@@ -614,50 +630,49 @@ static int make_uncompressed_planets_file(const char *const file_name, const int
   assert(n <= 2);
 
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * 2];
-
-  size_t i = 0;
-  ((int32_t *)test_data)[i++] = n;
+  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize +
+                    (SpriteHdrSize + PlanetBitmapSize) * 2] = {0};
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
+  writer_fwrite_int32(n, &writer);
   int32_t const first_sprite = SpriteHdrOffset + SpriteAreaHdrSize + msize;
-  ((int32_t *)test_data)[i++] = first_sprite;
-  ((int32_t *)test_data)[i++] = first_sprite + ((SpriteHdrSize + PlanetBitmapSize) * n);
+  writer_fwrite_int32(first_sprite, &writer);
+  writer_fwrite_int32(first_sprite +
+                      ((SpriteHdrSize + PlanetBitmapSize) * n), &writer);
 
-  if (metadata) {
-    static const char tag[4] = {'O','F','F','S'};
-    memcpy((int32_t *)test_data + (i++), tag, sizeof(tag));
-
-    ((int32_t *)test_data)[i++] = n;
-    ((int32_t *)test_data)[i++] = PlanetPaintX0;
-    ((int32_t *)test_data)[i++] = PlanetPaintY0;
-    ((int32_t *)test_data)[i++] = PlanetPaintX1;
-    ((int32_t *)test_data)[i++] = PlanetPaintY1;
+  if (metadata)
+  {
+    writer_fwrite("OFFS", 4, 1, &writer);
+    writer_fwrite_int32(n, &writer);
+    writer_fwrite_int32(PlanetPaintX0, &writer);
+    writer_fwrite_int32(PlanetPaintY0, &writer);
+    writer_fwrite_int32(PlanetPaintX1, &writer);
+    writer_fwrite_int32(PlanetPaintY1, &writer);
   }
 
   uint8_t p = PlanetMagic;
-  for (int j = 0; j < n; ++j) {
-    ((int32_t *)test_data)[i++] = (SpriteHdrSize + PlanetBitmapSize);
-    char *const src = (void *)((int32_t *)test_data + i);
-    i += 3;
-    memset(src, '\0', 12);
-    sprintf(src, "planet_%d", j);
+  for (int j = 0; j < n; ++j)
+  {
+    writer_fwrite_int32(SpriteHdrSize + PlanetBitmapSize, &writer);
+    char name[12] = {0};
+    sprintf(name, "planet_%d", j);
+    writer_fwrite(name, sizeof(name), 1, &writer);
     const int nwords = (SFPlanet_Width + WORD_SIZE - 1) / WORD_SIZE;
-    ((int32_t *)test_data)[i++] = nwords - 1;
-    ((int32_t *)test_data)[i++] = SFPlanet_Height - 1;
-    ((int32_t *)test_data)[i++] = 0;
-    ((int32_t *)test_data)[i++] = 15;
-    ((int32_t *)test_data)[i++] = SpriteHdrSize;
-    ((int32_t *)test_data)[i++] = SpriteHdrSize;
-    ((int32_t *)test_data)[i++] = SpriteType;
+    writer_fwrite_int32(nwords - 1, &writer);
+    writer_fwrite_int32(SFPlanet_Height - 1, &writer);
+    writer_fwrite_int32(0, &writer);
+    writer_fwrite_int32(15, &writer);
+    writer_fwrite_int32(SpriteHdrSize, &writer);
+    writer_fwrite_int32(SpriteHdrSize, &writer);
+    writer_fwrite_int32(SpriteType, &writer);
 
-    uint8_t *const bm = (void *)((int32_t *)test_data + i);
-
-    for (int y = 0; y < SFPlanet_Height; ++y) {
-      i += nwords;
-      for (int x = 0; x < SFPlanet_Width; ++x) {
-        bm[(y * (nwords * WORD_SIZE)) + x] = (x < (SFPlanet_Width-2) ? p++ : 0);
-      }
+    for (int y = 0; y < SFPlanet_Height; ++y)
+    {
+      for (int x = 0; x < nwords * WORD_SIZE; ++x)
+        writer_fputc(x < SFPlanet_Width - PlanetBorder ? p++ : 0, &writer);
     }
   }
+  assert(writer_destroy(&writer) >= 0);
   return make_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite);
 }
 
@@ -668,46 +683,45 @@ static int make_uncompressed_sky_file(const char *const file_name, const int n, 
   assert(*file_name != '\0');
 
   int const msize = metadata ? SkyMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize + SpriteHdrSize + SkyBitmapSize];
-
-  size_t i = 0;
-  ((int32_t *)test_data)[i++] = 1;
+  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize +
+                    SpriteHdrSize + SkyBitmapSize] = {0};
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
+  writer_fwrite_int32(1, &writer);
   int32_t const first_sprite = SpriteHdrOffset + SpriteAreaHdrSize + msize;
-  ((int32_t *)test_data)[i++] = first_sprite;
-  ((int32_t *)test_data)[i++] = first_sprite + (SpriteHdrSize + SkyBitmapSize);
+  writer_fwrite_int32(first_sprite, &writer);
+  writer_fwrite_int32(first_sprite + SpriteHdrSize + SkyBitmapSize, &writer);
 
-  if (metadata) {
-    static const char tag[4] = {'H','E','I','G'};
-    memcpy((int32_t *)test_data + (i++), tag, sizeof(tag));
-
-    ((int32_t *)test_data)[i++] = SkyPaintOffset;
-    ((int32_t *)test_data)[i++] = SkyStarsHeight;
+  if (metadata)
+  {
+    writer_fwrite("HEIG", 4, 1, &writer);
+    writer_fwrite_int32(SkyPaintOffset, &writer);
+    writer_fwrite_int32(SkyStarsHeight, &writer);
   }
 
-  uint8_t p = SkyMagic;
-  ((int32_t *)test_data)[i++] = (SpriteHdrSize + SkyBitmapSize);
-  char *const src = (void *)((int32_t *)test_data + i);
-  i += 3;
-  memset(src, '\0', 12);
-  strcpy(src, "sky");
+  writer_fwrite_int32(SpriteHdrSize + SkyBitmapSize, &writer);
+  char name[12] = "sky";
+  writer_fwrite(name, sizeof(name), 1, &writer);
   const int nwords = (SFSky_Width + WORD_SIZE - 1) / WORD_SIZE;
-  ((int32_t *)test_data)[i++] = nwords - 1;
-  ((int32_t *)test_data)[i++] = SFSky_Height - 1;
-  ((int32_t *)test_data)[i++] = 0;
-  ((int32_t *)test_data)[i++] = 31;
-  ((int32_t *)test_data)[i++] = SpriteHdrSize;
-  ((int32_t *)test_data)[i++] = SpriteHdrSize;
-  ((int32_t *)test_data)[i++] = SpriteType;
+  writer_fwrite_int32(nwords - 1, &writer);
+  writer_fwrite_int32(SFSky_Height - 1, &writer);
+  writer_fwrite_int32(0, &writer);
+  writer_fwrite_int32(31, &writer);
+  writer_fwrite_int32(SpriteHdrSize, &writer);
+  writer_fwrite_int32(SpriteHdrSize, &writer);
+  writer_fwrite_int32(SpriteType, &writer);
 
-  uint8_t *const bm = (void *)((int32_t *)test_data + i);
-  for (int y = 0; y < SFSky_Height; ++y) {
-    int const flip_y = (SFSky_Height - 1) - y;
-    i += nwords;
-    for (int x = 0; x < SFSky_Width; ++x) {
-      bm[(flip_y * (nwords * WORD_SIZE)) + x] = p;
-      ++p;
+  for (int y = 0; y < SFSky_Height; ++y)
+  {
+    int const source_y = SFSky_Height - 1 - y;
+    for (int x = 0; x < nwords * WORD_SIZE; ++x)
+    {
+      uint8_t const value = x < SFSky_Width ?
+        (uint8_t)(SkyMagic + source_y * SFSky_Width + x) : 0;
+      writer_fputc(value, &writer);
     }
   }
+  assert(writer_destroy(&writer) >= 0);
   return make_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite);
 }
 
@@ -719,65 +733,56 @@ static int make_uncompressed_sprites_file(const char *const file_name, const int
   assert(n < 256);
 
   int const msize = metadata ? TileMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * 255)];
-
-  size_t i = 0;
-  ((int32_t *)test_data)[i++] = n;
+  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize +
+                    ((SpriteHdrSize + TileBitmapSize) * 255)] = {0};
+  Writer writer;
+  assert(writer_mem_init(&writer, test_data, sizeof(test_data)));
+  writer_fwrite_int32(n, &writer);
   int32_t const first_sprite = SpriteHdrOffset + SpriteAreaHdrSize + msize;
-  ((int32_t *)test_data)[i++] = first_sprite;
-  ((int32_t *)test_data)[i++] = first_sprite + ((SpriteHdrSize + TileBitmapSize) * n);
+  writer_fwrite_int32(first_sprite, &writer);
+  writer_fwrite_int32(first_sprite + ((SpriteHdrSize + TileBitmapSize) * n),
+                      &writer);
 
-  if (metadata) {
-    uint8_t *const anims = (uint8_t *)((int32_t *)test_data + i);
-    size_t j = 0;
-
-    static const char tag[4] = {'A','N','I','M'};
-    memcpy(anims, tag, sizeof(tag));
-    j += sizeof(tag);
-
-    anims[j++] = TileAnim0;
-    anims[j++] = TileAnim1;
-    anims[j++] = TileAnim2;
-    anims[j++] = TileAnim3;
-
-    anims[j++] = TileBAnim0;
-    anims[j++] = TileBAnim1;
-    anims[j++] = TileBAnim2;
-    anims[j++] = TileBAnim3;
-
-    anims[j++] = TileBTrig0;
-    anims[j++] = TileBTrig1;
-    anims[j++] = TileBTrig2;
-    anims[j++] = TileBTrig3;
-
-    i += j / sizeof(int32_t);
+  if (metadata)
+  {
+    static uint8_t const anims[] = {
+      TileAnim0, TileAnim1, TileAnim2, TileAnim3,
+      TileBAnim0, TileBAnim1, TileBAnim2, TileBAnim3,
+      TileBTrig0, TileBTrig1, TileBTrig2, TileBTrig3
+    };
+    writer_fwrite("ANIM", 4, 1, &writer);
+    writer_fwrite(anims, sizeof(anims), 1, &writer);
   }
 
-  uint8_t p = TileMagic;
-  for (int j = 0; j < n; ++j) {
-    ((int32_t *)test_data)[i++] = (SpriteHdrSize + TileBitmapSize);
-    char *const src = (void *)((int32_t *)test_data + i);
-    i += 3;
-    memset(src, '\0', 12);
-    sprintf(src, "tile_%d", j);
+  for (int j = 0; j < n; ++j)
+  {
+    writer_fwrite_int32(SpriteHdrSize + TileBitmapSize, &writer);
+    char name[12] = {0};
+    sprintf(name, "tile_%d", j);
+    writer_fwrite(name, sizeof(name), 1, &writer);
     const int nwords = (SFMapTile_Width + WORD_SIZE - 1) / WORD_SIZE;
-    ((int32_t *)test_data)[i++] = nwords - 1;
-    ((int32_t *)test_data)[i++] = SFMapTile_Height - 1;
-    ((int32_t *)test_data)[i++] = 0;
-    ((int32_t *)test_data)[i++] = 31;
-    ((int32_t *)test_data)[i++] = SpriteHdrSize;
-    ((int32_t *)test_data)[i++] = SpriteHdrSize;
-    ((int32_t *)test_data)[i++] = SpriteType;
+    writer_fwrite_int32(nwords - 1, &writer);
+    writer_fwrite_int32(SFMapTile_Height - 1, &writer);
+    writer_fwrite_int32(0, &writer);
+    writer_fwrite_int32(31, &writer);
+    writer_fwrite_int32(SpriteHdrSize, &writer);
+    writer_fwrite_int32(SpriteHdrSize, &writer);
+    writer_fwrite_int32(SpriteType, &writer);
 
-    uint8_t *const bm = (void *)((int32_t *)test_data + i);
-    for (int y = 0; y < SFMapTile_Height; ++y) {
-      int const flip_y = (SFMapTile_Height - 1) - y;
-      i += nwords;
-      for (int x = 0; x < SFMapTile_Width; ++x) {
-        bm[(flip_y * (nwords * WORD_SIZE)) + x] = p++;
+    for (int y = 0; y < SFMapTile_Height; ++y)
+    {
+      int const source_y = SFMapTile_Height - 1 - y;
+      for (int x = 0; x < nwords * WORD_SIZE; ++x)
+      {
+        uint8_t const value = x < SFMapTile_Width ?
+          (uint8_t)(TileMagic +
+                    j * SFMapTile_Width * SFMapTile_Height +
+                    source_y * SFMapTile_Width + x) : 0;
+        writer_fputc(value, &writer);
       }
     }
   }
+  assert(writer_destroy(&writer) >= 0);
   return make_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite);
 }
 
@@ -809,69 +814,78 @@ static void check_uncompressed_planets_file(const char *const file_name, const i
   assert(n > 0);
   assert(n <= 2);
   int const msize = metadata ? PlanetMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize + (SpriteHdrSize + PlanetBitmapSize) * 2];
-  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
+  uint8_t test_data[SpriteAreaHdrSize + PlanetMetadataSize +
+                    (SpriteHdrSize + PlanetBitmapSize) * 2];
+  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data),
+                                 FileType_Sprite) == sizeof(test_data));
 
-  size_t i = 0;
-  assert(((int32_t *)test_data)[i++] == n);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + SpriteAreaHdrSize + msize);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + (int)sizeof(test_data));
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data, sizeof(test_data)));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == n);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + SpriteAreaHdrSize + msize);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + (int)sizeof(test_data));
 
-  if (metadata) {
-    static const char tag[4] = {'O','F','F','S'};
-    assert(!memcmp((int32_t *)test_data + (i++), tag, sizeof(tag)));
-
-    int32_t const noffsets = ((int32_t *)test_data)[i++];
-    assert(noffsets == n);
-
-    int32_t x[2], y[2];
-    x[0] = ((int32_t *)test_data)[i++];
-    y[0] = ((int32_t *)test_data)[i++];
-    x[1] = ((int32_t *)test_data)[i++];
-    y[1] = ((int32_t *)test_data)[i++];
-
-    DEBUGF("Got %d,%d %d,%d Expected %d,%d %d,%d\n",
-           x[0], y[0], x[1], y[1], PlanetPaintX0, PlanetPaintY0,
-           PlanetPaintX1, PlanetPaintY1);
-
-    assert(PlanetPaintX0 == x[0]);
-    assert(PlanetPaintY0 == y[0]);
-    assert(PlanetPaintX1 == x[1]);
-    assert(PlanetPaintY1 == y[1]);
+  if (metadata)
+  {
+    char tag[4];
+    assert(reader_fread(tag, sizeof(tag), 1, &reader) == 1);
+    assert(memcmp(tag, "OFFS", sizeof(tag)) == 0);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == n);
+    int32_t x[2];
+    int32_t y[2];
+    assert(reader_fread_int32(&x[0], &reader));
+    assert(reader_fread_int32(&y[0], &reader));
+    assert(reader_fread_int32(&x[1], &reader));
+    assert(reader_fread_int32(&y[1], &reader));
+    assert(x[0] == PlanetPaintX0);
+    assert(y[0] == PlanetPaintY0);
+    assert(x[1] == PlanetPaintX1);
+    assert(y[1] == PlanetPaintY1);
   }
 
   uint8_t p = PlanetMagic;
-  for (int j = 0; j < n; ++j) {
-    assert(((int32_t *)test_data)[i++] == (SpriteHdrSize + PlanetBitmapSize));
-    const char *const src = (void *)((int32_t *)test_data + i);
-    i += 3;
-    char tmp[13] = {'\0'};
-    for (size_t k = 0; k < sizeof(tmp) - 1; ++k) {
-      tmp[k] = src[k];
-    }
+  for (int j = 0; j < n; ++j)
+  {
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize + PlanetBitmapSize);
+    char name[13] = {0};
+    assert(reader_fread(name, sizeof(name) - 1, 1, &reader) == 1);
     int tileno;
-    int l = sscanf(tmp, "planet_%d", &tileno);
+    int const l = sscanf(name, "planet_%d", &tileno);
     assert(l == 1);
     assert(tileno == j);
     const int nwords = (SFPlanet_Width - PlanetBorder + WORD_SIZE - 1) / WORD_SIZE;
-    assert(((int32_t *)test_data)[i++] == nwords - 1);
-    assert(((int32_t *)test_data)[i++] == SFPlanet_Height - 1);
-    assert(((int32_t *)test_data)[i++] == 0);
-    assert(((int32_t *)test_data)[i++] == 15);
-    assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-    assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-    assert(((int32_t *)test_data)[i++] == SpriteType);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == nwords - 1);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SFPlanet_Height - 1);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == 0);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == 15);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteType);
 
-    uint8_t *const bm = (void *)((int32_t *)test_data + i);
-
-    for (int y = 0; y < SFPlanet_Height; ++y) {
-      i += nwords;
-      for (int x = 0; x < SFPlanet_Width - PlanetBorder; ++x) {
-        assert(bm[(y * (nwords * WORD_SIZE)) + x] == p);
-        ++p;
+    for (int y = 0; y < SFPlanet_Height; ++y)
+    {
+      for (int x = 0; x < nwords * WORD_SIZE; ++x)
+      {
+        int const expected = x < SFPlanet_Width - PlanetBorder ? p++ : 0;
+        assert(reader_fgetc(&reader) == expected);
       }
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_uncompressed_sky_file(const char *const file_name, const int n, bool metadata)
@@ -880,49 +894,65 @@ static void check_uncompressed_sky_file(const char *const file_name, const int n
   assert(file_name != NULL);
   assert(*file_name != '\0');
   int const msize = metadata ? SkyMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize + SpriteHdrSize + SkyBitmapSize];
-  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
+  uint8_t test_data[SpriteAreaHdrSize + SkyMetadataSize +
+                    SpriteHdrSize + SkyBitmapSize];
+  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data),
+                                 FileType_Sprite) == sizeof(test_data));
 
-  size_t i = 0;
-  assert(((int32_t *)test_data)[i++] == 1);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + SpriteAreaHdrSize + msize);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + (int)sizeof(test_data));
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data, sizeof(test_data)));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == 1);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + SpriteAreaHdrSize + msize);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + (int)sizeof(test_data));
 
-  if (metadata) {
-    static const char tag[4] = {'H','E','I','G'};
-    assert(!memcmp((int32_t *)test_data + (i++), tag, sizeof(tag)));
-
-    assert(((int32_t *)test_data)[i++] == SkyPaintOffset);
-    assert(((int32_t *)test_data)[i++] == SkyStarsHeight);
+  if (metadata)
+  {
+    char tag[4];
+    assert(reader_fread(tag, sizeof(tag), 1, &reader) == 1);
+    assert(memcmp(tag, "HEIG", sizeof(tag)) == 0);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SkyPaintOffset);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SkyStarsHeight);
   }
 
-  uint8_t p = SkyMagic;
-  assert(((int32_t *)test_data)[i++] == (SpriteHdrSize + SkyBitmapSize));
-  const char *const src = (void *)((int32_t *)test_data + i);
-  i += 3;
-  char tmp[13] = {'\0'};
-  for (size_t k = 0; k < sizeof(tmp) - 1; ++k) {
-    tmp[k] = src[k];
-  }
-  assert(!strcmp(tmp, "sky"));
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrSize + SkyBitmapSize);
+  char name[13] = {0};
+  assert(reader_fread(name, sizeof(name) - 1, 1, &reader) == 1);
+  assert(strcmp(name, "sky") == 0);
   const int nwords = (SFSky_Width + WORD_SIZE - 1) / WORD_SIZE;
-  assert(((int32_t *)test_data)[i++] == nwords - 1);
-  assert(((int32_t *)test_data)[i++] == SFSky_Height - 1);
-  assert(((int32_t *)test_data)[i++] == 0);
-  assert(((int32_t *)test_data)[i++] == 31);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-  assert(((int32_t *)test_data)[i++] == SpriteType);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == nwords - 1);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SFSky_Height - 1);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == 0);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == 31);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrSize);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrSize);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteType);
 
-  uint8_t *const bm = (void *)((int32_t *)test_data + i);
-  for (int y = 0; y < SFSky_Height; ++y) {
-    int const flip_y = (SFSky_Height - 1) - y;
-    i += nwords;
-    for (int x = 0; x < SFSky_Width; ++x) {
-      assert(bm[(flip_y * (nwords * WORD_SIZE)) + x] == p);
-      ++p;
+  for (int y = 0; y < SFSky_Height; ++y)
+  {
+    int const source_y = SFSky_Height - 1 - y;
+    for (int x = 0; x < nwords * WORD_SIZE; ++x)
+    {
+      int const expected = x < SFSky_Width ?
+        (uint8_t)(SkyMagic + source_y * SFSky_Width + x) : 0;
+      assert(reader_fgetc(&reader) == expected);
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_uncompressed_sprites_file(const char *const file_name, const int n, bool metadata)
@@ -932,70 +962,76 @@ static void check_uncompressed_sprites_file(const char *const file_name, const i
   assert(n > 0);
   assert(n < 256);
   int const msize = metadata ? TileMetadataSize : 0;
-  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize + ((SpriteHdrSize + TileBitmapSize) * 255)];
-  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data), FileType_Sprite) == sizeof(test_data));
+  uint8_t test_data[SpriteAreaHdrSize + TileMetadataSize +
+                    ((SpriteHdrSize + TileBitmapSize) * 255)];
+  assert(check_uncompressed_file(file_name, test_data, sizeof(test_data),
+                                 FileType_Sprite) == sizeof(test_data));
 
-  size_t i = 0;
-  assert(((int32_t *)test_data)[i++] == n);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + SpriteAreaHdrSize + msize);
-  assert(((int32_t *)test_data)[i++] == SpriteHdrOffset + (int)sizeof(test_data));
+  Reader reader;
+  assert(reader_mem_init(&reader, test_data, sizeof(test_data)));
+  int32_t value;
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == n);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + SpriteAreaHdrSize + msize);
+  assert(reader_fread_int32(&value, &reader));
+  assert(value == SpriteHdrOffset + (int)sizeof(test_data));
 
-  if (metadata) {
-    const uint8_t *const anims = (uint8_t *)((int32_t *)test_data + i);
-    size_t j = 0;
-
-    static const char tag[4] = {'A','N','I','M'};
-    assert(!memcmp(anims, tag, sizeof(tag)));
-    j += sizeof(tag);
-
-    assert(anims[j++] == TileAnim0);
-    assert(anims[j++] == TileAnim1);
-    assert(anims[j++] == TileAnim2);
-    assert(anims[j++] == TileAnim3);
-
-    assert(anims[j++] == TileBAnim0);
-    assert(anims[j++] == TileBAnim1);
-    assert(anims[j++] == TileBAnim2);
-    assert(anims[j++] == TileBAnim3);
-
-    assert(anims[j++] == TileBTrig0);
-    assert(anims[j++] == TileBTrig1);
-    assert(anims[j++] == TileBTrig2);
-    assert(anims[j++] == TileBTrig3);
-
-    i += j / sizeof(int32_t);
+  if (metadata)
+  {
+    static uint8_t const anims[] = {
+      TileAnim0, TileAnim1, TileAnim2, TileAnim3,
+      TileBAnim0, TileBAnim1, TileBAnim2, TileBAnim3,
+      TileBTrig0, TileBTrig1, TileBTrig2, TileBTrig3
+    };
+    char tag[4];
+    assert(reader_fread(tag, sizeof(tag), 1, &reader) == 1);
+    assert(memcmp(tag, "ANIM", sizeof(tag)) == 0);
+    for (size_t i = 0; i < sizeof(anims); ++i)
+      assert(reader_fgetc(&reader) == anims[i]);
   }
 
-  uint8_t p = TileMagic;
-  for (int j = 0; j < n; ++j) {
-    assert(((int32_t *)test_data)[i++] == (SpriteHdrSize + TileBitmapSize));
-    const char *const src = (void *)((int32_t *)test_data + i);
-    i += 3;
-    char tmp[13] = {'\0'};
-    for (size_t k = 0; k < sizeof(tmp) - 1; ++k) {
-      tmp[k] = src[k];
-    }
+  for (int j = 0; j < n; ++j)
+  {
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize + TileBitmapSize);
+    char name[13] = {0};
+    assert(reader_fread(name, sizeof(name) - 1, 1, &reader) == 1);
     int tileno;
-    int l = sscanf(tmp, "tile_%d", &tileno);
+    int const l = sscanf(name, "tile_%d", &tileno);
     assert(l == 1);
     assert(tileno == j);
     const int nwords = (SFMapTile_Width + WORD_SIZE - 1) / WORD_SIZE;
-    assert(((int32_t *)test_data)[i++] == nwords - 1);
-    assert(((int32_t *)test_data)[i++] == SFMapTile_Height - 1);
-    assert(((int32_t *)test_data)[i++] == 0);
-    assert(((int32_t *)test_data)[i++] == 31);
-    assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-    assert(((int32_t *)test_data)[i++] == SpriteHdrSize);
-    assert(((int32_t *)test_data)[i++] == SpriteType);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == nwords - 1);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SFMapTile_Height - 1);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == 0);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == 31);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteHdrSize);
+    assert(reader_fread_int32(&value, &reader));
+    assert(value == SpriteType);
 
-    uint8_t *const bm = (void *)((int32_t *)test_data + i);
-    for (int y = 0; y < SFMapTile_Height; ++y) {
-      i += nwords;
-      for (int x = 0; x < SFMapTile_Width; ++x) {
-        assert(bm[(y * (nwords * WORD_SIZE)) + x] == p++);
+    for (int y = 0; y < SFMapTile_Height; ++y)
+    {
+      int const source_y = SFMapTile_Height - 1 - y;
+      for (int x = 0; x < nwords * WORD_SIZE; ++x)
+      {
+        int const expected = x < SFMapTile_Width ?
+          (uint8_t)(TileMagic +
+                    j * SFMapTile_Width * SFMapTile_Height +
+                    source_y * SFMapTile_Width + x) : 0;
+        assert(reader_fgetc(&reader) == expected);
       }
     }
   }
+  assert(!reader_ferror(&reader));
+  reader_destroy(&reader);
 }
 
 static void check_planets_metadata_file(const char *const file_name)

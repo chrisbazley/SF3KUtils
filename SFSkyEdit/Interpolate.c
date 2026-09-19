@@ -68,7 +68,7 @@ static bool have_caret;
 static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Dialogue box about to open - set up from ancestor */
+  assert(event_code == Window_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -102,11 +102,11 @@ static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
 static int popup_about_to_be_shown(int const event_code,
   ToolboxEvent *const event, IdBlock *const id_block, void *const handle)
 {
-  /* Colour picker about to pop up - set colour */
   const PopUpAboutToBeShownEvent * const puatbs =
     (PopUpAboutToBeShownEvent *)event;
   SkyColour colour = 0;
 
+  assert(event_code == PopUp_AboutToBeShown);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -138,6 +138,7 @@ static int actionbutton_selected(int const event_code,
   const ActionButtonSelectedEvent * const abse =
     (ActionButtonSelectedEvent *)event;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

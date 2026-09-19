@@ -54,7 +54,7 @@ ObjectId savebox_sharedid = NULL_ObjectId;
 static int save_about_to_be_shown(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Set up dialogue box for ancestor document */
+  assert(event_code == SaveAs_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -102,6 +102,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastf = (SaveAsSaveToFileEvent *)event;
   unsigned int flags = 0;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -139,6 +140,7 @@ static int save_completed(int const event_code, ToolboxEvent *const event,
 {
   const SaveAsSaveCompletedEvent * const sasc = (SaveAsSaveCompletedEvent *)event;
 
+  assert(event_code == SaveAs_SaveCompleted);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

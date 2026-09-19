@@ -364,6 +364,7 @@ static int slider_value_changed(int const event_code,
   PreviewData *const preview_data = handle;
   ComponentId nr = NULL_ComponentId;
 
+  assert(event_code == Slider_ValueChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -414,6 +415,7 @@ static int h_numberrange_value_changed(int const event_code, ToolboxEvent *const
   PreviewData *const preview_data = handle;
   ComponentId sl = NULL_ComponentId;
 
+  assert(event_code == NumberRange_ValueChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -462,6 +464,7 @@ static int a_numberrange_value_changed(int const event_code,
     (NumberRangeValueChangedEvent *)event;
   PreviewData *const preview_data = handle;
 
+  assert(event_code == NumberRange_ValueChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -676,6 +679,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
   bool simple_redraw = false;
   static bool sup = false;
 
+  assert(event_code == Wimp_ERedrawWindow);
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);
@@ -762,6 +766,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
 {
   NOT_USED(id_block);
   assert(event != NULL);
+  assert(event_code == Wimp_EMouseClick);
   NOT_USED(event_code);
 
   if (event->mouse_click.buttons == Wimp_MouseButtonSelect ||

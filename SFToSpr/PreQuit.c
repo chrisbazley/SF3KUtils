@@ -62,6 +62,7 @@ static int quit_sender, window_handle;
 static int about_to_be_shown(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Quit_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   NOT_USED(id_block);
@@ -77,6 +78,7 @@ static int about_to_be_shown(const int event_code, ToolboxEvent *const event,
 static int quit(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Quit_Quit);
   NOT_USED(event_code);
   NOT_USED(event);
   NOT_USED(id_block);

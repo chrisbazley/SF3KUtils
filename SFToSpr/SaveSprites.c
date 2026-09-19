@@ -331,9 +331,9 @@ static int fill_buffer(const int event_code, ToolboxEvent *const event,
 static int save_completed(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Save completed */
   SaveSprites * const savefile_data = handle;
 
+  assert(event_code == SaveAs_SaveCompleted);
   NOT_USED(event_code);
   NOT_USED(event);
   NOT_USED(id_block);
@@ -354,6 +354,7 @@ static int actionbutton_selected(const int event_code, ToolboxEvent *const event
 {
   const ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)event;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -387,6 +388,7 @@ static int radiobutton_state_changed(const int event_code, ToolboxEvent *const e
     (RadioButtonStateChangedEvent *)event;
   SaveSprites * const savefile_data = handle;
 
+  assert(event_code == RadioButton_StateChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

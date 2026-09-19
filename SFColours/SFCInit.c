@@ -329,6 +329,7 @@ static int object_auto_created(int const event_code, ToolboxEvent *const event,
   };
   _Optional const ObjectInitInfo *match;
 
+  assert(event_code == Toolbox_ObjectAutoCreated);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -374,6 +375,7 @@ static int toolbox_error(int const event_code, ToolboxEvent *const event,
 {
   const ToolboxErrorEvent * const totee = (ToolboxErrorEvent *)event;
 
+  assert(event_code == Toolbox_Error);
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);

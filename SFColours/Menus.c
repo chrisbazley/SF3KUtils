@@ -81,6 +81,7 @@ static int root_menu_show_handler(int const event_code, ToolboxEvent *const even
   NOT_USED(handle);
   assert(id_block != NULL);
   NOT_USED(event);
+  assert(event_code == Menu_AboutToBeShown);
   NOT_USED(event_code);
 
   void *client_handle;
@@ -100,6 +101,7 @@ static int root_menu_show_handler(int const event_code, ToolboxEvent *const even
 static int effect_submenu_handler(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Menu_SubMenu);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -132,6 +134,7 @@ static int edit_menu_show_handler(int const event_code, ToolboxEvent *const even
   NOT_USED(handle);
   assert(id_block != NULL);
   NOT_USED(event);
+  assert(event_code == Menu_AboutToBeShown);
   NOT_USED(event_code);
 
   void *client_handle;
@@ -146,6 +149,7 @@ static int edit_menu_show_handler(int const event_code, ToolboxEvent *const even
 static int effect_menu_show_handler(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Menu_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);

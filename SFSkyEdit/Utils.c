@@ -125,6 +125,7 @@ int hand_back_caret(int const event_code, ToolboxEvent *const event,
   unsigned int anc_state;
   const bool *focus = handle;
 
+  assert(event_code == Window_HasBeenHidden);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);

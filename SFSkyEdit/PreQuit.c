@@ -71,6 +71,7 @@ static int quit(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
   NOT_USED(event);
+  assert(event_code == Quit_Quit);
   NOT_USED(event_code);
   NOT_USED(id_block);
   NOT_USED(handle);

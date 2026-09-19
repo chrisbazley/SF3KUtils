@@ -101,6 +101,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveFile *const savefile_data = handle;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -120,6 +121,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
   const SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)event;
   SaveFile *const savefile_data = handle;
 
+  assert(event_code == SaveAs_FillBuffer);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

@@ -58,6 +58,7 @@ static int selhandler(int const event_code, ToolboxEvent *const event,
   const Pal256ColourSelectedEvent * const pcse = (Pal256ColourSelectedEvent *)event;
   void *client_handle;
 
+  assert(event_code == Pal256_ColourSelected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

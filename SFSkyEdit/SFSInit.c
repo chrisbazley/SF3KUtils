@@ -156,6 +156,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
   /* Some pseudo-transient dialogue boxes ought to be hidden on mouse-click */
+  assert(event_code == Wimp_EMouseClick);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -387,6 +388,7 @@ static int object_auto_created(int const event_code, ToolboxEvent *const event,
   };
   _Optional const ObjectInitInfo *match;
 
+  assert(event_code == Toolbox_ObjectAutoCreated);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -432,6 +434,7 @@ static int toolbox_error(int const event_code, ToolboxEvent *const event,
 {
   const ToolboxErrorEvent * const totee = (ToolboxErrorEvent *)event;
 
+  assert(event_code == Toolbox_Error);
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);

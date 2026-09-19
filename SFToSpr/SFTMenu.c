@@ -73,7 +73,6 @@ static int about_to_be_shown(const int event_code, ToolboxEvent *const event,
 static int menu_selection(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Handle click on icon bar menu */
   assert(event_code == Menu_Selection);
   NOT_USED(event_code);
   NOT_USED(event);

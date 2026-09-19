@@ -122,7 +122,7 @@ static void reset_start_end(EditWin *const edit_win)
 static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Set up dialogue window */
+  assert(event_code == Window_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -200,6 +200,7 @@ static int radiobutton_state_changed(int const event_code,
   const RadioButtonStateChangedEvent * const rbsce =
     (RadioButtonStateChangedEvent *)event;
 
+  assert(event_code == RadioButton_StateChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -227,10 +228,10 @@ static int radiobutton_state_changed(int const event_code,
 static int popup_about_to_be_shown(int const event_code,
   ToolboxEvent *const event, IdBlock *const id_block, void *const handle)
 {
-  /* Colour picker about to pop up - set colour */
   const PopUpAboutToBeShownEvent * const puatbse =
     (PopUpAboutToBeShownEvent *)event;
 
+  assert(event_code == PopUp_AboutToBeShown);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -267,6 +268,7 @@ static int actionbutton_selected(int const event_code,
   const ActionButtonSelectedEvent * const abse =
     (ActionButtonSelectedEvent *)event;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

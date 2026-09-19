@@ -68,7 +68,7 @@ static _Optional char *ss_file_name = NULL;
 static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Dialogue box opening */
+  assert(event_code == SaveAs_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -100,6 +100,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   _Optional const _kernel_oserror *e = NULL;
   void *client_handle;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -140,6 +141,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
   void *client_handle;
   int chunk_size = 0;
 
+  assert(event_code == SaveAs_FillBuffer);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

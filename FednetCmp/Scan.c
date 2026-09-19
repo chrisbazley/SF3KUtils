@@ -788,6 +788,7 @@ static int actionbutton_selected(int const event_code, ToolboxEvent *const event
 {
   ScanData *const scan_data = handle;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);

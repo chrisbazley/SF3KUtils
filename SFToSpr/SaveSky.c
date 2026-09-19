@@ -279,9 +279,9 @@ static int dataload_message(WimpMessage *const message, void *const handle)
 static int actionbutton_selected(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* ActionButton clicked on underlying window */
   const ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)event;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

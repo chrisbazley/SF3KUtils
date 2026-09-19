@@ -51,6 +51,7 @@ static bool dcs_open_parent = false;
 static int dcs_save(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == DCS_Save);
   void *client_handle;
 
   NOT_USED(event_code);
@@ -74,6 +75,7 @@ static int dcs_save(int const event_code, ToolboxEvent *const event,
 static int dcs_discard(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == DCS_Discard);
   void *client_handle;
 
   NOT_USED(event_code);

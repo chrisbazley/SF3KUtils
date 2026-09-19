@@ -100,6 +100,7 @@ static int radiobutton_state_changed(int const event_code,
   ToolboxEvent *const event, IdBlock *const id_block, void *const handle)
 {
   /* Handles greying/ungreying of filetype gadgets */
+  assert(event_code == RadioButton_StateChanged);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -120,6 +121,7 @@ static int actionbutton_selected(int const event_code, ToolboxEvent *const event
   const ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)event;
   SaveDir *savedir_data = handle;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -168,6 +170,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   unsigned int flags = 0;
   _Optional char *buf = NULL;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

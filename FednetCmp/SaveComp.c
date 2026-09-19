@@ -113,6 +113,7 @@ static int stringset_value_changed(int const event_code,
   const SaveComp *const savecomp_data = handle;
   unsigned int hex_type = FileType_Fednet;
 
+  assert(event_code == StringSet_ValueChanged);
   NOT_USED(event_code);
   assert(event != NULL);
   NOT_USED(id_block);
@@ -135,6 +136,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveComp *const savecomp_data = handle;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -152,6 +154,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
   const SaveAsFillBufferEvent * const safbe = (SaveAsFillBufferEvent *)event;
   SaveComp *const savecomp_data = handle;
 
+  assert(event_code == SaveAs_FillBuffer);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -172,6 +175,7 @@ static int actionbutton_selected(int const event_code,
     (ActionButtonSelectedEvent *)event;
   SaveComp *const savecomp_data = handle;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

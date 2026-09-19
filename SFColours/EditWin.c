@@ -558,6 +558,7 @@ static int user_drag(int const event_code, WimpPollBlock *const event,
 
   NOT_USED(id_block);
   assert(event != NULL);
+  assert(event_code == Wimp_EUserDrag);
   NOT_USED(event_code);
   NOT_USED(handle);
 
@@ -649,6 +650,7 @@ static int user_drag(int const event_code, WimpPollBlock *const event,
 static int close_window(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Wimp_ECloseWindow);
   WimpGetPointerInfoBlock ptr;
 
   NOT_USED(event_code);
@@ -696,6 +698,7 @@ static int close_window(int const event_code, WimpPollBlock *const event,
 static int pointer_entering_window(int const event_code,
   WimpPollBlock *const event, IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Wimp_EPointerEnteringWindow);
   EditWin *const edit_win = handle;
 
   NOT_USED(event_code);
@@ -717,6 +720,7 @@ static int pointer_entering_window(int const event_code,
 static int pointer_leaving_window(int const event_code,
   WimpPollBlock *const event, IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Wimp_EPointerLeavingWindow);
   EditWin *const edit_win = handle;
 
   NOT_USED(event_code);
@@ -741,7 +745,7 @@ static int pointer_leaving_window(int const event_code,
 static int lose_caret(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Keep track of whether this view has the input focus */
+  assert(event_code == Wimp_ELoseCaret);
   EditWin *const edit_win = handle;
   assert(edit_win != NULL);
 
@@ -757,7 +761,7 @@ static int lose_caret(int const event_code, WimpPollBlock *const event,
 static int gain_caret(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Keep track of whether this view has the input focus */
+  assert(event_code == Wimp_EGainCaret);
   NOT_USED(event_code);
   NOT_USED(event);
   NOT_USED(id_block);
@@ -773,10 +777,10 @@ static int gain_caret(int const event_code, WimpPollBlock *const event,
 static int scroll_request(int const event_code, WimpPollBlock *const event,
   IdBlock *const id_block, void *const handle)
 {
-  /* Handle scroll request events */
   WimpScrollRequestEvent * const wsre = &event->scroll_request;
   int visible_height = 0, visible_width = 0;
 
+  assert(event_code == Wimp_EScrollRequest);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -846,6 +850,7 @@ static int mouse_click(int const event_code, WimpPollBlock *const event,
   const WimpMouseClickEvent * const wmce = &event->mouse_click;
   EditWin *const edit_win = handle;
 
+  assert(event_code == Wimp_EMouseClick);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

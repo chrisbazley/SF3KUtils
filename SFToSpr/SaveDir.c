@@ -95,6 +95,7 @@ static int actionbutton_selected(const int event_code, ToolboxEvent *const event
   const ActionButtonSelectedEvent * const abse = (ActionButtonSelectedEvent *)event;
   SaveDir *savedir_data = handle;
 
+  assert(event_code == ActionButton_Selected);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);
@@ -124,6 +125,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
   unsigned int flags = 0;
   _Optional char *buf = NULL;
 
+  assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
   assert(event != NULL);
   assert(id_block != NULL);

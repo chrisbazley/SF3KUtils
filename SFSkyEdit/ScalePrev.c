@@ -48,6 +48,7 @@ ObjectId ScalePrev_sharedid = NULL_ObjectId;
 static int scale_about_to_be_shown(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Scale_AboutToBeShown);
   NOT_USED(event_code);
   NOT_USED(event);
   assert(id_block != NULL);
@@ -70,6 +71,7 @@ static int scale_about_to_be_shown(int const event_code, ToolboxEvent *const eve
 static int scale_apply_factor(int const event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == Scale_ApplyFactor);
   const ScaleApplyFactorEvent * const safe = (ScaleApplyFactorEvent *)event;
 
   NOT_USED(event_code);

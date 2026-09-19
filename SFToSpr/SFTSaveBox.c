@@ -59,6 +59,7 @@ enum
 static int dialogue_completed(const int event_code, ToolboxEvent *const event,
   IdBlock *const id_block, void *const handle)
 {
+  assert(event_code == SaveAs_DialogueCompleted);
   NOT_USED(event_code);
   NOT_USED(event);
   NOT_USED(id_block);

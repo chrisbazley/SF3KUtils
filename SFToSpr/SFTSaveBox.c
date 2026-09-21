@@ -74,7 +74,7 @@ static int dialogue_completed(const int event_code, ToolboxEvent *const event,
 
 static void destroy_item(UserData *item)
 {
-  SFTSaveBox_destroy((SFTSaveBox *)item);
+  SFTSaveBox_destroy(CONTAINER_OF(item, SFTSaveBox, super));
 }
 
 /* ----------------------------------------------------------------------- */

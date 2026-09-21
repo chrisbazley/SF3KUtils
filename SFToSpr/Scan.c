@@ -1175,7 +1175,7 @@ static bool item_is_safe(struct UserData *item)
 static void destroy_item(struct UserData *item)
 {
   assert(item != NULL);
-  scan_finished((ScanData *)item);
+  scan_finished(CONTAINER_OF(item, ScanData, list_node));
 }
 
 /* ----------------------------------------------------------------------- */

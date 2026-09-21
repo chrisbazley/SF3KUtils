@@ -74,7 +74,7 @@ static int dialogue_completed(int const event_code, ToolboxEvent *const event,
 
 static void destroy_item(UserData *item)
 {
-  FNCSaveBox_destroy((FNCSaveBox *)item);
+  FNCSaveBox_destroy(CONTAINER_OF(item, FNCSaveBox, super));
 }
 
 /* ----------------------------------------------------------------------- */

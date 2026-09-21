@@ -1317,7 +1317,8 @@ static bool load_csv(Reader *const reader, char const *const filename)
 
 static bool cancel_cb(LinkedList *const list, LinkedListItem *const item, void *const arg)
 {
-  IOActionData * const action_data = (IOActionData *)item;
+  IOActionData * const action_data =
+    CONTAINER_OF(item, IOActionData, list_node);
 
   assert(list == &action_data_list);
   NOT_USED(list);

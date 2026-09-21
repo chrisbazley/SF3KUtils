@@ -920,7 +920,7 @@ static bool item_is_safe(struct UserData *const item)
 static void destroy_item(struct UserData *const item)
 {
   assert(item != NULL);
-  scan_finished((ScanData *)item);
+  scan_finished(CONTAINER_OF(item, ScanData, list_node));
 }
 
 /* ----------------------------------------------------------------------- */

@@ -52,6 +52,7 @@
 #include "ScreenSize.h"
 #include "OSVDU.h"
 #include "OSFile.h"
+#include "OSVarVal.h"
 #include "PalEntry.h"
 #include "ClrTrans.h"
 #include "DragAnObj.h"
@@ -1248,16 +1249,7 @@ void IO_initialise(void)
 
   /* Older versions of the C library have a bug where NULL cannot be
      passed to _kernel_setenv to delete a variable */
-  _kernel_swi_regs regs = {
-    .r = {
-      (uintptr_t)APP_NAME"$DAO",
-      0, /* no value */
-      -1, /* delete variable */
-      0, /* first call */
-      0, /* string */
-    },
-  };
-  EF(_kernel_swi(OS_SetVarVal, &regs, &regs));
+  EF(os_set_var_val(APP_NAME"$DAO", NULL));
 }
 
 /* ----------------------------------------------------------------------- */

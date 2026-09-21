@@ -46,6 +46,7 @@
 #include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
+#include "OSFSCntrl.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"
 #include "PseudoEvnt.h"
@@ -114,9 +115,6 @@ enum
   ComponentId_SaveFile_Decompress_Radio = 0,
   ComponentId_SaveFile_Extract_Images_Radio = 1,
   ComponentId_SaveFile_Extract_Data_Radio = 2,
-  OS_FSControl_Copy = 26,
-  OS_FSControl_Wipe = 27,
-  OS_FSControl_Flag_Recurse = 1,
   PaddingSize = 12,
   PlanetsHdrSize = 36,
   PlanetPaintX0 = -36,
@@ -158,7 +156,6 @@ enum
   MaxCSVSize = 256,
   ForeignTaskHandle = 999,
   UnsafeDataSize = -1,
-  FSControl_CanonicalisePath = 37,
   MaxNumWindows = 3,
   WorkArea = -1 /* Pseudo icon handle (window's work area) */
 
@@ -180,16 +177,7 @@ static intptr_t th;
 static void wipe(const char *path_name)
 {
   assert(path_name != NULL);
-
-  _kernel_swi_regs regs = {
-    .r = {
-      OS_FSControl_Wipe,
-      (intptr_t)(void *)path_name,
-      0,
-      OS_FSControl_Flag_Recurse,
-    }
-  };
-  _kernel_swi(OS_FSControl, &regs, &regs);
+  (void)os_fscontrol_wipe(path_name, OS_FSControl_Recurse);
 }
 
 static void copy(const char *src, const char *dst)
@@ -197,15 +185,7 @@ static void copy(const char *src, const char *dst)
   assert(src != NULL);
   assert(dst != NULL);
 
-  _kernel_swi_regs regs = {
-    .r = {
-      OS_FSControl_Copy,
-      (intptr_t)(void *)src,
-      (intptr_t)(void *)dst,
-      OS_FSControl_Flag_Recurse,
-    }
-  };
-  assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
+  assert_no_error(os_fscontrol_copy(src, dst, OS_FSControl_Recurse));
 }
 
 FILE *test_fopen(char const *file_name, char const *mode)
@@ -1117,21 +1097,12 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  char buffer[1024];
-  _kernel_swi_regs regs = {
-    .r = {
-      FSControl_CanonicalisePath,
-      (intptr_t)(void *)filename,
-      (intptr_t)(void *)buffer,
-      0,
-      0,
-      sizeof(buffer),
-    }
-  };
-  assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
-  assert(regs.r[5] >= 0);
+  _Optional char *buffer = NULL;
+  assert_no_error(canonicalise(&buffer, NULL, NULL, filename));
+  assert(buffer != NULL);
 
-  _Optional UserData *window = userdata_find_by_file_name(buffer);
+  _Optional UserData *window = userdata_find_by_file_name(&*buffer);
+  free(&*buffer);
   return window != NULL;
 }
 

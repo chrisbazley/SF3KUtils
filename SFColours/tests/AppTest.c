@@ -20,6 +20,7 @@
 #undef NDEBUG
 
 /* ANSI library files */
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -47,6 +48,8 @@
 #include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
+#include "OSFSCntrl.h"
+#include "FileUtils.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"
 #include "PseudoEvnt.h"
@@ -103,9 +106,6 @@ enum
   DestinationY = 34,
   Timeout = 30 * CLOCKS_PER_SEC,
   DragMsgInterval = CLOCKS_PER_SEC / 4,
-  OS_FSControl_Copy = 26,
-  OS_FSControl_Wipe = 27,
-  OS_FSControl_Flag_Recurse = 1,
   DraggingBBoxMin = -72000,
   DraggingBBoxMax = 72000,
   MaxNumWindows = 3,
@@ -120,7 +120,6 @@ enum
   ForeignTaskHandle = 999,
   UDBSize = 34,
   UnsafeDataSize = -1,
-  FSControl_CanonicalisePath = 37,
   Iconized = -3,
   FirstComponentId = 0x44,
   MaxSelectionWidth = 460,
@@ -144,16 +143,7 @@ static intptr_t th;
 static void wipe(char const *path_name)
 {
   assert(path_name != NULL);
-
-  _kernel_swi_regs regs = {
-    .r = {
-      OS_FSControl_Wipe,
-      (intptr_t)(void *)path_name,
-      0,
-      OS_FSControl_Flag_Recurse,
-    }
-  };
-  _kernel_swi(OS_FSControl, &regs, &regs);
+  (void)os_fscontrol_wipe(path_name, OS_FSControl_Recurse);
 }
 
 static void copy(char const *src, char const *dst)
@@ -161,15 +151,7 @@ static void copy(char const *src, char const *dst)
   assert(src != NULL);
   assert(dst != NULL);
 
-  _kernel_swi_regs regs = {
-    .r = {
-      OS_FSControl_Copy,
-      (intptr_t)(void *)src,
-      (intptr_t)(void *)dst,
-      OS_FSControl_Flag_Recurse,
-    }
-  };
-  assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
+  assert_no_error(os_fscontrol_copy(src, dst, OS_FSControl_Recurse));
 }
 
 FILE *test_fopen(char const *file_name, char const *mode)
@@ -571,21 +553,12 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  char buffer[1024];
-  _kernel_swi_regs regs = {
-    .r = {
-      FSControl_CanonicalisePath,
-      (intptr_t)(void *)filename,
-      (intptr_t)(void *)buffer,
-      0,
-      0,
-      sizeof(buffer),
-    }
-  };
-  assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
-  assert(regs.r[5] >= 0);
+  _Optional char *buffer = NULL;
+  assert_no_error(canonicalise(&buffer, NULL, NULL, filename));
+  assert(buffer != NULL);
 
-  _Optional UserData *window = userdata_find_by_file_name(buffer);
+  _Optional UserData *window = userdata_find_by_file_name(&*buffer);
+  free(&*buffer);
   return window != NULL;
 }
 

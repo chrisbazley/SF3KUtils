@@ -5421,7 +5421,9 @@ static void test81(void)
 
 void App_tests(void)
 {
-  _kernel_swi_regs regs;
+  _kernel_swi_regs regs = {
+    .r = {0}
+  };
   static const struct
   {
     char const *test_name;

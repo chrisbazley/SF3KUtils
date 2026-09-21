@@ -179,27 +179,32 @@ static intptr_t th;
 
 static void wipe(const char *path_name)
 {
-  _kernel_swi_regs regs;
-
   assert(path_name != NULL);
 
-  regs.r[0] = OS_FSControl_Wipe;
-  regs.r[1] = (intptr_t)(void *)path_name;
-  regs.r[3] = OS_FSControl_Flag_Recurse;
+  _kernel_swi_regs regs = {
+    .r = {
+      OS_FSControl_Wipe,
+      (intptr_t)(void *)path_name,
+      0,
+      OS_FSControl_Flag_Recurse,
+    }
+  };
   _kernel_swi(OS_FSControl, &regs, &regs);
 }
 
 static void copy(const char *src, const char *dst)
 {
-  _kernel_swi_regs regs;
-
   assert(src != NULL);
   assert(dst != NULL);
 
-  regs.r[0] = OS_FSControl_Copy;
-  regs.r[1] = (intptr_t)(void *)src;
-  regs.r[2] = (intptr_t)(void *)dst;
-  regs.r[3] = OS_FSControl_Flag_Recurse;
+  _kernel_swi_regs regs = {
+    .r = {
+      OS_FSControl_Copy,
+      (intptr_t)(void *)src,
+      (intptr_t)(void *)dst,
+      OS_FSControl_Flag_Recurse,
+    }
+  };
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
 }
 
@@ -1113,14 +1118,16 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 static bool path_is_in_userdata(char *filename)
 {
   char buffer[1024];
-  _kernel_swi_regs regs;
-
-  regs.r[0] = FSControl_CanonicalisePath;
-  regs.r[1] = (intptr_t)(void *)filename;
-  regs.r[2] = (intptr_t)(void *)buffer;
-  regs.r[3] = 0;
-  regs.r[4] = 0;
-  regs.r[5] = sizeof(buffer);
+  _kernel_swi_regs regs = {
+    .r = {
+      FSControl_CanonicalisePath,
+      (intptr_t)(void *)filename,
+      (intptr_t)(void *)buffer,
+      0,
+      0,
+      sizeof(buffer),
+    }
+  };
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
   assert(regs.r[5] >= 0);
 
@@ -3327,7 +3334,9 @@ void App_tests(void)
 
   /* This isn't ideal but it's better for replies to fake messages to be sent
      to our task rather than to an invalid handle or another task. */
-  _kernel_swi_regs regs;
+  _kernel_swi_regs regs = {
+    .r = {0}
+  };
   assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
   th = regs.r[0];
 

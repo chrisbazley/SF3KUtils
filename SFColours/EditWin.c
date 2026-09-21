@@ -301,14 +301,13 @@ static void make_selection_bbox(EditWin *const edit_win,
   int const num_cols = edit_win->file->num_cols;
   for (int col_num = 0; col_num < num_cols; col_num++)
   {
-    BBox const *gadget_bbox;
 
     if (!get_selected(edit_win, col_num))
     {
       continue; /* this colour isn't selected */
     }
 
-    gadget_bbox = &edit_win->file->gadget_bboxes[col_num];
+    BBox const *gadget_bbox = &edit_win->file->gadget_bboxes[col_num];
     DEBUGF("Gadget %d's bounding box is %d <= x < %d, %d <= y < %d\n",
           col_num, gadget_bbox->xmin, gadget_bbox->xmax,
           gadget_bbox->ymin, gadget_bbox->ymax);

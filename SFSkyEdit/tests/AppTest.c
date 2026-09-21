@@ -168,9 +168,7 @@ static int make_sky_file(char const *file_name, uint8_t (*compute_colour)(int ba
   size_t n;
   SFSky in_buffer;
   char out_buffer[CompressionBufferSize];
-  _Optional GKeyComp *comp;
   size_t estimated_size = sizeof(int32_t);
-  bool ok;
   GKeyStatus status;
 
   in_buffer.render_offset = 0;
@@ -192,10 +190,10 @@ static int make_sky_file(char const *file_name, uint8_t (*compute_colour)(int ba
 
   FILE * const f = test_fopen(file_name, "wb");
 
-  ok = fwrite_int32le(sizeof(in_buffer), f);
+  bool ok = fwrite_int32le(sizeof(in_buffer), f);
   assert(ok);
 
-  comp = gkeycomp_make(FednetHistoryLog2);
+  _Optional GKeyComp *comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
   GKeyParameters params = {
@@ -255,7 +253,6 @@ static void check_sky_file(char const *file_name,
 {
   char in_buffer[CompressionBufferSize];
   SFSky out_buffer;
-  _Optional GKeyDecomp     *decomp;
   long int len;
   bool ok, in_pending = false;
   GKeyStatus status;
@@ -266,7 +263,7 @@ static void check_sky_file(char const *file_name,
   assert(ok);
   assert(len == sizeof(out_buffer));
 
-  decomp = gkeydecomp_make(FednetHistoryLog2);
+  _Optional GKeyDecomp     *decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
   
   GKeyParameters params = {
@@ -315,14 +312,14 @@ static void check_sky_file(char const *file_name,
   {
     for (int j = 0; j < SFSky_Width; ++j)
     {
-      int band, colour;
+      int band;
 
       if ((i % 2) || !(((i/2) + j) % 2) || (i == 0))
         band = i/2;
       else
         band = (i-1)/2;
 
-      colour = compute_colour(band);
+      int colour = compute_colour(band);
       if (out_buffer.pixel_data[i][j] != colour)
       {
         DEBUGF("Got %d at [%d][%d] (band %d), expected %d\n",
@@ -457,7 +454,6 @@ static void check_csv_file(char const *file_name, uint8_t (*compute_colour)(int 
 
 static void check_sprite_file(char const *file_name, uint8_t (*compute_colour)(int band), int ncols)
 {
-  int i;
   unsigned char row[4];
 
   FILE * const f = test_fopen(file_name, "rb");
@@ -485,7 +481,7 @@ static void check_sprite_file(char const *file_name, uint8_t (*compute_colour)(i
   assert(spr_hdr.mask == sizeof(spr_hdr));
   assert(spr_hdr.type == SpriteType);
 
-  i = 0;
+  int i = 0;
   do
   {
     n = fread(row, sizeof(row), 1, f);
@@ -619,7 +615,6 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional UserData *window;
   char buffer[1024];
   _kernel_swi_regs regs = {
     .r[0] = FSControl_CanonicalisePath,
@@ -632,7 +627,7 @@ static bool path_is_in_userdata(char *filename)
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
   assert(regs.r[5] >= 0);
 
-  window = userdata_find_by_file_name(buffer);
+  _Optional UserData *window = userdata_find_by_file_name(buffer);
   return window != NULL;
 }
 
@@ -2286,7 +2281,6 @@ static void save_sky_file(unsigned int flags, DataTransferMethod method)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     WimpPollBlock poll_block;
 
     err_suppress_errors();
@@ -2298,7 +2292,7 @@ static void save_sky_file(unsigned int flags, DataTransferMethod method)
     dispatch_event_with_error_sim(Wimp_EToolboxEvent, &poll_block, limit);
 
     Fortify_LeaveScope();
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
   }
@@ -2390,7 +2384,6 @@ static void test2(void)
 static void test3(void)
 {
   /* Load directory */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2410,7 +2403,7 @@ static void test3(void)
 
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
@@ -2445,11 +2438,10 @@ static void cleanup_stalled(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     err_suppress_errors();
     dispatch_event_with_error_sim(Wimp_ENull, &(WimpPollBlock){0}, limit);
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
   }
@@ -2459,7 +2451,6 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
    const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method,
    int your_ref)
 {
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   bool use_file = false;
 
@@ -2477,7 +2468,7 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
 
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   WimpMessage data_save_ack;
   if (check_data_save_ack_msg(our_ref, &data_save_ack, pointer_info))
@@ -2685,7 +2676,6 @@ static void test5(void)
 static void test6(void)
 {
   /* Transfer dir from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   WimpGetPointerInfoBlock drag_dest;
@@ -2696,7 +2686,7 @@ static void test6(void)
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("BadFileType")));
@@ -2900,8 +2890,6 @@ static void test10(void)
 static void load_bad_csv(char const *csv)
 {
   WimpPollBlock poll_block;
-  int data_load_ref;
-  _Optional const _kernel_oserror *err;
 
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2914,13 +2902,13 @@ static void load_bad_csv(char const *csv)
 
   assert_no_error(os_file_set_type(TEST_DATA_IN, FileType_CSV));
 
-  data_load_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, UnsafeDataSize, FileType_CSV, &drag_dest, 0);
+  int data_load_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, UnsafeDataSize, FileType_CSV, &drag_dest, 0);
 
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
   assert(fopen_num() == 0);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   if (*csv == '\0')
   {
     assert_no_error(err);
@@ -2980,7 +2968,6 @@ static void test13(void)
 static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_types[], int ftype_idx, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, unsigned int flags)
 {
   WimpPollBlock poll_block;
-  _Optional const _kernel_oserror *err;
 
   /* Before a drag is claimed, auto-scrolling should be disabled */
   assert(!get_scroll_state(pointer_info->window_handle));
@@ -2990,7 +2977,7 @@ static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_type
   int const dragging_ref = init_dragging_msg(&poll_block, file_types, pointer_info, flags);
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   WimpMessage drag_claim;
   if (check_drag_claim_msg(dragging_ref, ForeignTaskHandle, &drag_claim))
@@ -3028,7 +3015,6 @@ static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_type
 static _Optional const _kernel_oserror *paste_internal_core(_Optional int const file_types[], int ftype_idx, int estimated_size, ObjectId id, DataTransferMethod method)
 {
   WimpPollBlock poll_block;
-  _Optional const _kernel_oserror *err;
 
   WimpGetPointerInfoBlock pointer_info;
   init_pointer_info_for_win(&pointer_info, id, 0, 0);
@@ -3039,7 +3025,7 @@ static _Optional const _kernel_oserror *paste_internal_core(_Optional int const 
   init_id_block(pseudo_event_get_client_id_block(), id, NULL_ComponentId);
   dispatch_event(Wimp_EToolboxEvent, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   if (err == NULL)
   {
     WimpMessage data_request;
@@ -4255,14 +4241,13 @@ static void test43(void)
     unsigned long limit;
     for (limit = 0; limit < FortifyAllocationLimit; ++limit)
     {
-      _Optional const _kernel_oserror *err;
 
       err_suppress_errors();
       wait_for_stalled_ops(DragMsgInterval);
 
       /* Simulate a null event to trigger a dragging message. */
       dispatch_event_suppress_with_error_sim(Wimp_ENull, &(WimpPollBlock){0}, limit);
-      err = err_dump_suppressed();
+      _Optional const _kernel_oserror *err = err_dump_suppressed();
       if (err == NULL)
         break;
     }
@@ -5013,7 +4998,6 @@ static void save_prev_core(unsigned int flags, DataTransferMethod method)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     err_suppress_errors();
     Fortify_EnterScope();
@@ -5028,7 +5012,7 @@ static void save_prev_core(unsigned int flags, DataTransferMethod method)
     dispatch_event(Wimp_EUserMessage, &poll_block);
 
     Fortify_LeaveScope();
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
   }
@@ -5133,7 +5117,6 @@ static void test67(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     WimpPollBlock poll_block;
 
     err_suppress_errors();
@@ -5144,7 +5127,7 @@ static void test67(void)
     init_msg(&poll_block, Wimp_MModeChange);
     dispatch_event(Wimp_EUserMessage, &poll_block);
 
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
     {
       /* Force a new colour translation table to be made */
@@ -5181,7 +5164,6 @@ static void test68(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     WimpPollBlock poll_block;
 
     err_suppress_errors();
@@ -5192,7 +5174,7 @@ static void test68(void)
     init_msg(&poll_block, Wimp_MPaletteChange);
     dispatch_event(Wimp_EUserMessage, &poll_block);
 
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
     {
       /* Force a new colour translation table to be made */

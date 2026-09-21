@@ -218,7 +218,6 @@ static int make_compressed_file(const char *const file_name, void *const data, c
   assert(size > 0);
 
   char out_buffer[CompressionBufferSize];
-  _Optional GKeyComp      *comp;
   size_t estimated_size = sizeof(int32_t);
   GKeyStatus status;
 
@@ -228,7 +227,7 @@ static int make_compressed_file(const char *const file_name, void *const data, c
   bool const ok = fwrite_int32le((int32_t)size, f);
   assert(ok);
 
-  comp = gkeycomp_make(FednetHistoryLog2);
+  _Optional GKeyComp      *comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
   GKeyParameters params = {
@@ -396,7 +395,6 @@ static void check_compressed_file(const char *const file_name, void *const data,
   assert(size > 0);
 
   uint8_t in_buffer[CompressionBufferSize];
-  _Optional GKeyDecomp     *decomp;
   long int len;
   bool in_pending = false;
   GKeyStatus status;
@@ -413,7 +411,7 @@ static void check_compressed_file(const char *const file_name, void *const data,
   assert(ok);
   assert(len > 0);
 
-  decomp = gkeydecomp_make(FednetHistoryLog2);
+  _Optional GKeyDecomp     *decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
 
   GKeyParameters params = {
@@ -1101,13 +1099,12 @@ static void check_sprites_metadata_file(const char *const file_name)
 
 static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 {
-  _Optional _kernel_oserror *e;
 
   assert(block != NULL);
 
   block->self_id = id;
   block->self_component = component;
-  e = toolbox_get_parent(0, id, &block->parent_id, &block->parent_component);
+  _Optional _kernel_oserror *e = toolbox_get_parent(0, id, &block->parent_id, &block->parent_component);
   assert(e == NULL);
   e = toolbox_get_ancestor(0, id, &block->ancestor_id, &block->ancestor_component);
   assert(e == NULL);
@@ -1115,7 +1112,6 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional UserData *window;
   char buffer[1024];
   _kernel_swi_regs regs;
 
@@ -1128,7 +1124,7 @@ static bool path_is_in_userdata(char *filename)
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
   assert(regs.r[5] >= 0);
 
-  window = userdata_find_by_file_name(buffer);
+  _Optional UserData *window = userdata_find_by_file_name(buffer);
   return window != NULL;
 }
 
@@ -1899,13 +1895,12 @@ static void test1(void)
 {
   /* Load uncompressed planets file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_uncompressed_planets_file(TEST_DATA_IN, NPlanets, true);
 
   load_persistent(estimated_size, FileType_Sprite);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("SprToPla");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SprToPla");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -1922,13 +1917,12 @@ static void test2(void)
 {
   /* Load uncompressed sky file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_uncompressed_sky_file(TEST_DATA_IN, 1, true);
 
   load_persistent(estimated_size, FileType_Sprite);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("SprToSky");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SprToSky");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -1945,13 +1939,12 @@ static void test3(void)
 {
   /* Load uncompressed sprites file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_uncompressed_sprites_file(TEST_DATA_IN, NSprites, true);
 
   load_persistent(estimated_size, FileType_Sprite);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("SprToTex");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SprToTex");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -1968,13 +1961,12 @@ static void test4(void)
 {
   /* Load compressed planets file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_compressed_planets_file(TEST_DATA_IN, NPlanets, true);
 
   load_persistent(estimated_size, FileType_SFSkyPic);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("ToSpr");
+  ObjectId id = pseudo_toolbox_find_by_template_name("ToSpr");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -1991,13 +1983,12 @@ static void test5(void)
 {
   /* Load compressed sky file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_compressed_sky_file(TEST_DATA_IN, 1, true);
 
   load_persistent(estimated_size, FileType_SFSkyCol);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("ToSpr");
+  ObjectId id = pseudo_toolbox_find_by_template_name("ToSpr");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -2014,13 +2005,12 @@ static void test6(void)
 {
   /* Load compressed sprites file */
   WimpPollBlock poll_block;
-  ObjectId id;
   const int estimated_size = make_compressed_sprites_file(TEST_DATA_IN, NSprites, true);
 
   load_persistent(estimated_size, FileType_SFMapGfx);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("ToSpr");
+  ObjectId id = pseudo_toolbox_find_by_template_name("ToSpr");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -2049,7 +2039,6 @@ static void test7(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, &drag_dest, 0);
 
     err_suppress_errors();
@@ -2063,7 +2052,7 @@ static void test7(void)
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
     assert(fopen_num() == 0);
 
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
 
@@ -2101,7 +2090,6 @@ static void do_data_rec(int file_type, int (*make_file)(const char *filename, in
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
   const int my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, file_type, &drag_dest, 0);
-  ObjectId id;
 
   /* Load compressed file */
   pseudo_wimp_reset();
@@ -2112,7 +2100,7 @@ static void do_data_rec(int file_type, int (*make_file)(const char *filename, in
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name(template_name);
+  ObjectId id = pseudo_toolbox_find_by_template_name(template_name);
   assert(object_is_on_menu(id));
 
   activate_savebox(id, radio, 0, method);
@@ -2258,7 +2246,7 @@ static void batch_test(ComponentId radio)
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
   const int my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, &drag_dest, 0);
-  ObjectId id, win_id;
+  ObjectId win_id;
 
   /* Load directory */
   pseudo_wimp_reset();
@@ -2269,7 +2257,7 @@ static void batch_test(ComponentId radio)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveDir");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveDir");
   assert(object_is_on_menu(id));
 
   assert_no_error(saveas_get_window_id(0, id, &win_id));
@@ -2278,7 +2266,6 @@ static void batch_test(ComponentId radio)
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
     DEBUGF("Fortify limit %lu\n", limit);
-    ObjectId scan_id;
     unsigned int i;
     OS_File_CatalogueInfo cat;
     _Optional const _kernel_oserror *err = NULL;
@@ -2294,7 +2281,7 @@ static void batch_test(ComponentId radio)
     check_file_save_completed(id, NULL);
 
     /* A scan dbox should have been created */
-    scan_id = pseudo_toolbox_find_by_template_name("Scan");
+    ObjectId scan_id = pseudo_toolbox_find_by_template_name("Scan");
     assert(scan_id != NULL_ObjectId);
     assert(object_is_on_menu(scan_id));
     assert(userdata_count_unsafe() == 1);
@@ -2535,7 +2522,6 @@ static void cleanup_stalled(void)
 
 static _Optional const _kernel_oserror *send_data_core(int file_type, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, int your_ref)
 {
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   bool use_file = false;
 
@@ -2553,7 +2539,7 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
 
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   WimpMessage data_save_ack;
   if (check_data_save_ack_msg(our_ref, &data_save_ack, pointer_info))
@@ -2713,12 +2699,11 @@ static void test22(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
     Fortify_SetNumAllocationsLimit(limit);
-    err = send_data_core(FileType_Sprite, TestDataSize, &drag_dest, DTM_BadFile, 0);
+    _Optional const _kernel_oserror *err = send_data_core(FileType_Sprite, TestDataSize, &drag_dest, DTM_BadFile, 0);
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
 
     Fortify_LeaveScope();
@@ -2738,12 +2723,11 @@ static void test23(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
     Fortify_SetNumAllocationsLimit(limit);
-    err = send_data_core(FileType_SFSkyPic, TestDataSize, &drag_dest, DTM_BadFile, 0);
+    _Optional const _kernel_oserror *err = send_data_core(FileType_SFSkyPic, TestDataSize, &drag_dest, DTM_BadFile, 0);
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
 
     Fortify_LeaveScope();
@@ -2757,7 +2741,6 @@ static void test23(void)
 static void test24(void)
 {
   /* Transfer dir from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2773,7 +2756,7 @@ static void test24(void)
 
   Fortify_LeaveScope();
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
@@ -2783,7 +2766,6 @@ static void test24(void)
 static void test25(void)
 {
   /* Transfer app from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2798,7 +2780,7 @@ static void test25(void)
 
   Fortify_LeaveScope();
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
@@ -2810,8 +2792,6 @@ static void do_data_transfer(int file_type, int (*make_file)(const char *filenam
   WimpPollBlock poll_block;
   unsigned long limit;
   _Optional const _kernel_oserror *err;
-  _Optional UserData *savebox;
-  ObjectId id;
   const int estimated_size = make_file(TEST_DATA_IN, n, metadata);
 
   WimpGetPointerInfoBlock drag_dest;
@@ -2835,9 +2815,9 @@ static void do_data_transfer(int file_type, int (*make_file)(const char *filenam
   /* A single savebox should have been created */
   assert(!path_is_in_userdata("<Wimp$Scrap>"));
   assert(userdata_count_unsafe() == 0);
-  savebox = userdata_find_by_file_name("");
+  _Optional UserData *savebox = userdata_find_by_file_name("");
   assert(savebox != NULL);
-  id = pseudo_toolbox_find_by_template_name(template_name);
+  ObjectId id = pseudo_toolbox_find_by_template_name(template_name);
   assert(object_is_on_menu(id));
 
   /* Complete the save dialogue */
@@ -2876,12 +2856,11 @@ static void test29(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
 
     Fortify_SetNumAllocationsLimit(limit);
-    err = send_data_core(FileType_Sprite, estimated_size, &drag_dest, DTM_BadRAM, 0);
+    _Optional const _kernel_oserror *err = send_data_core(FileType_Sprite, estimated_size, &drag_dest, DTM_BadRAM, 0);
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
 
     Fortify_LeaveScope();

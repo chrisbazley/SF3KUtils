@@ -135,24 +135,21 @@ FILE *test_fopen(char const *file_name, char const *mode)
 
 static int make_compressed_file(char const *file_name)
 {
-  FILE *f;
   size_t n;
   char test_data[TestDataSize], out_buffer[CompressionBufferSize];
-  _Optional GKeyComp      *comp;
   unsigned int i;
   size_t estimated_size = sizeof(int32_t);
-  bool ok;
   GKeyStatus status;
 
   for (i = 0; i < TestDataSize; ++i)
     test_data[i] = (char)i;
 
-  f = test_fopen(file_name, "wb");
+  FILE *f = test_fopen(file_name, "wb");
 
-  ok = fwrite_int32le(sizeof(test_data), f);
+  bool ok = fwrite_int32le(sizeof(test_data), f);
   assert(ok);
 
-  comp = gkeycomp_make(FednetHistoryLog2);
+  _Optional GKeyComp      *comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
   GKeyParameters params = {
@@ -198,9 +195,7 @@ static int make_compressed_file(char const *file_name)
 
 static void check_compressed_file(char const *file_name)
 {
-  FILE *f;
   char test_data[TestDataSize], in_buffer[CompressionBufferSize];
-  _Optional GKeyDecomp     *decomp;
   unsigned int i;
   long int len;
   bool ok, in_pending = false;
@@ -212,13 +207,13 @@ static void check_compressed_file(char const *file_name)
   DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestCompressedFileType);
 
-  f = test_fopen(file_name, "rb");
+  FILE *f = test_fopen(file_name, "rb");
 
   ok = fread_int32le(&len, f);
   assert(ok);
   assert(len == TestDataSize);
 
-  decomp = gkeydecomp_make(FednetHistoryLog2);
+  _Optional GKeyDecomp     *decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
 
   GKeyParameters params = {
@@ -265,17 +260,15 @@ static void check_compressed_file(char const *file_name)
 
 static int make_uncompressed_file(char const *file_name)
 {
-  FILE *f;
-  size_t n;
   char test_data[TestDataSize];
   unsigned int i;
 
   for (i = 0; i < TestDataSize; ++i)
     test_data[i] = (char)i;
 
-  f = test_fopen(file_name, "wb");
+  FILE *f = test_fopen(file_name, "wb");
 
-  n = fwrite(test_data, TestDataSize, 1, f);
+  size_t n = fwrite(test_data, TestDataSize, 1, f);
   assert(n == 1);
 
   fclose(f);
@@ -287,8 +280,6 @@ static int make_uncompressed_file(char const *file_name)
 
 static void check_uncompressed_file(char const *file_name)
 {
-  FILE *f;
-  size_t n;
   char test_data[TestDataSize];
   unsigned int i;
   OS_File_CatalogueInfo cat;
@@ -298,9 +289,9 @@ static void check_uncompressed_file(char const *file_name)
   DEBUGF("Load address: 0x%" PRIxPTR "\n", cat.load);
   assert(((cat.load >> 8) & 0xfff) == TestUncompFileType);
 
-  f = test_fopen(file_name, "rb");
+  FILE *f = test_fopen(file_name, "rb");
 
-  n = fread(test_data, TestDataSize, 1, f);
+  size_t n = fread(test_data, TestDataSize, 1, f);
   assert(n == 1);
 
   fclose(f);
@@ -311,13 +302,12 @@ static void check_uncompressed_file(char const *file_name)
 
 static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 {
-  _Optional _kernel_oserror *e;
 
   assert(block != NULL);
 
   block->self_id = id;
   block->self_component = component;
-  e = toolbox_get_parent(0, id, &block->parent_id, &block->parent_component);
+  _Optional _kernel_oserror *e = toolbox_get_parent(0, id, &block->parent_id, &block->parent_component);
   assert(e == NULL);
   e = toolbox_get_ancestor(0, id, &block->ancestor_id, &block->ancestor_component);
   assert(e == NULL);
@@ -325,12 +315,11 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional UserData *savebox;
   _Optional char *path = NULL;
 
   assert_no_error(canonicalise(&path, NULL, NULL, filename));
   assert(path);
-  savebox = userdata_find_by_file_name(&*path);
+  _Optional UserData *savebox = userdata_find_by_file_name(&*path);
   free(path);
   return savebox != NULL;
 }
@@ -754,13 +743,12 @@ static void load_persistent(int estimated_size, int file_type)
 static void test1(void)
 {
   /* Load uncompressed file */
-  ObjectId id;
   int const estimated_size = make_uncompressed_file(TEST_DATA_IN);
 
   load_persistent(estimated_size, TestUncompFileType);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("SaveFednet");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveFednet");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -773,13 +761,12 @@ static void test1(void)
 static void test2(void)
 {
   /* Load compressed file */
-  ObjectId id;
   int const estimated_size = make_compressed_file(TEST_DATA_IN);
 
   load_persistent(estimated_size, TestCompressedFileType);
 
   /* A single savebox should have been created */
-  id = pseudo_toolbox_find_by_template_name("SaveFile");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveFile");
   assert(object_is_on_menu(id));
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
@@ -801,7 +788,6 @@ static void test3(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, 0);
 
     err_suppress_errors();
@@ -815,7 +801,7 @@ static void test3(void)
     Fortify_SetNumAllocationsLimit(ULONG_MAX);
     assert(fopen_num() == 0);
 
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
 
@@ -848,7 +834,6 @@ static void test4(void)
   int const estimated_size = make_uncompressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestUncompFileType, 0);
-  ObjectId id;
 
   /* Load uncompressed file */
   pseudo_wimp_reset();
@@ -859,7 +844,7 @@ static void test4(void)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveFednet");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveFednet");
   assert(object_is_on_menu(id));
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -899,7 +884,6 @@ static void test5(void)
   int const estimated_size = make_compressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestCompressedFileType, 0);
-  ObjectId id;
 
   /* Load compressed file */
   pseudo_wimp_reset();
@@ -910,7 +894,7 @@ static void test5(void)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveFile");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveFile");
   assert(object_is_on_menu(id));
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -949,7 +933,6 @@ static void test6(void)
   _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, 0);
-  ObjectId id;
 
   /* Create directory */
   assert_no_error(os_file_create_dir(TEST_DATA_IN, OS_File_CreateDir_DefaultNoOfEntries));
@@ -963,7 +946,7 @@ static void test6(void)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveDir");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveDir");
   assert(object_is_on_menu(id));
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -1028,7 +1011,7 @@ static void batch_test(ComponentId radio)
   unsigned long limit;
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, -1, FileType_Directory, 0);
-  ObjectId id, win_id;
+  ObjectId win_id;
 
   /* Load directory */
   pseudo_wimp_reset();
@@ -1039,7 +1022,7 @@ static void batch_test(ComponentId radio)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveDir");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveDir");
   assert(object_is_on_menu(id));
 
   assert_no_error(saveas_get_window_id(0, id, &win_id));
@@ -1047,7 +1030,6 @@ static void batch_test(ComponentId radio)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    ObjectId scan_id;
     unsigned int i;
     OS_File_CatalogueInfo cat;
     _Optional const _kernel_oserror *err = NULL;
@@ -1063,7 +1045,7 @@ static void batch_test(ComponentId radio)
     check_file_save_completed(id, NULL);
 
     /* A scan dbox should have been created */
-    scan_id = pseudo_toolbox_find_by_template_name("Scan");
+    ObjectId scan_id = pseudo_toolbox_find_by_template_name("Scan");
     assert(scan_id != NULL_ObjectId);
     assert(object_is_on_menu(scan_id));
     assert(userdata_count_unsafe() == 1);
@@ -1172,7 +1154,6 @@ static void test9(void)
   int const estimated_size = make_compressed_file(TEST_DATA_IN);
   WimpPollBlock poll_block;
   int const my_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, estimated_size, TestCompressedFileType, 0);
-  ObjectId id;
 
   /* Load compressed file */
   pseudo_wimp_reset();
@@ -1183,7 +1164,7 @@ static void test9(void)
   /* A single savebox should have been created */
   assert(path_is_in_userdata(TEST_DATA_IN));
   assert(userdata_count_unsafe() == 0);
-  id = pseudo_toolbox_find_by_template_name("SaveFile");
+  ObjectId id = pseudo_toolbox_find_by_template_name("SaveFile");
   assert(object_is_on_menu(id));
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
@@ -1319,7 +1300,6 @@ static void test11(void)
 static void test12(void)
 {
   /* Transfer dir from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   init_data_save_msg(&poll_block, 0, FileType_Directory);
@@ -1333,7 +1313,7 @@ static void test12(void)
 
   Fortify_LeaveScope();
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
@@ -1343,7 +1323,6 @@ static void test12(void)
 static void test13(void)
 {
   /* Transfer app from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   init_data_save_msg(&poll_block, 0, FileType_Application);
@@ -1356,7 +1335,7 @@ static void test13(void)
 
   Fortify_LeaveScope();
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("AppDir")));
@@ -1370,8 +1349,6 @@ static void do_data_transfer(int file_type, int (*make_file)(char const *filenam
   int dataload_ref = 0;
   int estimated_size = 0;
   _Optional const _kernel_oserror *err;
-  _Optional UserData *savebox;
-  ObjectId id;
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
@@ -1478,9 +1455,9 @@ static void do_data_transfer(int file_type, int (*make_file)(char const *filenam
   /* A single savebox should have been created */
   assert(!path_is_in_userdata("<Wimp$Scrap>"));
   assert(userdata_count_unsafe() == 0);
-  savebox = userdata_find_by_file_name("");
+  _Optional UserData *savebox = userdata_find_by_file_name("");
   assert(savebox != NULL);
-  id = pseudo_toolbox_find_by_template_name(template_name);
+  ObjectId id = pseudo_toolbox_find_by_template_name(template_name);
   assert(object_is_on_menu(id));
   dialogue_completed(id);
 
@@ -1514,7 +1491,6 @@ static void test17(void)
   {
     WimpPollBlock poll_block;
     int const datasave_ref = init_data_save_msg(&poll_block, TestDataSize, TestUncompFileType);
-    _Optional const _kernel_oserror *err;
 
     Fortify_EnterScope();
     Fortify_SetNumAllocationsLimit(limit);
@@ -1524,17 +1500,16 @@ static void test17(void)
 
     dispatch_event(Wimp_EUserMessage, &poll_block);
 
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
     {
       WimpMessage ram_fetch;
-      int ram_transmit_ref;
 
       assert(check_ram_fetch_msg(datasave_ref, &ram_fetch));
 
       /* Fake a reply to the RAMFetch message with a RAMTransmit message,
          ensuring that we fill the buffer. */
-      ram_transmit_ref = init_ram_transmit_msg(&poll_block, &ram_fetch, ram_fetch.data.ram_fetch.buffer_size);
+      int ram_transmit_ref = init_ram_transmit_msg(&poll_block, &ram_fetch, ram_fetch.data.ram_fetch.buffer_size);
       err_suppress_errors();
 
       dispatch_event(Wimp_EUserMessage, &poll_block);

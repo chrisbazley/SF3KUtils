@@ -136,7 +136,6 @@ static bool write_anims(ObjectId win, MapTilesHeader const *const tiles_data)
 
   for (int byte = 0; byte < (int)ARRAY_SIZE(tiles_data->splash_anim_1); byte++)
   {
-    int temp;
 
     if (E(numberrange_set_value(0, win, ComponentId_Splash1_NumRange + byte,
                                 tiles_data->splash_anim_1[byte])))
@@ -146,7 +145,7 @@ static bool write_anims(ObjectId win, MapTilesHeader const *const tiles_data)
                                 tiles_data->splash_anim_2[byte])))
       return false;
 
-    temp = tiles_data->splash_2_triggers[byte];
+    int temp = tiles_data->splash_2_triggers[byte];
 
     if (E(numberrange_set_value(0, win, ComponentId_S2TriggerA_NumRange + byte,
                                 temp)))

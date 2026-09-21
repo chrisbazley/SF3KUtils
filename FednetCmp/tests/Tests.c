@@ -116,13 +116,16 @@ enum
 
 static void wipe(char const *path_name)
 {
-  _kernel_swi_regs regs;
-
   assert(path_name != NULL);
 
-  regs.r[0] = OS_FSControl_Wipe;
-  regs.r[1] = (intptr_t)(void *)path_name;
-  regs.r[3] = OS_FSControl_Flag_Recurse;
+  _kernel_swi_regs regs = {
+    .r = {
+      OS_FSControl_Wipe,
+      (intptr_t)(void *)path_name,
+      0,
+      OS_FSControl_Flag_Recurse,
+    }
+  };
   _kernel_swi(OS_FSControl, &regs, &regs);
 }
 
@@ -449,7 +452,9 @@ static void dialogue_completed(ObjectId id)
 static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fetch, int nbytes)
 {
   /* Set up fake RAMTransmit message */
-  _kernel_swi_regs regs;
+  _kernel_swi_regs regs = {
+    .r = {0}
+  };
 
   /* This isn't ideal but it's better for replies to these fake messages to be sent
      to our task rather than to an invalid handle or another task. */
@@ -481,7 +486,9 @@ static int init_ram_transmit_msg(WimpPollBlock *poll_block, WimpMessage *ram_fet
 static int init_data_load_msg(WimpPollBlock *poll_block, char *filename, int estimated_size, int file_type, int your_ref)
 {
   /* Set up fake DataLoad message */
-  _kernel_swi_regs regs;
+  _kernel_swi_regs regs = {
+    .r = {0}
+  };
 
   /* This isn't ideal but it's better for replies to these fake messages to be sent
      to our task rather than to an invalid handle or another task. */
@@ -514,7 +521,9 @@ static int init_data_load_msg(WimpPollBlock *poll_block, char *filename, int est
 static int init_data_save_msg(WimpPollBlock *poll_block, int estimated_size, int file_type)
 {
   /* Set up fake datasave message */
-  _kernel_swi_regs regs;
+  _kernel_swi_regs regs = {
+    .r = {0}
+  };
 
   /* This isn't ideal but it's better for replies to these fake messages to be sent
      to our task rather than to an invalid handle or another task. */
@@ -558,7 +567,9 @@ static int check_data_load_ack_msg(int my_ref, char *filename, int estimated_siz
 
     if (msg.hdr.your_ref == my_ref)
     {
-      _kernel_swi_regs regs;
+      _kernel_swi_regs regs = {
+        .r = {0}
+      };
 
       assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
 
@@ -593,7 +604,9 @@ static bool check_data_save_ack_msg(int my_ref, WimpMessage *data_save_ack)
 
     if (msg.hdr.your_ref == my_ref)
     {
-      _kernel_swi_regs regs;
+      _kernel_swi_regs regs = {
+        .r = {0}
+      };
 
       assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
 
@@ -634,7 +647,9 @@ static bool check_ram_fetch_msg(int my_ref, WimpMessage *ram_fetch)
 
     if (msg.hdr.your_ref == my_ref)
     {
-      _kernel_swi_regs regs;
+      _kernel_swi_regs regs = {
+        .r = {0}
+      };
 
       assert_no_error(toolbox_get_sys_info( Toolbox_GetSysInfo_TaskHandle, &regs));
       assert(msg.hdr.sender == regs.r[0]);

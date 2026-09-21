@@ -310,12 +310,12 @@ void EffectMenu_update(EditWin *const edit_win)
       SmoothMinSelect
     }
   };
-  int sel_start, sel_end, sel_len;
+  int sel_start, sel_end;
 
   EditWin_get_selection(edit_win, &sel_start, &sel_end);
 
   assert(sel_end >= sel_start);
-  sel_len = sel_end - sel_start;
+  int sel_len = sel_end - sel_start;
 
   for (size_t i = 0; i < ARRAY_SIZE(items_to_fade); i++)
   {

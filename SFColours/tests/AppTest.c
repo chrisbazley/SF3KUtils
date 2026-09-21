@@ -176,20 +176,17 @@ FILE *test_fopen(char const *file_name, char const *mode)
 
 static int make_comp_file(char const *file_name, const void *in_buffer, size_t in_size)
 {
-  FILE *f;
   size_t n;
   char out_buffer[CompressionBufferSize];
-  _Optional GKeyComp *comp;
   size_t estimated_size = sizeof(int32_t);
-  bool ok;
   GKeyStatus status;
 
-  f = test_fopen(file_name, "wb");
+  FILE *f = test_fopen(file_name, "wb");
   assert(in_size <= INT32_MAX);
-  ok = fwrite_int32le((int32_t)in_size, f);
+  bool ok = fwrite_int32le((int32_t)in_size, f);
   assert(ok);
 
-  comp = gkeycomp_make(FednetHistoryLog2);
+  _Optional GKeyComp *comp = gkeycomp_make(FednetHistoryLog2);
   assert(comp != NULL);
 
   GKeyParameters params = {
@@ -271,7 +268,6 @@ static void assert_file_has_type(char const *file_name, int file_type)
 static void load_comp_file(char const *file_name, void *out_buffer, size_t out_size)
 {
   char in_buffer[CompressionBufferSize];
-  _Optional GKeyDecomp     *decomp;
   long int len;
   bool ok, in_pending = false;
   GKeyStatus status;
@@ -283,7 +279,7 @@ static void load_comp_file(char const *file_name, void *out_buffer, size_t out_s
   assert(len >= 0);
   assert((size_t)len == out_size);
 
-  decomp = gkeydecomp_make(FednetHistoryLog2);
+  _Optional GKeyDecomp     *decomp = gkeydecomp_make(FednetHistoryLog2);
   assert(decomp != NULL);
 
   GKeyParameters params = {
@@ -570,7 +566,6 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional UserData *window;
   char buffer[1024];
   _kernel_swi_regs regs;
 
@@ -583,7 +578,7 @@ static bool path_is_in_userdata(char *filename)
   assert_no_error(_kernel_swi(OS_FSControl, &regs, &regs));
   assert(regs.r[5] >= 0);
 
-  window = userdata_find_by_file_name(buffer);
+  _Optional UserData *window = userdata_find_by_file_name(buffer);
   return window != NULL;
 }
 
@@ -2190,7 +2185,6 @@ static void save_file(ObjectId id, unsigned int flags, DataTransferMethod method
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
     WimpPollBlock poll_block;
 
     err_suppress_errors();
@@ -2202,7 +2196,7 @@ static void save_file(ObjectId id, unsigned int flags, DataTransferMethod method
     dispatch_event_with_error_sim(Wimp_EToolboxEvent, &poll_block, limit);
 
     Fortify_LeaveScope();
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
   }
@@ -2290,7 +2284,6 @@ static void test2(void)
 static void test3(void)
 {
   /* Load directory */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   WimpGetPointerInfoBlock drag_dest;
@@ -2310,7 +2303,7 @@ static void test3(void)
 
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
@@ -2345,11 +2338,10 @@ static void cleanup_stalled(void)
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {
-    _Optional const _kernel_oserror *err;
 
     err_suppress_errors();
     dispatch_event_with_error_sim(Wimp_ENull, &(WimpPollBlock){0}, limit);
-    err = err_dump_suppressed();
+    _Optional const _kernel_oserror *err = err_dump_suppressed();
     if (err == NULL)
       break;
   }
@@ -2357,7 +2349,6 @@ static void cleanup_stalled(void)
 
 static _Optional const _kernel_oserror *send_data_core(int file_type, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, int your_ref)
 {
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
   bool use_file = false;
 
@@ -2373,7 +2364,7 @@ static _Optional const _kernel_oserror *send_data_core(int file_type, int estima
 
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   WimpMessage data_save_ack;
   if (check_data_save_ack_msg(our_ref, &data_save_ack, pointer_info))
@@ -2577,7 +2568,6 @@ static void test5(void)
 static void test6(void)
 {
   /* Transfer dir from app */
-  _Optional const _kernel_oserror *err;
   WimpPollBlock poll_block;
 
   WimpGetPointerInfoBlock drag_dest;
@@ -2588,7 +2578,7 @@ static void test6(void)
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   assert(err != NULL);
   assert(err->errnum == DUMMY_ERRNO);
   assert(!strcmp(&*err->errmess, msgs_lookup("BadFileType")));
@@ -2795,8 +2785,6 @@ static void test10(void)
 static void load_bad_csv(char const *csv)
 {
   WimpPollBlock poll_block;
-  int data_load_ref;
-  _Optional const _kernel_oserror *err;
 
   WimpGetPointerInfoBlock drag_dest;
   init_pointer_info_for_icon(&drag_dest);
@@ -2809,13 +2797,13 @@ static void load_bad_csv(char const *csv)
 
   assert_no_error(os_file_set_type(TEST_DATA_IN, FileType_CSV));
 
-  data_load_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, UnsafeDataSize, FileType_CSV, &drag_dest, 0);
+  int data_load_ref = init_data_load_msg(&poll_block, TEST_DATA_IN, UnsafeDataSize, FileType_CSV, &drag_dest, 0);
 
   err_suppress_errors();
   dispatch_event(Wimp_EUserMessage, &poll_block);
   assert(fopen_num() == 0);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   if (*csv == '\0')
   {
     assert_no_error(err);
@@ -2876,7 +2864,6 @@ static void test13(void)
 static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_types[], int ftype_idx, int estimated_size, const WimpGetPointerInfoBlock *pointer_info, DataTransferMethod method, unsigned int flags)
 {
   WimpPollBlock poll_block;
-  _Optional const _kernel_oserror *err;
 
   /* Before a drag is claimed, auto-scrolling should be disabled */
   assert(!get_scroll_state(pointer_info->window_handle));
@@ -2885,7 +2872,7 @@ static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_type
   int const dragging_ref = init_dragging_msg(&poll_block, file_types, pointer_info, flags);
   dispatch_event(Wimp_EUserMessage, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
 
   /* Do not expect file type 'data' to be accepted by the app if the drag is over the iconbar */
   WimpMessage drag_claim;
@@ -2924,7 +2911,6 @@ static _Optional const _kernel_oserror *do_drag_in_data_core(int const file_type
 static _Optional const _kernel_oserror *paste_internal_core(_Optional int const file_types[], int ftype_idx, int estimated_size, ObjectId id, DataTransferMethod method)
 {
   WimpPollBlock poll_block;
-  _Optional const _kernel_oserror *err;
 
   WimpGetPointerInfoBlock pointer_info;
   init_pointer_info_for_win(&pointer_info, id, 0, 0);
@@ -2935,7 +2921,7 @@ static _Optional const _kernel_oserror *paste_internal_core(_Optional int const 
   init_id_block(pseudo_event_get_client_id_block(), id, NULL_ComponentId);
   dispatch_event(Wimp_EToolboxEvent, &poll_block);
 
-  err = err_dump_suppressed();
+  _Optional const _kernel_oserror *err = err_dump_suppressed();
   if (err == NULL)
   {
     WimpMessage data_request;
@@ -4128,14 +4114,13 @@ static void test43(void)
     unsigned long limit;
     for (limit = 0; limit < FortifyAllocationLimit; ++limit)
     {
-      _Optional const _kernel_oserror *err;
 
       wait_for_stalled_ops(DragMsgInterval);
 
       /* Simulate a null event to trigger a dragging message. */
       err_suppress_errors();
       dispatch_event_suppress_with_error_sim(Wimp_ENull, &(WimpPollBlock){0}, limit);
-      err = err_dump_suppressed();
+      _Optional const _kernel_oserror *err = err_dump_suppressed();
       if (err == NULL)
         break;
     }

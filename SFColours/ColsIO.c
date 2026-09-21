@@ -1011,11 +1011,12 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
 
       intptr_t const renderer_args[4] =
       {
-        (intptr_t)colours, (intptr_t)pos, (intptr_t)&size, ncols
+        (intptr_t)(void *)colours, (intptr_t)(void *)pos,
+        (intptr_t)(void *)&size, ncols
       };
       ON_ERR_RTN_E(drag_an_object_start(
                          DragAnObject_BBoxPointer | DragAnObject_RenderAPCS,
-                         (intptr_t)DAO_render,
+                         (intptr_t)(void *)DAO_render,
                          renderer_args,
                          &drag_box.dragging_box,
                          &(BBox){0}));

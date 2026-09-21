@@ -45,6 +45,7 @@
 #include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
+#include "OSFSCntrl.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"
 #include "PseudoEvnt.h"
@@ -109,24 +110,13 @@ enum
   ComponentId_Scan_Pause_ActButton = 0x04,
   ComponentId_SaveDir_Compress_Radio = 0x01,
   ComponentId_SaveDir_Decompress_Radio = 0x02,
-  OS_FSControl_Wipe = 27,
-  OS_FSControl_Flag_Recurse = 1,
   //OS_FSControl = 0x29,
 };
 
 static void wipe(char const *path_name)
 {
   assert(path_name != NULL);
-
-  _kernel_swi_regs regs = {
-    .r = {
-      OS_FSControl_Wipe,
-      (intptr_t)(void *)path_name,
-      0,
-      OS_FSControl_Flag_Recurse,
-    }
-  };
-  _kernel_swi(OS_FSControl, &regs, &regs);
+  (void)os_fscontrol_wipe(path_name, OS_FSControl_Recurse);
 }
 
 FILE *test_fopen(char const *file_name, char const *mode)

@@ -6,10 +6,11 @@ include(FetchContent)
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
 FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG main)
 FetchContent_Declare(CBDebug GIT_REPOSITORY https://github.com/chrisbazley/CBDebugLib.git GIT_TAG main)
+FetchContent_Declare(CBPseudo GIT_REPOSITORY https://github.com/chrisbazley/CBPseudoLib.git GIT_TAG main)
 FetchContent_Declare(OptionalAcornC GIT_REPOSITORY https://github.com/chrisbazley/OptionalAcornC.git GIT_TAG main)
 FetchContent_Declare(SF3K GIT_REPOSITORY https://github.com/chrisbazley/SF3KLib.git GIT_TAG main)
 
-FetchContent_MakeAvailable(CBUtil CB CBDebug OptionalAcornC SF3K)
+FetchContent_MakeAvailable(CBUtil CB CBDebug CBPseudo OptionalAcornC SF3K)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
@@ -61,6 +62,7 @@ add_library(SFSkyEdit ${SOURCES} ${PRIVATE_HEADERS})
 target_link_libraries(SFSkyEdit PUBLIC
     CB
     CBDebug
+    CBPseudo
     OptionalAcornC
     SF3K
 )

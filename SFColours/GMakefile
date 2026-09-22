@@ -18,7 +18,7 @@ include MakeCommon
 DebugList = $(addsuffix .debug,$(ObjectList))
 ReleaseList = $(addsuffix .o,$(ObjectList))
 LibList = C:o.toolboxlib C:o.eventlib C:o.wimplib
-DebugLibs = Fortify CBDebug CBUtildbg GKeydbg Streamdbg CBOSdbg CBdbg SFColEd
+DebugLibs = CBPseudo Fortify CBDebug CBUtildbg GKeydbg Streamdbg CBOSdbg CBdbg SFColEd
 ReleaseLibs = Flex CBUtil GKey Stream CBOS CB
 DebugObjects = Main.debug $(DebugList)
 

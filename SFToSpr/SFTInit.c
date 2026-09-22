@@ -96,6 +96,7 @@ int wimp_version;
 static int pre_quit_msg(WimpMessage *const message, void *const handle)
 {
   assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MPreQuit);
   NOT_USED(handle);
 
   DEBUG("Received Wimp pre-quit message (ref. %d in reply to %d)",
@@ -127,6 +128,8 @@ static int pre_quit_msg(WimpMessage *const message, void *const handle)
 
 static int quit_msg(WimpMessage *const message, void *const handle)
 {
+  assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MQuit);
   NOT_USED(message);
   NOT_USED(handle);
 
@@ -176,7 +179,9 @@ static int misc_tb_event(const int event_code, ToolboxEvent *const event,
   {
     case EventCode_Quit:
       if (!PreQuit_queryunsaved(0))
-        quit_msg(&(WimpMessage){0}, &(int){0});
+        quit_msg(&(WimpMessage){
+          .hdr = {.action_code = Wimp_MQuit}
+        }, &(int){0});
       break;
 
     case EventCode_Help:

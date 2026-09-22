@@ -742,6 +742,7 @@ static int datasave_msg_handler(WimpMessage *const message, void *const handle)
 
   assert(edit_win != NULL);
   assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MDataSave);
 
   DEBUGF("View %p evaluating a DataSave message (ref. %d in reply to %d)\n",
         (void *)edit_win, message->hdr.my_ref, message->hdr.your_ref);
@@ -792,6 +793,8 @@ static int datasave_fallback_handler(WimpMessage *const message, void *const han
      not belong to any of our views. In such cases, none will claim the
      message (leaving the drag claimant with auto-scrolling enabled). */
 
+  assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MDataSave);
   NOT_USED(handle);
   DEBUGF("Fallback handler got a DataSave message (ref. %d in reply to %d)\n",
         message->hdr.my_ref, message->hdr.your_ref);

@@ -113,7 +113,8 @@ MessagesFD mfd;
 
 static int mode_change_msg(WimpMessage *const message, void *const handle)
 {
-  /* This handler is called upon desktop screen mode change */
+  assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MModeChange);
   enum
   {
     VarIndex_XEigFactor,
@@ -199,8 +200,8 @@ static void cb_released(void)
 
 static int quit_msg(WimpMessage *const message, void *const handle)
 {
-  /* Quit application */
   assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MQuit);
   NOT_USED(handle);
   NOT_USED(message);
 
@@ -261,6 +262,7 @@ static int misc_tb_event(int const event_code, ToolboxEvent *const event,
 static int pre_quit_msg(WimpMessage *const message, void *const handle)
 {
   assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MPreQuit);
   NOT_USED(handle);
 
   DEBUGF("Received Wimp pre-quit message (ref. %d in reply to %d)\n",
@@ -607,7 +609,9 @@ void initialise(void)
   EF(colourtrans_read_palette(0, &source, palette, sizeof(palette), NULL));
 
   /* Read variables for current screen mode */
-  mode_change_msg(&(WimpMessage){0}, &(int){0});
+  mode_change_msg(&(WimpMessage){
+    .hdr = {.action_code = Wimp_MModeChange}
+  }, &(int){0});
 
   hourglass_off();
 }

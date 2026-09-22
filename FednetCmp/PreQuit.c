@@ -119,6 +119,7 @@ static int menus_deleted(WimpMessage *const message, void *const handle)
 {
   /* 'Menu tree' has been closed - is menu block our wimp window? */
   assert(message != NULL);
+  assert(message->hdr.action_code == Wimp_MMenusDeleted);
   NOT_USED(handle);
 
   if (message->data.words[0] == window_handle)

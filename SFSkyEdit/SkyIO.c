@@ -897,7 +897,7 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
       flags |= DragAnObject_HAlign_Centre | DragAnObject_VAlign_Centre;
 #endif
       ON_ERR_RTN_E(drag_an_object_start(flags,
-                                        (intptr_t)(void *)DAO_render,
+                                        (intptr_t)DAO_render,
                                         renderer_args,
                                         &drag_box.dragging_box,
                                         &(BBox){0}));

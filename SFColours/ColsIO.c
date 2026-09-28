@@ -1020,7 +1020,7 @@ static _Optional const _kernel_oserror *drag_box(const DragBoxOp action,
       };
       ON_ERR_RTN_E(drag_an_object_start(
                          DragAnObject_BBoxPointer | DragAnObject_RenderAPCS,
-                         (intptr_t)(void *)DAO_render,
+                         (intptr_t)DAO_render,
                          renderer_args,
                          &drag_box.dragging_box,
                          &(BBox){0}));

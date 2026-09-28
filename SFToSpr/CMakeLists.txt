@@ -33,19 +33,20 @@ if(ENABLE_CLANG_TIDY)
         HINTS "/opt/homebrew/opt/llvm/bin"
     )
 
-    if(CLANG_TIDY_EXE)
-        set(CLANG_TIDY_ARGS "${CLANG_TIDY_EXE};-checks=-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.*")
-
-        if(APPLE)
-            execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE MAC_SDK_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
-            list(APPEND CLANG_TIDY_ARGS "--extra-arg=-isysroot" "--extra-arg=${MAC_SDK_PATH}")
-        endif()
-
-        set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_ARGS}")
-        message(STATUS "Clang-Tidy Static Analyzer enabled automatically.")
-    else()
-        message(STATUS "clang-tidy binary not found. Skipping analysis pass.")
+    if(NOT CLANG_TIDY_EXE)
+        message(FATAL_ERROR
+            "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found")
     endif()
+
+    set(CLANG_TIDY_ARGS "${CLANG_TIDY_EXE};-checks=-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.*;--warnings-as-errors=clang-analyzer-*")
+
+    if(APPLE)
+        execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE MAC_SDK_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+        list(APPEND CLANG_TIDY_ARGS "--extra-arg=-isysroot" "--extra-arg=${MAC_SDK_PATH}")
+    endif()
+
+    set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_ARGS}")
+    message(STATUS "Clang-Tidy Static Analyzer enabled automatically.")
 endif()
 
 set(SOURCES

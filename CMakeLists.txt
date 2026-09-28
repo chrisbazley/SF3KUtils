@@ -5,6 +5,7 @@ enable_testing()
 option(USE_OPTIONAL "Enable the _Optional qualifier" OFF)
 option(USE_FORTIFY "Enable Fortify memory-allocation checking" OFF)
 option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 include(FetchContent)
 
@@ -31,6 +32,23 @@ if(USE_FORTIFY)
 
     FetchContent_MakeAvailable(Fortify)
     link_libraries(Fortify)
+endif()
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
+
+if(MSVC)
+    add_compile_options(/W4 /wd4200 /wd4996 /wd4130)
+else()
+    add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)
+endif()
+
+if(WARNINGS_AS_ERRORS AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    if(MSVC)
+        add_compile_options(/WX)
+    else()
+        add_compile_options(-Werror)
+    endif()
 endif()
 
 add_subdirectory(SFToSpr)

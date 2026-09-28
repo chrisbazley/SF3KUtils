@@ -56,8 +56,12 @@
 #define SKY_SPR_NAME "sky"
 #define SKY_SPR_TAG "HEIG"
 
-#if defined(__GNUC__)
+#if defined(__has_attribute)
+#if __has_attribute(nonstring)
 #define NON_STRING __attribute__((nonstring))
+#else
+#define NON_STRING
+#endif
 #else
 #define NON_STRING
 #endif

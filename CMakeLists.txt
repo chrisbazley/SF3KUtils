@@ -37,21 +37,26 @@ endif()
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
 
-if(MSVC)
-    add_compile_options(/W4 /wd4200 /wd4996 /wd4130)
-else()
-    add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)
-endif()
-
-if(WARNINGS_AS_ERRORS AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    if(MSVC)
-        add_compile_options(/WX)
-    else()
-        add_compile_options(-Werror)
-    endif()
-endif()
-
 add_subdirectory(SFToSpr)
 add_subdirectory(SFSkyEdit)
 add_subdirectory(FednetCmp)
 add_subdirectory(SFColours)
+
+# These targets belong to SF3KUtils. Do not pass the diagnostic policy to
+# dependencies created by FetchContent inside the component directories.
+if(WARNINGS_AS_ERRORS AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    set(OWN_TARGETS SFToSpr SFSkyEdit FednetCmp SFColours
+        SFToSprApp SFSkyEditApp FednetCmpApp SFColoursApp
+        SFToSprCoreTestsLib SFToSprAppTestsLib SFToSprTests
+        SFSkyEditCoreTestsLib SFSkyEditAppTestsLib SFSkyEditTests
+        SFColoursCoreTestsLib SFColoursAppTestsLib SFColoursTests)
+    foreach(target IN LISTS OWN_TARGETS)
+        if(TARGET ${target})
+            if(MSVC)
+                target_compile_options(${target} PRIVATE /WX)
+            else()
+                target_compile_options(${target} PRIVATE -Werror)
+            endif()
+        endif()
+    endforeach()
+endif()

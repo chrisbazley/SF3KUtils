@@ -57,7 +57,7 @@ static void fortify_check(void)
     Fortify_LeaveScope();
   }
   assert(!fortify_detected);
-  (void)fortify_detected;
+  NOT_USED(fortify_detected);
 }
 
 /* ----------------------------------------------------------------------- */

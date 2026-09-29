@@ -113,8 +113,8 @@ static int mode_change_msg(WimpMessage *const message, void *const handle)
 
   static const VDUVar mode_vars[VarIndex_LAST + 1] =
   {
-    [VarIndex_XEigFactor] = (VDUVar)ModeVar_XEigFactor,
-    [VarIndex_YEigFactor] = (VDUVar)ModeVar_YEigFactor,
+    [VarIndex_XEigFactor] = VDUVar_XEigFactor,
+    [VarIndex_YEigFactor] = VDUVar_YEigFactor,
     [VarIndex_LAST] = VDUVar_EndOfList,
   };
 

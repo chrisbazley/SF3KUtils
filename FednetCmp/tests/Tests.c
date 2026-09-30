@@ -180,7 +180,7 @@ static int make_compressed_file(char const *file_name)
   assert(status == GKeyStatus_Finished);
   gkeycomp_destroy(comp);
 
-  fclose(f);
+  assert(!fclose(f));
   assert_no_error(os_file_set_type(file_name, TestCompressedFileType));
   assert(estimated_size <= INT_MAX);
   return (int)estimated_size;
@@ -264,7 +264,7 @@ static int make_uncompressed_file(char const *file_name)
   size_t n = fwrite(test_data, TestDataSize, 1, f);
   assert(n == 1);
 
-  fclose(f);
+  assert(!fclose(f));
 
   assert_no_error(os_file_set_type(file_name, TestUncompFileType));
 

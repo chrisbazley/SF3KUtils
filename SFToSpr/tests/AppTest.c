@@ -252,7 +252,7 @@ static int make_compressed_file(const char *const file_name, void *const data, c
   assert(status == GKeyStatus_Finished);
   gkeycomp_destroy(comp);
 
-  fclose(f);
+  assert(!fclose(f));
   assert_no_error(os_file_set_type(file_name, file_type));
   assert(estimated_size <= INT_MAX);
   return (int)estimated_size;
@@ -597,7 +597,7 @@ static int make_uncompressed_file(const char *const file_name, const void *const
   size_t const n = fwrite(data, size, 1, f);
   assert(n == 1);
 
-  fclose(f);
+  assert(!fclose(f));
 
   assert_no_error(os_file_set_type(file_name, file_type));
 
@@ -1823,7 +1823,7 @@ static void activate_savebox(ObjectId saveas_id, ComponentId radio, unsigned int
           }
           while (1);
 
-          fclose(f);
+          assert(!fclose(f));
           break;
         }
         case DTM_File:

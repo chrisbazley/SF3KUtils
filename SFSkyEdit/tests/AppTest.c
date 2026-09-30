@@ -220,7 +220,7 @@ static int make_sky_file(char const *file_name, uint8_t (*compute_colour)(int ba
   assert(status == GKeyStatus_Finished);
   gkeycomp_destroy(comp);
 
-  fclose(f);
+  assert(!fclose(f));
   assert_no_error(os_file_set_type(file_name, FileType_SFSkyCol));
   assert(estimated_size <= INT_MAX);
   return (int)estimated_size;
@@ -392,7 +392,7 @@ static int make_csv_file(char const *file_name, uint8_t (*compute_colour)(int ba
     total += n;
   }
 
-  fclose(f);
+  assert(!fclose(f));
 
   assert_no_error(os_file_set_type(file_name, FileType_CSV));
 
@@ -2196,7 +2196,7 @@ static void activate_savebox(ObjectId saveas_id, unsigned int flags, DataTransfe
         }
         while (1);
 
-        fclose(f);
+        assert(!fclose(f));
         break;
       }
       case DTM_File:
@@ -2753,7 +2753,7 @@ static _Optional const _kernel_oserror *rec_data_core(const WimpMessage *data_sa
       }
       while (1);
 
-      fclose(f);
+      assert(!fclose(f));
       break;
     }
 
@@ -2877,7 +2877,7 @@ static void load_bad_csv(char const *csv)
   assert(csv != NULL);
   FILE * const f = test_fopen(TEST_DATA_IN, "wb");
   int const put = fputs(csv, f);
-  fclose(f);
+  assert(!fclose(f));
   assert(put >= 0);
 
   assert_no_error(os_file_set_type(TEST_DATA_IN, FileType_CSV));
@@ -2927,7 +2927,7 @@ static void test13(void)
 {
   /* Load empty CSV file */
   FILE * const f = test_fopen(TEST_DATA_IN, "wb");
-  fclose(f);
+  assert(!fclose(f));
 
   assert_no_error(os_file_set_type(TEST_DATA_IN, FileType_CSV));
 
@@ -5284,7 +5284,7 @@ static void test79(void)
 
   FILE * const f = test_fopen(TEST_DATA_IN, "wb");
   assert(fputc('#', f) == '#');
-  fclose(f);
+  assert(!fclose(f));
 
   for (limit = 0; limit < FortifyAllocationLimit; ++limit)
   {

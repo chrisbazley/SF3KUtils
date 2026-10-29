@@ -61,7 +61,10 @@ enum
 
 typedef struct
 {
-  SFTSaveBox  super;
+  union {
+    char nil;
+    SFTSaveBox obj;
+  } super;
   ComponentId reset_direction;
   _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
@@ -72,7 +75,7 @@ SaveDir;
 
 static void destroy_savedir(SFTSaveBox *savebox)
 {
-  SaveDir * const savedir_data = CONTAINER_OF(savebox, SaveDir, super);
+  SaveDir * const savedir_data = CONTAINER_OF(savebox, SaveDir, super.obj);
 
   assert(savedir_data != NULL);
   SFTSaveBox_finalise(savebox);
@@ -134,7 +137,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
   do
   {
     /* Read conversion operation from radio buttons */
-    if (E(radiobutton_get_state(0, savedir_data->super.window_id,
+    if (E(radiobutton_get_state(0, savedir_data->super.obj.window_id,
                                 ComponentId_SpriteToSF3000_Radio, NULL,
                                 &savedir_data->reset_direction)))
       break;
@@ -169,7 +172,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
     const bool data = (savedir_data->reset_direction == ComponentId_ExtractData_Radio ||
                        savedir_data->reset_direction == ComponentId_SF3000ToSprite_Radio);
 
-    Scan_create(stringbuffer_get_pointer(&savedir_data->super.super.file_name),
+    Scan_create(stringbuffer_get_pointer(&savedir_data->super.obj.super.file_name),
                 &*buf, images, data);
   }
   while (0);
@@ -199,14 +202,14 @@ _Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
     .deleted_cb = deleted_cb,
   };
 
-  if (SFTSaveBox_initialise(&savedir_data->super, input_path, true,
+  if (SFTSaveBox_initialise(&savedir_data->super.obj, input_path, true,
                             FileType_Directory, "SaveDir", "DirDialogueList",
                             x, destroy_savedir))
   {
     do
     {
       /* Register Toolbox event handlers for SaveAs object */
-      if (E(event_register_toolbox_handler(savedir_data->super.saveas_id,
+      if (E(event_register_toolbox_handler(savedir_data->super.obj.saveas_id,
                                            SaveAs_SaveToFile,
                                            save_to_file,
                                            &*savedir_data)))
@@ -215,7 +218,7 @@ _Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
       }
 
       /* Record initial state of dialogue box */
-      if (E(radiobutton_get_state(0, savedir_data->super.window_id,
+      if (E(radiobutton_get_state(0, savedir_data->super.obj.window_id,
                                   ComponentId_SF3000ToSprite_Radio,
                                   NULL, &savedir_data->reset_direction)))
       {
@@ -223,7 +226,7 @@ _Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
       }
 
       /* Register an event handler for the underlying Window object */
-      if (E(event_register_toolbox_handler(savedir_data->super.window_id,
+      if (E(event_register_toolbox_handler(savedir_data->super.obj.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
                                            &*savedir_data)))
@@ -231,10 +234,10 @@ _Optional SFTSaveBox *SaveDir_create(char const *input_path, int x,
         break;
       }
 
-      return &savedir_data->super;
+      return &savedir_data->super.obj;
     }
     while (0);
-    SFTSaveBox_finalise(&savedir_data->super);
+    SFTSaveBox_finalise(&savedir_data->super.obj);
   }
   free(savedir_data);
   return NULL;

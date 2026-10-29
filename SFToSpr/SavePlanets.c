@@ -77,7 +77,10 @@ enum
 
 typedef struct
 {
-  SFTSaveBox super;
+  union {
+    char nil;
+    SFTSaveBox obj;
+  } super;
   int        wimp_handle;
   void      *planets_data; /* flex block */
   void      *sprites; /* flex block */
@@ -185,11 +188,11 @@ static bool csv_loaded(Reader *const reader, int const estimated_size,
   bool success = false;
 
   PlanetsHeader hdr = savefile_data->context.hdr;
-  if (read_offsets(savefile_data->super.window_id, &hdr))
+  if (read_offsets(savefile_data->super.obj.window_id, &hdr))
   {
     if (!handle_error(csv_to_planets(reader, &hdr), filename, ""))
     {
-      success = write_offsets(savefile_data->super.window_id, &hdr);
+      success = write_offsets(savefile_data->super.obj.window_id, &hdr);
     }
   }
   return success;
@@ -206,7 +209,7 @@ static bool write_planets(Writer *const writer, void *const handle,
   /* Read displayed paint offsets into header
   N.B. This has the side effect of confirming the displayed offsets for
        use if the dbox is reset (e.g. ADJUST-click 'Cancel') */
-  if (!read_offsets(savefile_data->super.window_id, &savefile_data->context.hdr))
+  if (!read_offsets(savefile_data->super.obj.window_id, &savefile_data->context.hdr))
     return false;
 
   Writer gkwriter;
@@ -377,7 +380,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 
 static void destroy_savebox(SFTSaveBox *const savebox)
 {
-  SavePlanets * const savefile_data = CONTAINER_OF(savebox, SavePlanets, super);
+  SavePlanets * const savefile_data = CONTAINER_OF(savebox, SavePlanets, super.obj);
 
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
@@ -430,11 +433,13 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
   }
 
   *savefile_data = (SavePlanets){
+    .planets_data = (void *)NULL,
+    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
 
-  if (SFTSaveBox_initialise(&savefile_data->super,
+  if (SFTSaveBox_initialise(&savefile_data->super.obj,
                             save_path, data_saved,
                             FileType_SFSkyPic,
                             "SprToPla", "SprPlaList",
@@ -452,7 +457,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
         do
         {
           /* Get the Wimp handle of the window underlying the savebox */
-          if (E(window_get_wimp_handle(0, savefile_data->super.window_id,
+          if (E(window_get_wimp_handle(0, savefile_data->super.obj.window_id,
                                        &savefile_data->wimp_handle)))
           {
             break;
@@ -460,14 +465,14 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
 
           /* Can't know the final size yet because the user can edit things
              in the dialogue box so calculate the worst case. */
-          if (E(saveas_set_file_size(0, savefile_data->super.saveas_id,
+          if (E(saveas_set_file_size(0, savefile_data->super.obj.saveas_id,
                 worst_comp_size(planets_size(&savefile_data->context.hdr)))))
           {
             break;
           }
 
           /* Register other event handlers for SaveAs object */
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_SaveToFile,
                                                save_to_file,
                                                &*savefile_data)))
@@ -475,7 +480,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
             break;
           }
 
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_FillBuffer,
                                                fill_buffer,
                                                &*savefile_data)))
@@ -484,7 +489,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
           }
 
           /* Register event handler for underlying Window object */
-          if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                                ActionButton_Selected,
                                                actionbutton_selected,
                                                &*savefile_data)))
@@ -494,19 +499,19 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
 
           /* Set up extra gadgets in the underlying Window object */
           const int last_image = context->hdr.last_image_num;
-          if (E(numberrange_set_value(0, savefile_data->super.window_id,
+          if (E(numberrange_set_value(0, savefile_data->super.obj.window_id,
                                       ComponentId_LastImage_NumRange,
                                       last_image)))
           {
             break;
           }
 
-          if (!fade_offsets(savefile_data->super.window_id, last_image))
+          if (!fade_offsets(savefile_data->super.obj.window_id, last_image))
           {
             break;
           }
 
-          if (!write_offsets(savefile_data->super.window_id, &savefile_data->context.hdr))
+          if (!write_offsets(savefile_data->super.obj.window_id, &savefile_data->context.hdr))
           {
             break;
           }
@@ -517,7 +522,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
             break;
           }
 
-          return &savefile_data->super;
+          return &savefile_data->super.obj;
         }
         while (0);
 
@@ -529,7 +534,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
                                              datasave_message,
                                              &*savefile_data);
     }
-    SFTSaveBox_finalise(&savefile_data->super);
+    SFTSaveBox_finalise(&savefile_data->super.obj);
   }
   free(savefile_data);
   return NULL;

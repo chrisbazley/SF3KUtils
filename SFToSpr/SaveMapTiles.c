@@ -74,7 +74,10 @@ enum
 
 typedef struct
 {
-  SFTSaveBox super;
+  union {
+    char nil;
+    SFTSaveBox obj;
+  } super;
   int        wimp_handle;
   void      *tiles_data; /* flex block */
   void      *sprites; /* flex block */
@@ -194,11 +197,11 @@ static bool csv_loaded(Reader *const reader, int const estimated_size,
   SaveMapTiles * const savefile_data = client_handle;
   MapTilesHeader header = savefile_data->context.hdr;
   bool success = false;
-  if (read_anims(savefile_data->super.window_id, &header))
+  if (read_anims(savefile_data->super.obj.window_id, &header))
   {
     if (!handle_error(csv_to_tiles(reader, &header), filename, ""))
     {
-      success = write_anims(savefile_data->super.window_id, &header);
+      success = write_anims(savefile_data->super.obj.window_id, &header);
     }
   }
   return success;
@@ -249,7 +252,7 @@ static bool write_map_tiles(Writer *const writer, void *const handle,
   /* Read displayed animations data into header
   N.B. This has the side effect of confirming the displayed animations for
        use if the dbox is reset (e.g. ADJUST-click 'Cancel') */
-  if (!read_anims(savefile_data->super.window_id, &savefile_data->context.hdr))
+  if (!read_anims(savefile_data->super.obj.window_id, &savefile_data->context.hdr))
   {
     return false;
   }
@@ -464,7 +467,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 
 static void destroy_savebox(SFTSaveBox *const savebox)
 {
-  SaveMapTiles * const savefile_data = CONTAINER_OF(savebox, SaveMapTiles, super);
+  SaveMapTiles * const savefile_data = CONTAINER_OF(savebox, SaveMapTiles, super.obj);
 
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
@@ -516,11 +519,13 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
   }
 
   *savefile_data = (SaveMapTiles){
+    .tiles_data = (void *)NULL,
+    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
 
-  if (SFTSaveBox_initialise(&savefile_data->super,
+  if (SFTSaveBox_initialise(&savefile_data->super.obj,
                             save_path,
                             data_saved,
                             FileType_SFMapGfx,
@@ -541,7 +546,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
         do
         {
           /* Get the Wimp handle of the window underlying the savebox */
-          if (E(window_get_wimp_handle(0, savefile_data->super.window_id,
+          if (E(window_get_wimp_handle(0, savefile_data->super.obj.window_id,
                                        &savefile_data->wimp_handle)))
           {
             break;
@@ -549,21 +554,21 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
 
           /* Can't know the final size yet because the user can edit things
              in the dialogue box so calculate the worst case. */
-          if (E(saveas_set_file_size(0, savefile_data->super.saveas_id,
+          if (E(saveas_set_file_size(0, savefile_data->super.obj.saveas_id,
                  worst_comp_size(tiles_size(&savefile_data->context.hdr)))))
           {
             break;
           }
 
           /* Register other event handlers for SaveAs object */
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_SaveToFile,
                                                save_to_file, &*savefile_data)))
           {
             break;
           }
 
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_FillBuffer,
                                                fill_buffer, &*savefile_data)))
           {
@@ -571,7 +576,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
           }
 
           /* Register event handlers for underlying Window object */
-          if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                                ActionButton_Selected,
                                                actionbutton_selected,
                                                &*savefile_data)))
@@ -579,7 +584,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
             break;
           }
 
-          if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                                NumberRange_ValueChanged,
                                                numberrange_value_changed,
                                                &*savefile_data)))
@@ -589,18 +594,18 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
 
           /* Set up extra gadgets in the underlying Window object */
           const int last_tile = savefile_data->context.hdr.last_tile_num;
-          if (E(numberrange_set_value(0, savefile_data->super.window_id,
+          if (E(numberrange_set_value(0, savefile_data->super.obj.window_id,
                                       ComponentId_LastTile_NumRange, last_tile)))
           {
             break;
           }
 
-          if (!set_limits(savefile_data->super.window_id, last_tile))
+          if (!set_limits(savefile_data->super.obj.window_id, last_tile))
           {
             break;
           }
 
-          if (!write_anims(savefile_data->super.window_id,
+          if (!write_anims(savefile_data->super.obj.window_id,
                            &savefile_data->context.hdr))
           {
             break;
@@ -611,7 +616,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
             assert("flex_reanchor failed!" == NULL);
             break;
           }
-          return &savefile_data->super;
+          return &savefile_data->super.obj;
         }
         while (0);
 
@@ -623,7 +628,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
                                              datasave_message,
                                              &*savefile_data);
     }
-    SFTSaveBox_finalise(&savefile_data->super);
+    SFTSaveBox_finalise(&savefile_data->super.obj);
   }
   free(savefile_data);
   return NULL;

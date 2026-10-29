@@ -57,7 +57,10 @@ enum
 
 typedef struct
 {
-  FNCSaveBox super;
+  union {
+    char nil;
+    FNCSaveBox obj;
+  } super;
   void *comp_data;
   void *decomp_data;
   _Optional FNCSaveBoxDeletedFn *deleted_cb;
@@ -69,7 +72,7 @@ SaveFile;
 
 static void destroy_savefile(FNCSaveBox *const savebox)
 {
-  SaveFile * const savefile_data = CONTAINER_OF(savebox, SaveFile, super);
+  SaveFile * const savefile_data = CONTAINER_OF(savebox, SaveFile, super.obj);
 
   assert(savefile_data != NULL);
   FNCSaveBox_finalise(savebox);
@@ -152,9 +155,13 @@ _Optional FNCSaveBox *SaveFile_create(char const *const filename,
     RPT_ERR("NoMem");
     return NULL;
   }
-  *savefile_data = (SaveFile){.deleted_cb = deleted_cb};
+  *savefile_data = (SaveFile){
+    .comp_data = (void *)NULL,
+    .decomp_data = (void *)NULL,
+    .deleted_cb = deleted_cb,
+  };
 
-  if (FNCSaveBox_initialise(&savefile_data->super,
+  if (FNCSaveBox_initialise(&savefile_data->super.obj,
                             filename,
                             data_saved,
                             FileType_Data,
@@ -170,27 +177,27 @@ _Optional FNCSaveBox *SaveFile_create(char const *const filename,
       do
       {
         if (E(event_register_toolbox_handler(
-            savefile_data->super.saveas_id, SaveAs_SaveToFile,
+            savefile_data->super.obj.saveas_id, SaveAs_SaveToFile,
             save_to_file, &*savefile_data)))
           break;
 
         if (E(event_register_toolbox_handler(
-            savefile_data->super.saveas_id, SaveAs_FillBuffer,
+            savefile_data->super.obj.saveas_id, SaveAs_FillBuffer,
             fill_buffer, &*savefile_data)))
           break;
 
-        if (E(saveas_set_file_size(0, savefile_data->super.saveas_id,
+        if (E(saveas_set_file_size(0, savefile_data->super.obj.saveas_id,
           get_decomp_size(&savefile_data->comp_data))))
         {
           break;
         }
 
-        return &savefile_data->super;
+        return &savefile_data->super.obj;
       }
       while (0);
       flex_free(&savefile_data->comp_data);
     }
-    FNCSaveBox_finalise(&savefile_data->super);
+    FNCSaveBox_finalise(&savefile_data->super.obj);
   }
   free(savefile_data);
   return NULL;

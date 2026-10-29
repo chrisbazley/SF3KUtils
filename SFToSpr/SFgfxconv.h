@@ -18,7 +18,7 @@ typedef struct ConvertIter
   int32_t pos;
   int32_t count;
   Reader *reader;
-  Writer *writer;
+  _Optional Writer *writer; /* Scanning does not produce output. */
   SFError (*convert)(struct ConvertIter *iter);
 } ConvertIter;
 

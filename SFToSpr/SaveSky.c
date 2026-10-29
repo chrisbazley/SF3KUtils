@@ -72,7 +72,10 @@ enum
 
 typedef struct
 {
-  SFTSaveBox super;
+  union {
+    char nil;
+    SFTSaveBox obj;
+  } super;
   int        wimp_handle;
   void      *sky_data; /* flex block */
   void      *sprites; /* flex block */
@@ -140,11 +143,11 @@ static bool csv_loaded(Reader *const reader, int const estimated_size,
 
   /* Allocate memory for the just the header of a sky file */
   SkyHeader hdr = {0};
-  if (read_heights(savefile_data->super.window_id, &hdr))
+  if (read_heights(savefile_data->super.obj.window_id, &hdr))
   {
     if (!handle_error(csv_to_sky(reader, &hdr), filename, ""))
     {
-      success = write_heights(savefile_data->super.window_id, &hdr);
+      success = write_heights(savefile_data->super.obj.window_id, &hdr);
     }
   }
   return success;
@@ -161,7 +164,7 @@ static bool write_sky(Writer *const writer, void *const handle,
   /* Read displayed paint offsets into header
   N.B. This has the side effect of confirming the displayed offsets for
        use if the dbox is reset (e.g. ADJUST-click 'Cancel') */
-  if (!read_heights(savefile_data->super.window_id, &savefile_data->context.hdr))
+  if (!read_heights(savefile_data->super.obj.window_id, &savefile_data->context.hdr))
   {
     return false;
   }
@@ -332,7 +335,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 
 static void destroy_savebox(SFTSaveBox *const savebox)
 {
-  SaveSky * const savefile_data = CONTAINER_OF(savebox, SaveSky, super);
+  SaveSky * const savefile_data = CONTAINER_OF(savebox, SaveSky, super.obj);
 
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
@@ -384,11 +387,13 @@ static void destroy_savebox(SFTSaveBox *const savebox)
   }
 
   *savefile_data = (SaveSky){
+    .sky_data = (void *)NULL,
+    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
 
-  if (SFTSaveBox_initialise(&savefile_data->super,
+  if (SFTSaveBox_initialise(&savefile_data->super.obj,
                             save_path,
                             data_saved,
                             FileType_SFSkyCol,
@@ -409,7 +414,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
         do
         {
           /* Get the Wimp handle of the window underlying the savebox */
-          if (E(window_get_wimp_handle(0, savefile_data->super.window_id,
+          if (E(window_get_wimp_handle(0, savefile_data->super.obj.window_id,
                                        &savefile_data->wimp_handle)))
           {
             break;
@@ -417,14 +422,14 @@ static void destroy_savebox(SFTSaveBox *const savebox)
 
           /* Can't know the final size yet because the user can edit things
              in the dialogue box so calculate the worst case. */
-          if (E(saveas_set_file_size(0, savefile_data->super.saveas_id,
+          if (E(saveas_set_file_size(0, savefile_data->super.obj.saveas_id,
                 worst_comp_size(sky_size()))))
           {
             break;
           }
 
           /* Register other event handlers for SaveAs object */
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_SaveToFile,
                                                save_to_file,
                                                &*savefile_data)))
@@ -432,7 +437,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
             break;
           }
 
-          if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                                SaveAs_FillBuffer,
                                                fill_buffer, &*savefile_data)))
           {
@@ -440,7 +445,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
           }
 
           /* Register event handler for underlying Window object */
-          if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+          if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                                ActionButton_Selected,
                                                actionbutton_selected,
                                                &*savefile_data)))
@@ -449,7 +454,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
           }
 
           /* Set up extra gadgets in the underlying Window object */
-          if (!write_heights(savefile_data->super.window_id, &savefile_data->context.hdr))
+          if (!write_heights(savefile_data->super.obj.window_id, &savefile_data->context.hdr))
           {
             break;
           }
@@ -460,7 +465,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
             break;
           }
 
-          return &savefile_data->super;
+          return &savefile_data->super.obj;
         }
         while (0);
         (void)event_deregister_message_handler(Wimp_MDataLoad,
@@ -471,7 +476,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
                                              datasave_message,
                                              &*savefile_data);
     }
-    SFTSaveBox_finalise(&savefile_data->super);
+    SFTSaveBox_finalise(&savefile_data->super.obj);
   }
   free(savefile_data);
   return NULL;

@@ -146,6 +146,7 @@ static int make_compressed_file(char const *file_name)
   assert(comp != NULL);
 
   GKeyParameters params = {
+    .cb_arg = &*comp,
     .in_buffer = test_data,
     .in_size = sizeof(test_data),
     .out_buffer = out_buffer,
@@ -210,6 +211,7 @@ static void check_compressed_file(char const *file_name)
   assert(decomp != NULL);
 
   GKeyParameters params = {
+    .cb_arg = &*decomp,
     .in_buffer = in_buffer,
     .in_size = 0,
     .out_buffer = test_data,

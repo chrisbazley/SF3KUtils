@@ -1017,6 +1017,7 @@ void Scan_create(char *const load_root, char const *const save_root,
 
   /* Initialise state */
   *scan_data = (ScanData){
+    .buffer = (void *)NULL,
     .phase = ScanStatus_Error,
     .num_checked = 0,
     .num_output = 0,

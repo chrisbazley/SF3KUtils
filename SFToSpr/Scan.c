@@ -147,8 +147,14 @@ typedef struct
   size_t make_path_offset; /* avoids creating directories that should already exist */
   _Optional FILE *in;
   _Optional FILE *out;
-  Reader reader;
-  Writer writer;
+  union {
+    char nil;
+    Reader obj;
+  } reader;
+  union {
+    char nil;
+    Writer obj;
+  } writer;
   _Optional ConvertIter *conv_iter;
 
   bool extract_images:1;
@@ -187,7 +193,7 @@ static void scan_reader_destroy(ScanData *const scan_data)
   if (scan_data->state.has_reader)
   {
     scan_data->state.has_reader = false;
-    reader_destroy(&scan_data->state.reader);
+    reader_destroy(&scan_data->state.reader.obj);
   }
 }
 
@@ -198,7 +204,7 @@ static long int scan_writer_destroy(ScanData *const scan_data)
   if (scan_data->state.has_writer)
   {
     scan_data->state.has_writer = false;
-    n = writer_destroy(&scan_data->state.writer);
+    n = writer_destroy(&scan_data->state.writer.obj);
   }
   DEBUGF("%ld bytes written in scan_writer_destroy\n", n);
   return n;
@@ -692,7 +698,7 @@ static _Optional const _kernel_oserror *open_input(ScanData *const scan_data)
     case FileType_SFMapGfx:
     case FileType_SFSkyPic:
     case FileType_SFSkyCol:
-      if (!reader_gkey_init(&scan_data->state.reader, FednetHistoryLog2,
+      if (!reader_gkey_init(&scan_data->state.reader.obj, FednetHistoryLog2,
                             &*scan_data->state.in))
       {
         err = SFError_NoMem;
@@ -706,7 +712,7 @@ static _Optional const _kernel_oserror *open_input(ScanData *const scan_data)
       break;
 
     case FileType_Sprite:
-      reader_raw_init(&scan_data->state.reader, &*scan_data->state.in);
+      reader_raw_init(&scan_data->state.reader.obj, &*scan_data->state.in);
       scan_data->state.has_reader = true;
       scan_data->state.phase = ScanStatus_StartScanSprites;
       break;
@@ -725,7 +731,7 @@ static _Optional const _kernel_oserror *start_scan_sprites(ScanData *const scan_
 {
   assert(scan_data->state.in);
   SFError const err = scan_sprite_file_init(&scan_data->iter.scan_sprites,
-                                            &scan_data->state.reader,
+                                            &scan_data->state.reader.obj,
                                             &scan_data->context);
   if (err == SFError_OK)
   {
@@ -772,7 +778,7 @@ static _Optional const _kernel_oserror *pick_conversion(ScanData *const scan_dat
   }
 
   SFError err = SFError_OK;
-  if (reader_fseek(&scan_data->state.reader, 0, SEEK_SET))
+  if (reader_fseek(&scan_data->state.reader.obj, 0, SEEK_SET))
   {
     err = SFError_BadSeek;
   }
@@ -834,7 +840,7 @@ static void decide_output(ScanData *const scan_data)
   if (scan_data->state.replace_input)
   {
     assert(!scan_data->state.has_writer);
-    writer_flex_init(&scan_data->state.writer, &scan_data->state.out_buf);
+    writer_flex_init(&scan_data->state.writer.obj, &scan_data->state.out_buf);
     scan_data->state.has_writer = true;
     scan_data->state.phase = ScanStatus_StartConvert;
   }
@@ -880,7 +886,7 @@ static _Optional const _kernel_oserror *open_output(ScanData *const scan_data)
 
     if (min_size >= 0)
     {
-      if (!writer_gkey_init(&scan_data->state.writer, FednetHistoryLog2, min_size,
+      if (!writer_gkey_init(&scan_data->state.writer.obj, FednetHistoryLog2, min_size,
                             &*scan_data->state.out))
       {
         err = SFError_NoMem;
@@ -893,7 +899,7 @@ static _Optional const _kernel_oserror *open_output(ScanData *const scan_data)
     }
     else
     {
-      writer_raw_init(&scan_data->state.writer, &*scan_data->state.out);
+      writer_raw_init(&scan_data->state.writer.obj, &*scan_data->state.out);
       scan_data->state.has_writer = true;
     }
   }
@@ -924,7 +930,7 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
     scan_data->state.conv_iter = &scan_data->iter.sprites_to_tiles.super;
 
     err = sprites_to_tiles_init(&scan_data->iter.sprites_to_tiles,
-      &scan_data->state.reader, &scan_data->state.writer, &scan_data->context.tiles);
+      &scan_data->state.reader.obj, &scan_data->state.writer.obj, &scan_data->context.tiles);
 
     break;
 
@@ -933,7 +939,7 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
     scan_data->state.conv_iter = &scan_data->iter.sprites_to_planets.super;
 
     err = sprites_to_planets_init(&scan_data->iter.sprites_to_planets,
-      &scan_data->state.reader, &scan_data->state.writer, &scan_data->context.planets);
+      &scan_data->state.reader.obj, &scan_data->state.writer.obj, &scan_data->context.planets);
 
     break;
 
@@ -942,7 +948,7 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
     scan_data->state.conv_iter = &scan_data->iter.sprites_to_sky.super;
 
     err = sprites_to_sky_init(&scan_data->iter.sprites_to_sky,
-      &scan_data->state.reader, &scan_data->state.writer, &scan_data->context.sky);
+      &scan_data->state.reader.obj, &scan_data->state.writer.obj, &scan_data->context.sky);
 
     break;
 
@@ -955,12 +961,12 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
       if (scan_data->state.extract_data)
       {
         err = tiles_to_sprites_ext_init(&scan_data->iter.tiles_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
       else
       {
         err = tiles_to_sprites_init(&scan_data->iter.tiles_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
 
       break;
@@ -971,12 +977,12 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
       if (scan_data->state.extract_data)
       {
         err = planets_to_sprites_ext_init(&scan_data->iter.planets_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
       else
       {
         err = planets_to_sprites_init(&scan_data->iter.planets_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
 
       break;
@@ -987,12 +993,12 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
       if (scan_data->state.extract_data)
       {
         err = sky_to_sprites_ext_init(&scan_data->iter.sky_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
       else
       {
         err = sky_to_sprites_init(&scan_data->iter.sky_to_sprites,
-          &scan_data->state.reader, &scan_data->state.writer);
+          &scan_data->state.reader.obj, &scan_data->state.writer.obj);
       }
 
       break;
@@ -1009,15 +1015,15 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
     switch (scan_data->state.input_type)
     {
     case FileType_SFMapGfx:
-      err = tiles_to_csv(&scan_data->state.reader, &scan_data->state.writer);
+      err = tiles_to_csv(&scan_data->state.reader.obj, &scan_data->state.writer.obj);
       break;
 
     case FileType_SFSkyPic:
-      err = planets_to_csv(&scan_data->state.reader, &scan_data->state.writer);
+      err = planets_to_csv(&scan_data->state.reader.obj, &scan_data->state.writer.obj);
       break;
 
     case FileType_SFSkyCol:
-      err = sky_to_csv(&scan_data->state.reader, &scan_data->state.writer);
+      err = sky_to_csv(&scan_data->state.reader.obj, &scan_data->state.writer.obj);
       break;
 
     default:
@@ -1053,7 +1059,7 @@ static _Optional const _kernel_oserror *convert_data(ScanData *const scan_data)
   {
     if ((scan_data->state.input_type == FileType_SFMapGfx ||
          scan_data->state.input_type == FileType_SFSkyPic) &&
-         reader_fgetc(&scan_data->state.reader) != EOF)
+         reader_fgetc(&scan_data->state.reader.obj) != EOF)
     {
       err = SFError_TooLong;
     }
@@ -1126,7 +1132,7 @@ static _Optional const _kernel_oserror *start_copy_tmp(ScanData *const scan_data
   else
   {
     assert(!scan_data->state.has_reader);
-    reader_flex_init(&scan_data->state.reader, &scan_data->state.out_buf);
+    reader_flex_init(&scan_data->state.reader.obj, &scan_data->state.out_buf);
     scan_data->state.has_reader = true;
     scan_data->state.phase = ScanStatus_OpenOutput;
   }
@@ -1141,18 +1147,18 @@ static _Optional const _kernel_oserror *copy_tmp(ScanData *const scan_data)
 
   SFError err = SFError_OK;
   size_t const n = reader_fread(scan_data->copy_buf, 1, sizeof(scan_data->copy_buf),
-                                &scan_data->state.reader);
+                                &scan_data->state.reader.obj);
   assert(n <= sizeof(scan_data->copy_buf));
-  if (reader_ferror(&scan_data->state.reader))
+  if (reader_ferror(&scan_data->state.reader.obj))
   {
     err = SFError_ReadFail;
   }
-  else if (writer_fwrite(scan_data->copy_buf, 1, n, &scan_data->state.writer) != n)
+  else if (writer_fwrite(scan_data->copy_buf, 1, n, &scan_data->state.writer.obj) != n)
   {
     err = SFError_WriteFail;
   }
 
-  if (err == SFError_OK && reader_feof(&scan_data->state.reader))
+  if (err == SFError_OK && reader_feof(&scan_data->state.reader.obj))
   {
     scan_reader_destroy(scan_data);
     scan_data->state.phase = ScanStatus_CloseOutput;
@@ -1519,6 +1525,7 @@ void Scan_create(char *const load_root, const char *const save_root,
 
   /* Initialise state */
   scan_data->state = (ScanDataState){
+    .out_buf = (void *)NULL,
     .phase = ScanStatus_ExamineObject,
     .num_checked = 0,
     .num_output = 0,

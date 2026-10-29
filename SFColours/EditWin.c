@@ -122,12 +122,22 @@ enum
   MaxColourNumber = 255,
 };
 
+/* Shared bounding-box caches for the two window types. */
+static BBox hill_gadget_bboxes[ ARRAY_SIZE( (*(SFHillColours *)0) ) ];
+static BBox obj_gadget_bboxes[EditWin_MaxSize];
+
 struct ColMapFile
 {
   UserData list_node;
-  EditColMap edit_colmap;
+  union {
+    char nil;
+    EditColMap obj;
+  } edit_colmap;
 #if !PER_VIEW_SELECT
-  Editor editor;
+  union {
+    char nil;
+    Editor obj;
+  } editor;
 #endif
   OSDateAndTime file_date; /* 000000CC DDDDDDDD */
   bool changed_since_save;
@@ -144,7 +154,10 @@ struct EditWin
   LinkedListItem node;
   ColMapFile *file;
 #if PER_VIEW_SELECT
-  Editor editor;
+  union {
+    char nil;
+    Editor obj;
+  } editor;
 #endif
   ObjectId window_id; /* Toolbox ID of editing window */
   ObjectId status_bar_id; /* Toolbox ID of status bar */
@@ -204,10 +217,10 @@ static inline Editor *get_editor(EditWin *const edit_win)
 {
   assert(edit_win != NULL);
 #if PER_VIEW_SELECT
-  return &edit_win->editor;
+  return &edit_win->editor.obj;
 #else
   assert(edit_win->file != NULL);
-  return &edit_win->file->editor;
+  return &edit_win->file->editor.obj;
 #endif
 }
 
@@ -1273,9 +1286,9 @@ static void redraw_selected(Editor *const editor, int pos)
   DEBUGF("Force redraw of entry %d for editor %p\n", pos, (void *)editor);
   assert(editor != NULL);
 #if PER_VIEW_SELECT
-  (void)redraw_selected_cb(CONTAINER_OF(editor, EditWin, editor), &pos);
+  (void)redraw_selected_cb(CONTAINER_OF(editor, EditWin, editor.obj), &pos);
 #else
-  ColMapFile *const file = CONTAINER_OF(editor, ColMapFile, editor);
+  ColMapFile *const file = CONTAINER_OF(editor, ColMapFile, editor.obj);
   (void)for_each_view(file, redraw_selected_cb, pos);
 #endif
 }
@@ -1393,7 +1406,7 @@ static void redraw_entry(EditColMap *const edit_colmap, int pos)
 {
   DEBUGF("Force redraw of entry %d for editor %p\n", pos, (void *)edit_colmap);
   assert(edit_colmap != NULL);
-  ColMapFile *const file = CONTAINER_OF(edit_colmap, ColMapFile, edit_colmap);
+  ColMapFile *const file = CONTAINER_OF(edit_colmap, ColMapFile, edit_colmap.obj);
   (void)for_each_view(file, redraw_entry_cb, &pos);
 }
 
@@ -1408,21 +1421,17 @@ static bool read_bboxes(EditWin * const edit_win)
      locally the first time that a Window of a given type is
      created */
   static bool hgbb_cached = false, ogbb_cached = false;
-  static BBox hill_gadget_bboxes[ ARRAY_SIZE( (*(SFHillColours *)0) ) ];
-  static BBox obj_gadget_bboxes[EditWin_MaxSize];
 
   bool *bboxes_read;
   int num_cols;
   if (file->hillcols)
   {
     num_cols = (int)ARRAY_SIZE(hill_gadget_bboxes);
-    file->gadget_bboxes = hill_gadget_bboxes;
     bboxes_read = &hgbb_cached;
   }
   else
   {
     num_cols = EditWin_MaxSize;
-    file->gadget_bboxes = obj_gadget_bboxes;
     bboxes_read = &ogbb_cached;
   }
 
@@ -1592,7 +1601,7 @@ static _Optional EditWin *add_view(ColMapFile *const file)
   ++file->num_views;
 
 #if PER_VIEW_SELECT
-  editor_init(&edit_win->editor, &file->edit_colmap, redraw_selected);
+  editor_init(&edit_win->editor.obj, &file->edit_colmap.obj, redraw_selected);
 #endif
   return edit_win;
 }
@@ -1888,6 +1897,7 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
   }
 
   *file = (ColMapFile){
+    .gadget_bboxes = hillcols ? hill_gadget_bboxes : obj_gadget_bboxes,
     .changed_since_save = !is_safe,
     .num_views = 0,
   };
@@ -1896,9 +1906,9 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
 
   int const size = hillcols ? sizeof(SFHillColours) :
                               sizeof(SFObjectColours);
-  ColMapState state = edit_colmap_init(&file->edit_colmap, reader, size,
+  ColMapState state = edit_colmap_init(&file->edit_colmap.obj, reader, size,
                                        redraw_entry);
-  ColMap *const colmap = edit_colmap_get_colmap(&file->edit_colmap);
+  ColMap *const colmap = edit_colmap_get_colmap(&file->edit_colmap.obj);
   bool success = IO_report_read(colmap, state);
 
   if (success)
@@ -1909,11 +1919,13 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
       /* Exclude the static colours (non-editable) */
       file->num_cols = EditWin_MaxSize;
       file->hillcols = false;
+      file->gadget_bboxes = obj_gadget_bboxes;
     }
     else
     {
       file->num_cols = real_size;
       file->hillcols = true;
+      file->gadget_bboxes = hill_gadget_bboxes;
     }
 
     file->start_editnum = real_size - file->num_cols;
@@ -1927,7 +1939,7 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
     }
 
 #if !PER_VIEW_SELECT
-    editor_init(&file->editor, &file->edit_colmap, redraw_selected);
+    editor_init(&file->editor.obj, &file->edit_colmap.obj, redraw_selected);
 #endif
 
     success = userdata_add_to_list(&file->list_node, userdata_is_safe,
@@ -1948,7 +1960,7 @@ _Optional ColMapFile *ColMapFile_create(_Optional Reader *const reader,
 
     if (!success)
     {
-      edit_colmap_destroy(&file->edit_colmap);
+      edit_colmap_destroy(&file->edit_colmap.obj);
     }
   }
 
@@ -1975,7 +1987,7 @@ void ColMapFile_destroy(_Optional ColMapFile *const file)
   if (file)
   {
     (void)for_each_view(&*file, destroy_view_cb, &*file);
-    edit_colmap_destroy(&file->edit_colmap);
+    edit_colmap_destroy(&file->edit_colmap.obj);
     userdata_remove_from_list(&file->list_node);
     free(file);
   }
@@ -1988,7 +2000,7 @@ bool ColMapFile_export(ColMapFile *const file, Writer *const writer)
   assert(file != NULL);
 
   hourglass_on();
-  colmap_write_file(edit_colmap_get_colmap(&file->edit_colmap), writer);
+  colmap_write_file(edit_colmap_get_colmap(&file->edit_colmap.obj), writer);
   hourglass_off();
 
   return true; /* caller should check writer for error */
@@ -1999,7 +2011,7 @@ bool ColMapFile_export(ColMapFile *const file, Writer *const writer)
 bool ColMapFile_import(ColMapFile *const file, Reader *const reader)
 {
   assert(file != NULL);
-  return IO_read_colmap(edit_colmap_get_colmap(&file->edit_colmap), reader);
+  return IO_read_colmap(edit_colmap_get_colmap(&file->edit_colmap.obj), reader);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -2067,7 +2079,7 @@ ColMapEntry EditWin_get_colour(EditWin const *const edit_win, int const index)
   assert(index >= 0);
   assert(index < edit_win->file->num_cols);
 
-  ColMap *const colmap = edit_colmap_get_colmap(&edit_win->file->edit_colmap);
+  ColMap *const colmap = edit_colmap_get_colmap(&edit_win->file->edit_colmap.obj);
   ColMapEntry const colour = colmap_get_colour(colmap,
     edit_win->file->start_editnum + index);
 

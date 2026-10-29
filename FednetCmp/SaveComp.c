@@ -65,7 +65,10 @@ enum
 
 typedef struct
 {
-  FNCSaveBox super;
+  union {
+    char nil;
+    FNCSaveBox obj;
+  } super;
   void *comp_data;
   void *decomp_data;
   char reset_filetype[MaxFileTypeNameLen + 1];
@@ -78,7 +81,7 @@ SaveComp;
 
 static void destroy_savecomp(FNCSaveBox *const savebox)
 {
-  SaveComp * const savecomp_data = CONTAINER_OF(savebox, SaveComp, super);
+  SaveComp * const savecomp_data = CONTAINER_OF(savebox, SaveComp, super.obj);
 
   assert(savecomp_data != NULL);
   FNCSaveBox_finalise(savebox);
@@ -123,7 +126,7 @@ static int stringset_value_changed(int const event_code,
   if (bracket) {
     sscanf(&*bracket, "(&%x)", &hex_type);
   }
-  ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.saveas_id, hex_type));
+  ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.obj.saveas_id, hex_type));
 
   return 1; /* claim event */
 }
@@ -199,7 +202,7 @@ static int actionbutton_selected(int const event_code,
         if (bracket) {
           sscanf(&*bracket, "(&%x)", &hex_type);
         }
-        ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.saveas_id,
+        ON_ERR_RPT(saveas_set_file_type(0, savecomp_data->super.obj.saveas_id,
           hex_type));
       }
       break;
@@ -240,9 +243,13 @@ _Optional FNCSaveBox *SaveComp_create(char const *const filename, bool const dat
     RPT_ERR("NoMem");
     return NULL;
   }
-  *savecomp_data = (SaveComp){.deleted_cb = deleted_cb};
+  *savecomp_data = (SaveComp){
+    .comp_data = (void *)NULL,
+    .decomp_data = (void *)NULL,
+    .deleted_cb = deleted_cb,
+  };
 
-  if (FNCSaveBox_initialise(&savecomp_data->super,
+  if (FNCSaveBox_initialise(&savecomp_data->super.obj,
                              filename,
                              data_saved,
                              FileType_Fednet,
@@ -256,26 +263,26 @@ _Optional FNCSaveBox *SaveComp_create(char const *const filename, bool const dat
     {
       do
       {
-        if (E(saveas_set_file_size(0, savecomp_data->super.saveas_id,
+        if (E(saveas_set_file_size(0, savecomp_data->super.obj.saveas_id,
           get_comp_size(&savecomp_data->decomp_data))))
         {
           break;
         }
 
         if (E(event_register_toolbox_handler(
-              savecomp_data->super.saveas_id, SaveAs_SaveToFile,
+              savecomp_data->super.obj.saveas_id, SaveAs_SaveToFile,
               save_to_file, &*savecomp_data)))
           break;
 
         if (E(event_register_toolbox_handler(
-            savecomp_data->super.saveas_id, SaveAs_FillBuffer,
+            savecomp_data->super.obj.saveas_id, SaveAs_FillBuffer,
             fill_buffer, &*savecomp_data)))
           break;
 
         /* Get default output file type from object template */
         if (E(stringset_get_selected(
               0,
-              savecomp_data->super.window_id,
+              savecomp_data->super.obj.window_id,
               ComponentId_FileType_StringSet,
               &savecomp_data->reset_filetype,
               sizeof(savecomp_data->reset_filetype),
@@ -285,25 +292,25 @@ _Optional FNCSaveBox *SaveComp_create(char const *const filename, bool const dat
           /* Register extra handlers for filetype selection & restoration of
              last filetype used if Cancel button clicked */
         if (E(event_register_toolbox_handler(
-              savecomp_data->super.window_id,
+              savecomp_data->super.obj.window_id,
               StringSet_ValueChanged,
               stringset_value_changed,
               &*savecomp_data)))
           break;
 
         if (E(event_register_toolbox_handler(
-              savecomp_data->super.window_id,
+              savecomp_data->super.obj.window_id,
               ActionButton_Selected,
               actionbutton_selected,
               &*savecomp_data)))
           break;
 
-        return &savecomp_data->super;
+        return &savecomp_data->super.obj;
       }
       while (0);
       flex_free(&savecomp_data->decomp_data);
     }
-    FNCSaveBox_finalise(&savecomp_data->super);
+    FNCSaveBox_finalise(&savecomp_data->super.obj);
   }
   free(savecomp_data);
   return NULL;

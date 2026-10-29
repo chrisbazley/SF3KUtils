@@ -110,6 +110,18 @@ SFSpriteHeader;
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
 
+static Writer *get_writer(ConvertIter const *const iter)
+{
+  _Optional Writer *const writer = iter->writer;
+  if (!writer)
+  {
+    abort();
+  }
+  return &*writer;
+}
+
+/* ----------------------------------------------------------------------- */
+
 static inline bool sprite_type_has_8_bpp(int32_t const sprite_type)
 {
   bool has_8_bpp = false;
@@ -458,6 +470,7 @@ static bool tiles_sprite_identifier(long int const fpos,
 static SFError tiles_to_sprites_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= MapTileMax + 1);
@@ -470,10 +483,10 @@ static SFError tiles_to_sprites_conv(ConvertIter *const iter)
   strncat(name, numstr, sizeof(name) - strlen(name) - 1);
   DEBUGF("Sprite name is %s\n", name);
 
-  write_spr_header(MapTileSprSize, name, MapTileWidth, MapTileHeight, iter->writer);
+  write_spr_header(MapTileSprSize, name, MapTileWidth, MapTileHeight, writer);
 
   TilesToSpritesIter *const sub = CONTAINER_OF(iter, TilesToSpritesIter, super);
-  return copy_n_flip_tile(iter->reader, iter->writer, sub->tmp);
+  return copy_n_flip_tile(iter->reader, writer, sub->tmp);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -481,6 +494,7 @@ static SFError tiles_to_sprites_conv(ConvertIter *const iter)
 static SFError sprites_to_tiles_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= MapTileMax + 1);
@@ -497,7 +511,7 @@ static SFError sprites_to_tiles_conv(ConvertIter *const iter)
       return SFError_BadSeek;
     }
 
-    err = copy_n_flip_tile(iter->reader, iter->writer, sub->tmp);
+    err = copy_n_flip_tile(iter->reader, writer, sub->tmp);
   }
   else
   {
@@ -505,7 +519,7 @@ static SFError sprites_to_tiles_conv(ConvertIter *const iter)
     {
       sub->tmp[i] = 0;
     }
-    writer_fwrite(sub->tmp, sizeof(sub->tmp), 1, iter->writer);
+    writer_fwrite(sub->tmp, sizeof(sub->tmp), 1, writer);
   }
   return err;
 }
@@ -982,12 +996,13 @@ static bool planets_sprite_identifier(long int const fpos,
 static SFError planets_to_sprites_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= PlanetMax + 1);
 
   PlanetsToSpritesIter *const sub = CONTAINER_OF(iter, PlanetsToSpritesIter, super);
-  return planet_to_sprite(iter->reader, iter->writer, &sub->hdr,
+  return planet_to_sprite(iter->reader, writer, &sub->hdr,
                           sub->tmp, iter->pos);
 }
 
@@ -996,6 +1011,7 @@ static SFError planets_to_sprites_conv(ConvertIter *const iter)
 static SFError sprites_to_planets_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= PlanetMax + 1);
@@ -1025,14 +1041,14 @@ static SFError sprites_to_planets_conv(ConvertIter *const iter)
     }
   }
 
-  err = sprite_to_planet(iter->writer, &sub->hdr,
+  err = sprite_to_planet(writer, &sub->hdr,
                          sub->tmp, iter->pos);
 
   if (err == SFError_OK && iter->pos == iter->count - 1)
   {
-    DEBUGF("Final file position is %ld\n", writer_ftell(iter->writer));
-    assert(writer_ferror(iter->writer) ||
-           writer_ftell(iter->writer) == planets_size(&sub->hdr));
+    DEBUGF("Final file position is %ld\n", writer_ftell(writer));
+    assert(writer_ferror(writer) ||
+           writer_ftell(writer) == planets_size(&sub->hdr));
   }
 
   return err;
@@ -1207,14 +1223,15 @@ static bool sky_sprite_identifier(long int const fpos, char const *const name,
 static SFError sky_to_sprites_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= SkyMax + 1);
 
   SkyToSpritesIter *const sub = CONTAINER_OF(iter, SkyToSpritesIter, super);
 
-  write_spr_header(SkySprSize, SKY_SPR_NAME, SkyWidth, SkyHeight, iter->writer);
-  return copy_n_flip_sky(iter->reader, iter->writer, sub->tmp);
+  write_spr_header(SkySprSize, SKY_SPR_NAME, SkyWidth, SkyHeight, writer);
+  return copy_n_flip_sky(iter->reader, writer, sub->tmp);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -1222,6 +1239,7 @@ static SFError sky_to_sprites_conv(ConvertIter *const iter)
 static SFError sprites_to_sky_conv(ConvertIter *const iter)
 {
   assert(iter);
+  Writer *const writer = get_writer(iter);
   assert(iter->pos >= 0);
   assert(iter->pos < iter->count);
   assert(iter->count <= SkyMax + 1);
@@ -1237,13 +1255,13 @@ static SFError sprites_to_sky_conv(ConvertIter *const iter)
     return SFError_BadSeek;
   }
 
-  err = copy_n_flip_sky(iter->reader, iter->writer, sub->tmp);
+  err = copy_n_flip_sky(iter->reader, writer, sub->tmp);
 
   if (err == SFError_OK)
   {
-    DEBUGF("Final file position is %ld\n", writer_ftell(iter->writer));
-    assert(writer_ferror(iter->writer) ||
-           writer_ftell(iter->writer) == sky_size());
+    DEBUGF("Final file position is %ld\n", writer_ftell(writer));
+    assert(writer_ferror(writer) ||
+           writer_ftell(writer) == sky_size());
   }
 
   return err;
@@ -1427,7 +1445,7 @@ SFError convert_advance(ConvertIter *const iter)
   ++iter->pos;
 
   DEBUG_VERBOSEF("Read position: %ld\nWrite position: %ld\n",
-     reader_ftell(iter->reader), iter->writer ? writer_ftell(iter->writer) : 0);
+     reader_ftell(iter->reader), iter->writer ? writer_ftell(&*iter->writer) : 0);
 
   return err;
 }
@@ -1444,7 +1462,7 @@ SFError convert_finish(ConvertIter *const iter)
     Fortify_CheckAllMemory();
 #endif
   } while (err == SFError_OK &&
-           (!iter->writer || !writer_ferror(iter->writer)));
+           (!iter->writer || !writer_ferror(&*iter->writer)));
 
   return err == SFError_Done ? SFError_OK : err;
 }
@@ -1460,6 +1478,7 @@ SFError scan_sprite_file_init(ScanSpritesIter *const iter, Reader *const reader,
   iter->super = (ConvertIter){
     .reader = reader,
     .convert = scan_sprites_conv,
+    .writer = NULL,
   };
   iter->context = context;
 

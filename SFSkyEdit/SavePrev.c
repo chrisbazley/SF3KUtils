@@ -237,7 +237,7 @@ void SavePrev_initialise(ObjectId const id)
 
   /* Read default leafname */
   atexit(free_file_name);
-  EF(saveas_get_file_name(0, id, 0, 0, &len));
+  EF(saveas_get_file_name(0, id, NULL, 0, &len));
   ss_file_name = malloc(len);
   if (ss_file_name == NULL)
   {

@@ -1288,6 +1288,9 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
   }
 
   *preview_data = (PreviewData){
+    .cached_image = (void *)NULL,
+    .export = (void *)NULL,
+    .stars = (void *)NULL,
     .no_scale = false,
     .have_caret = false,
     .plot_err = false,

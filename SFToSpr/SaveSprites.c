@@ -73,7 +73,10 @@ enum
 
 typedef struct
 {
-  SFTSaveBox super;
+  union {
+    char nil;
+    SFTSaveBox obj;
+  } super;
   void      *input_buffer; /* flex_block */
   void      *output_buffer; /* flex block */
   int        reset_radio;
@@ -90,7 +93,7 @@ typedef SFError ConverterFn(Reader *, Writer *);
 
 static void destroy_savebox(SFTSaveBox *savebox)
 {
-  SaveSprites * const savefile_data = (SaveSprites *)savebox;
+  SaveSprites * const savefile_data = CONTAINER_OF(savebox, SaveSprites, super.obj);
 
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
@@ -234,7 +237,7 @@ static bool change_output(SaveSprites *const savefile_data, int const radio_butt
     return false;
   }
 
-  if (E(saveas_set_file_type(0, savefile_data->super.saveas_id,
+  if (E(saveas_set_file_type(0, savefile_data->super.obj.saveas_id,
                              filetypes[radio_button])))
   {
     return false;
@@ -248,7 +251,7 @@ static bool change_output(SaveSprites *const savefile_data, int const radio_butt
   }
 
   int const file_size = get_size(savefile_data, &*converter);
-  if (E(saveas_set_file_size(0, savefile_data->super.saveas_id, file_size)))
+  if (E(saveas_set_file_size(0, savefile_data->super.obj.saveas_id, file_size)))
   {
     return false;
   }
@@ -265,7 +268,7 @@ static bool write_sprite_or_csv(Writer *const writer, void *const handle,
   assert(handle != NULL);
 
   /* Read state of radio buttons in the underlying Window object */
-  if (E(radiobutton_get_state(0, savefile_data->super.window_id,
+  if (E(radiobutton_get_state(0, savefile_data->super.obj.window_id,
                               ComponentId_ImagesData_Radio, NULL,
                               &savefile_data->reset_radio)))
   {
@@ -449,18 +452,20 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
   }
 
   *savefile_data = (SaveSprites){
+    .input_buffer = (void *)NULL,
+    .output_buffer = (void *)NULL,
     .input_file_type = input_file_type,
     .deleted_cb = deleted_cb,
   };
 
-  if (SFTSaveBox_initialise(&savefile_data->super, save_path, data_saved,
+  if (SFTSaveBox_initialise(&savefile_data->super.obj, save_path, data_saved,
                             FileType_SFMapGfx, "ToSpr", "ToSprList", x,
                             destroy_savebox))
   {
     do
     {
       /* Record initial state of dialogue box */
-      if (E(radiobutton_get_state(0, savefile_data->super.window_id,
+      if (E(radiobutton_get_state(0, savefile_data->super.obj.window_id,
                                   ComponentId_ImagesData_Radio, NULL,
                                   &savefile_data->reset_radio)))
         break;
@@ -468,7 +473,7 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
       /* Register other event handlers for SaveAs object */
       for (size_t i = 0; i < ARRAY_SIZE(tbox_handlers); i++)
       {
-        if (E(event_register_toolbox_handler(savefile_data->super.saveas_id,
+        if (E(event_register_toolbox_handler(savefile_data->super.obj.saveas_id,
                                              tbox_handlers[i].event_code,
                                              tbox_handlers[i].handler,
                                              &*savefile_data)))
@@ -476,13 +481,13 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
       }
 
       /* Register event handlers for the underlying Window object */
-      if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+      if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
                                            &*savefile_data)))
         break;
 
-      if (E(event_register_toolbox_handler(savefile_data->super.window_id,
+      if (E(event_register_toolbox_handler(savefile_data->super.obj.window_id,
                                            RadioButton_StateChanged,
                                            radiobutton_state_changed,
                                            &*savefile_data)))
@@ -501,10 +506,10 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
         break;
       }
 
-      return &savefile_data->super;
+      return &savefile_data->super.obj;
     }
     while (0);
-    SFTSaveBox_finalise(&savefile_data->super);
+    SFTSaveBox_finalise(&savefile_data->super.obj);
   }
   free(savefile_data);
   return NULL;

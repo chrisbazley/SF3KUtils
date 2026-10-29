@@ -788,11 +788,22 @@ static void test_sky_csv_overflow(void)
   reader_destroy(&reader);
 }
 
+static SFError unexpected_conversion(ConvertIter *const iter)
+{
+  (void)iter;
+  assert(!"A completed iterator must not convert another item");
+  return SFError_Done;
+}
+
 static void test_convert_advance_done(void)
 {
-  ConvertIter iter = {.pos = 0, .count = 0};
+  Reader reader;
+  assert(reader_mem_init(&reader, "", 0));
+  ConvertIter iter = {.pos = 0, .count = 0, .reader = &reader,
+                      .writer = NULL, .convert = unexpected_conversion};
   assert(convert_advance(&iter) == SFError_Done);
   assert(convert_finish(&iter) == SFError_OK);
+  reader_destroy(&reader);
 }
 
 static void check_to_sprites_error(void const *const data, size_t const size,

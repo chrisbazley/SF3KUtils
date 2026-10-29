@@ -104,12 +104,12 @@ void Menu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_Selection,
                                     menu_selection,
-                                    0));
+                                    (void *)NULL));
 
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     about_to_be_shown,
-                                    0));
+                                    (void *)NULL));
 
   EF(ViewsMenu_parentcreated(id, ComponentId_Windows));
 }

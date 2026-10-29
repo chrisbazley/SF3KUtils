@@ -124,9 +124,15 @@ enum
 struct SkyFile
 {
   UserData list_node;
-  EditSky edit_sky;
+  union {
+    char nil;
+    EditSky obj;
+  } edit_sky;
 #if !PER_VIEW_SELECT
-  Editor editor;
+  union {
+    char nil;
+    Editor obj;
+  } editor;
 #endif
   _Optional PreviewData *preview_data; /* preview window, or NULL if none */
   OSDateAndTime file_date; /* 000000CC DDDDDDDD */
@@ -140,9 +146,15 @@ struct EditWin
   LinkedListItem node;
   SkyFile *file;
 #if PER_VIEW_SELECT
-  Editor editor;
+  union {
+    char nil;
+    Editor obj;
+  } editor;
 #endif
-  Editor ghost;
+  union {
+    char nil;
+    Editor obj;
+  } ghost;
   ObjectId window_id; /* Main editing window */
   ObjectId toolbar_id; /* Internal top left toolbar */
   int wimp_handle; /* Wimp handle of main editing window */
@@ -200,10 +212,10 @@ static inline Editor *get_editor(EditWin *const edit_win)
 {
   assert(edit_win != NULL);
 #if PER_VIEW_SELECT
-  return &edit_win->editor;
+  return &edit_win->editor.obj;
 #else
   assert(edit_win->file != NULL);
-  return &edit_win->file->editor;
+  return &edit_win->file->editor.obj;
 #endif
 }
 
@@ -726,9 +738,9 @@ static void redraw_bbox(Editor *const editor, BBox *const bbox)
 {
   assert(editor != NULL);
 #if PER_VIEW_SELECT
-  redraw_bbox_cb(CONTAINER_OF(editor, EditWin, editor), bbox);
+  redraw_bbox_cb(CONTAINER_OF(editor, EditWin, editor.obj), bbox);
 #else
-  SkyFile *const file = CONTAINER_OF(editor, SkyFile, editor);
+  SkyFile *const file = CONTAINER_OF(editor, SkyFile, editor.obj);
   (void)for_each_view(file, redraw_bbox_cb, bbox);
 #endif
 }
@@ -742,7 +754,7 @@ static void redraw_caret(Editor *const editor, int const pos)
 
   assert(pos >= 0);
 #if PER_VIEW_SELECT
-  if (CONTAINER_OF(editor, EditWin, editor)->has_input_focus)
+  if (CONTAINER_OF(editor, EditWin, editor.obj)->has_input_focus)
 #endif
   {
     BBox caret_bbox;
@@ -879,7 +891,7 @@ static void redraw_ghost(Editor *const editor, int const pos)
   BBox caret_bbox;
   layout_get_caret_bbox(pos, &caret_bbox);
   DEBUGF("y=%d..%d (in work area)\n", caret_bbox.ymin, caret_bbox.ymax);
-  redraw_bbox_cb(CONTAINER_OF(editor, EditWin, ghost), &caret_bbox);
+  redraw_bbox_cb(CONTAINER_OF(editor, EditWin, ghost.obj), &caret_bbox);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -895,7 +907,7 @@ static void ghost_changed_cb(Editor *const editor, int const old_low,
   assert(new_high <= NColourBands);
   assert(old_low != new_low || old_high != new_high);
 
-  EditWin *const edit_win = CONTAINER_OF(editor, EditWin, ghost);
+  EditWin *const edit_win = CONTAINER_OF(editor, EditWin, ghost.obj);
   if (edit_win->drop_pending)
   {
     if (old_low == old_high)
@@ -974,7 +986,7 @@ static void redraw_bands(EditSky *const edit_sky, int const start,
   BBox redraw_box;
   layout_get_bands_bbox(start, end, &redraw_box);
 
-  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky);
+  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky.obj);
   (void)for_each_view(file, redraw_bbox_cb, &redraw_box);
 }
 
@@ -985,7 +997,7 @@ static void redraw_render_offset(EditSky *const edit_sky)
   DEBUGF("Force redraw of render offset for file %p\n", (void *)edit_sky);
   assert(edit_sky != NULL);
 
-  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky);
+  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky.obj);
   (void)for_each_view(file, set_render_offset_cb, file);
 }
 
@@ -996,7 +1008,7 @@ static void redraw_stars_height(EditSky *const edit_sky)
   DEBUGF("Force redraw of min stars height for file %p\n", (void *)edit_sky);
   assert(edit_sky != NULL);
 
-  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky);
+  SkyFile *const file = CONTAINER_OF(edit_sky, SkyFile, edit_sky.obj);
   (void)for_each_view(file, set_star_height_cb, file);
 }
 
@@ -1320,7 +1332,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
 
     layout_redraw_bbox(left_scrx, top_scry, &block.redraw_area,
                        get_editor(edit_win),
-                       edit_win->drop_pending ? &edit_win->ghost : NULL,
+                       edit_win->drop_pending ? &edit_win->ghost.obj : NULL,
                        palette, edit_win->has_input_focus);
   }
 
@@ -1960,9 +1972,9 @@ static _Optional EditWin *add_view(SkyFile *const file)
   ++file->num_views;
 
 #if PER_VIEW_SELECT
-  editor_init(&edit_win->editor, &file->edit_sky, redraw_select_cb);
+  editor_init(&edit_win->editor.obj, &file->edit_sky.obj, redraw_select_cb);
 #endif
-  editor_init(&edit_win->ghost, &file->edit_sky, ghost_changed_cb);
+  editor_init(&edit_win->ghost.obj, &file->edit_sky.obj, ghost_changed_cb);
 
   return edit_win;
 }
@@ -1974,9 +1986,9 @@ static void remove_view(EditWin *const edit_win)
   assert(edit_win != NULL);
 
 #if PER_VIEW_SELECT
-  editor_destroy(&edit_win->editor);
+  editor_destroy(&edit_win->editor.obj);
 #endif
-  editor_destroy(&edit_win->ghost);
+  editor_destroy(&edit_win->ghost.obj);
 
   SkyFile *const file = edit_win->file;
   assert(file != NULL);
@@ -2184,7 +2196,7 @@ static void copy_from(EditWin *const dest_data, EditWin *const src_data)
   Editor *const dest = get_editor(dest_data);
 
   if (handle_edit(dest_data->file,
-    editor_copy(dest_data->drop_pending ? &dest_data->ghost : dest,
+    editor_copy(dest_data->drop_pending ? &dest_data->ghost.obj : dest,
       get_editor(src_data))))
   {
     EditWin_confirm_insert_pos(dest_data);
@@ -2203,7 +2215,7 @@ static void move_from(EditWin *const dest_data, EditWin *const src_data)
   if (dest_data->file == src_data->file)
   {
     if (!handle_edit(dest_data->file,
-      editor_move(dest_data->drop_pending ? &dest_data->ghost : dest,
+      editor_move(dest_data->drop_pending ? &dest_data->ghost.obj : dest,
         get_editor(src_data))))
     {
       return;
@@ -2212,7 +2224,7 @@ static void move_from(EditWin *const dest_data, EditWin *const src_data)
   else
   {
     if (!handle_edit(dest_data->file, editor_copy(
-      dest_data->drop_pending ? &dest_data->ghost : dest,
+      dest_data->drop_pending ? &dest_data->ghost.obj : dest,
       get_editor(src_data))))
     {
       return;
@@ -2315,7 +2327,7 @@ _Optional SkyFile *SkyFile_create(_Optional Reader *const reader,
 
   linkedlist_init(&file->views);
 
-  SkyState state = edit_sky_init(&file->edit_sky, reader, redraw_bands,
+  SkyState state = edit_sky_init(&file->edit_sky.obj, reader, redraw_bands,
     redraw_render_offset, redraw_stars_height);
 
   bool success = IO_report_read(state);
@@ -2323,7 +2335,7 @@ _Optional SkyFile *SkyFile_create(_Optional Reader *const reader,
   if (success)
   {
 #if !PER_VIEW_SELECT
-    editor_init(&file->editor, &file->edit_sky, select_changed);
+    editor_init(&file->editor.obj, &file->edit_sky.obj, select_changed);
 #endif
 
     success = userdata_add_to_list(&file->list_node, userdata_is_safe,
@@ -2344,7 +2356,7 @@ _Optional SkyFile *SkyFile_create(_Optional Reader *const reader,
 
     if (!success)
     {
-      edit_sky_destroy(&file->edit_sky);
+      edit_sky_destroy(&file->edit_sky.obj);
     }
   }
 
@@ -2373,9 +2385,9 @@ void SkyFile_destroy(_Optional SkyFile *const file)
     Preview_destroy(file->preview_data);
     (void)for_each_view(&*file, destroy_view_cb, &*file);
 #if !PER_VIEW_SELECT
-    editor_destroy(&file->editor);
+    editor_destroy(&file->editor.obj);
 #endif
-    edit_sky_destroy(&file->edit_sky);
+    edit_sky_destroy(&file->edit_sky.obj);
     userdata_remove_from_list(&file->list_node);
     free(file);
   }
@@ -2386,7 +2398,7 @@ void SkyFile_destroy(_Optional SkyFile *const file)
 void SkyFile_set_star_height(SkyFile *const file, int const height)
 {
   assert(file != NULL);
-  handle_edit(file, edit_sky_set_stars_height(&file->edit_sky, height));
+  handle_edit(file, edit_sky_set_stars_height(&file->edit_sky.obj, height));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -2394,7 +2406,7 @@ void SkyFile_set_star_height(SkyFile *const file, int const height)
 void SkyFile_set_render_offset(SkyFile *const file, int const height)
 {
   assert(file != NULL);
-  handle_edit(file, edit_sky_set_render_offset(&file->edit_sky, height));
+  handle_edit(file, edit_sky_set_render_offset(&file->edit_sky.obj, height));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -2402,7 +2414,7 @@ void SkyFile_set_render_offset(SkyFile *const file, int const height)
 void SkyFile_add_render_offset(SkyFile *const file, int const offset)
 {
   assert(file != NULL);
-  handle_edit(file, edit_sky_add_render_offset(&file->edit_sky, offset));
+  handle_edit(file, edit_sky_add_render_offset(&file->edit_sky.obj, offset));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -2412,7 +2424,7 @@ void SkyFile_export(SkyFile *const file, Writer *const writer)
   assert(file != NULL);
 
   hourglass_on();
-  sky_write_file(edit_sky_get_sky(&file->edit_sky), writer);
+  sky_write_file(edit_sky_get_sky(&file->edit_sky.obj), writer);
   hourglass_off();
 }
 
@@ -2834,9 +2846,9 @@ void EditWin_remove_insert_pos(EditWin *const edit_win)
   assert(edit_win != NULL);
   if (edit_win->drop_pending)
   {
-    int const insert_pos = editor_get_caret_pos(&edit_win->ghost);
+    int const insert_pos = editor_get_caret_pos(&edit_win->ghost.obj);
     DEBUGF("Hiding ghost caret at %d\n", insert_pos);
-    redraw_ghost(&edit_win->ghost, insert_pos);
+    redraw_ghost(&edit_win->ghost.obj, insert_pos);
     edit_win->drop_pending = false;
   }
 }
@@ -2861,11 +2873,11 @@ void EditWin_set_insert_pos(EditWin *const edit_win,
   }
   else
   {
-    editor_set_caret_pos(&edit_win->ghost, new_ghost_pos);
+    editor_set_caret_pos(&edit_win->ghost.obj, new_ghost_pos);
     if (!edit_win->drop_pending)
     {
       edit_win->drop_pending = true;
-      redraw_ghost(&edit_win->ghost, new_ghost_pos);
+      redraw_ghost(&edit_win->ghost.obj, new_ghost_pos);
     }
   }
 }
@@ -2879,7 +2891,7 @@ void EditWin_confirm_insert_pos(EditWin *const edit_win)
   if (edit_win->drop_pending)
   {
     int sel_low, sel_high;
-    editor_get_selection_range(&edit_win->ghost, &sel_low, &sel_high);
+    editor_get_selection_range(&edit_win->ghost.obj, &sel_low, &sel_high);
     DEBUGF("Confirming ghost selection %d,%d\n", sel_low, sel_high);
 
     (void)editor_set_caret_pos(get_editor(edit_win), sel_low);

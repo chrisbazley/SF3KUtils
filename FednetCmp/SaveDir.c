@@ -68,7 +68,10 @@ enum
 
 typedef struct
 {
-  FNCSaveBox  super;
+  union {
+    char nil;
+    FNCSaveBox obj;
+  } super;
   ComponentId reset_direction;
   char        reset_filetype[MaxFileTypeNameLen + 1];
   _Optional FNCSaveBoxDeletedFn *deleted_cb;
@@ -80,7 +83,7 @@ SaveDir;
 
 static void destroy_savedir(FNCSaveBox *const savebox)
 {
-  SaveDir * const savedir_data = CONTAINER_OF(savebox, SaveDir, super);
+  SaveDir * const savedir_data = CONTAINER_OF(savebox, SaveDir, super.obj);
 
   assert(savedir_data != NULL);
   FNCSaveBox_finalise(savebox);
@@ -180,7 +183,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   {
     /* Read conversion operation from radio buttons */
     if (E(radiobutton_get_state(0,
-                                savedir_data->super.window_id,
+                                savedir_data->super.obj.window_id,
                                 ComponentId_Compress_Radio,
                                 NULL,
                                 &savedir_data->reset_direction)))
@@ -188,7 +191,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
 
     /* Read filetype to give output */
     if (E(stringset_get_selected(0,
-                                 savedir_data->super.window_id,
+                                 savedir_data->super.obj.window_id,
                                  ComponentId_FileType_StringSet,
                                  &savedir_data->reset_filetype,
                                  sizeof(savedir_data->reset_filetype),
@@ -225,7 +228,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
     if (bracket) {
       sscanf(&*bracket, "(&%x)", &hex_type);
     }
-    Scan_create(userdata_get_file_name(&savedir_data->super.super),
+    Scan_create(userdata_get_file_name(&savedir_data->super.obj.super),
                 &*buf,
                 savedir_data->reset_direction == ComponentId_Compress_Radio,
                 hex_type);
@@ -261,7 +264,7 @@ _Optional FNCSaveBox *SaveDir_create(char const *input_path, int const x,
   }
   *savedir_data = (SaveDir){.deleted_cb = deleted_cb};
 
-  if (FNCSaveBox_initialise(&savedir_data->super,
+  if (FNCSaveBox_initialise(&savedir_data->super.obj,
                             input_path,
                             true,
                             FileType_Directory,
@@ -273,7 +276,7 @@ _Optional FNCSaveBox *SaveDir_create(char const *input_path, int const x,
     do
     {
       /* Register Toolbox event handlers for SaveAs object */
-      if (E(event_register_toolbox_handler(savedir_data->super.saveas_id,
+      if (E(event_register_toolbox_handler(savedir_data->super.obj.saveas_id,
                                            SaveAs_SaveToFile,
                                            save_to_file,
                                            &*savedir_data)))
@@ -281,14 +284,14 @@ _Optional FNCSaveBox *SaveDir_create(char const *input_path, int const x,
 
       /* Record initial state of dialogue box */
       if (E(radiobutton_get_state(0,
-                                  savedir_data->super.window_id,
+                                  savedir_data->super.obj.window_id,
                                   ComponentId_Compress_Radio,
                                   NULL,
                                   &savedir_data->reset_direction)))
         break;
 
       if (E(stringset_get_selected(0,
-                                   savedir_data->super.window_id,
+                                   savedir_data->super.obj.window_id,
                                    ComponentId_FileType_StringSet,
                                    &savedir_data->reset_filetype,
                                    sizeof(savedir_data->reset_filetype),
@@ -297,22 +300,22 @@ _Optional FNCSaveBox *SaveDir_create(char const *input_path, int const x,
 
       /* Register extra handlers for compression/decompression selection &
          restoration of last filetype used if Cancel button clicked */
-      if (E(event_register_toolbox_handler(savedir_data->super.window_id,
+      if (E(event_register_toolbox_handler(savedir_data->super.obj.window_id,
                                            ActionButton_Selected,
                                            actionbutton_selected,
                                            &*savedir_data)))
         break;
 
-      if (E(event_register_toolbox_handler(savedir_data->super.window_id,
+      if (E(event_register_toolbox_handler(savedir_data->super.obj.window_id,
                                            RadioButton_StateChanged,
                                            radiobutton_state_changed,
                                            &*savedir_data)))
         break;
 
-      return &savedir_data->super;
+      return &savedir_data->super.obj;
     }
     while (0);
-    FNCSaveBox_finalise(&savedir_data->super);
+    FNCSaveBox_finalise(&savedir_data->super.obj);
   }
   free(savedir_data);
   return NULL;

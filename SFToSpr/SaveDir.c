@@ -37,7 +37,6 @@
 #include "FileUtils.h"
 #include "Macros.h"
 #include "StrExtra.h"
-#include "PathTail.h"
 #include "EventExtra.h"
 
 /* Local headers */

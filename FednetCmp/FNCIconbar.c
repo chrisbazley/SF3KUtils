@@ -33,8 +33,6 @@
 #include "wimplib.h"
 
 /* My library files */
-#include "FOpenCount.h"
-#include "StrExtra.h"
 #include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"

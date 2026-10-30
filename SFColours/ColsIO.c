@@ -60,7 +60,6 @@
 #include "ScreenSize.h"
 #include "SFFormats.h"
 #include "DragAnObj.h"
-#include "PalEntry.h"
 #include "OSVDU.h"
 #include "OSVarVal.h"
 #include "ClrTrans.h"

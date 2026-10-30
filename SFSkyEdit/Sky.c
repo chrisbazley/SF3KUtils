@@ -19,11 +19,8 @@
  */
 
 /* ISO library files */
-#include <stdbool.h>
 #include <stddef.h>
 #include <assert.h>
-#include <stdint.h>
-#include <limits.h>
 #include <math.h>
 
 /* My library files */

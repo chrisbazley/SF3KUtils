@@ -39,7 +39,6 @@
 #include "msgtrans.h"
 #include "Macros.h"
 #include "FilePerc.h"
-#include "PathTail.h"
 #include "EventExtra.h"
 #include "Loader3.h"
 #include "Debug.h"

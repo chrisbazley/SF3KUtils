@@ -22,7 +22,6 @@
 /* ANSI library files */
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 
 /* My library files */
 #include "Macros.h"

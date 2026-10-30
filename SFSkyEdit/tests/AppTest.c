@@ -29,7 +29,6 @@
 #include <inttypes.h>
 
 /* RISC OS library files */
-#include "swis.h"
 
 /* My library files */
 #include "Macros.h"

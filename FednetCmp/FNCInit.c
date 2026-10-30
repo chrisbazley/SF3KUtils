@@ -24,7 +24,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <signal.h>
-#include <ctype.h>
 
 /* RISC OS library files */
 #include "kernel.h"
@@ -43,7 +42,6 @@
 #include "ViewsMenu.h"
 #include "scheduler.h"
 #include "InputFocus.h"
-#include "StrExtra.h"
 #include "Loader3.h"
 #include "FileUtils.h"
 #include "Debug.h"

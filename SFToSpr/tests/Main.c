@@ -40,11 +40,8 @@
 #endif
 
 #include "msgtrans.h"
-#include "Hourglass.h"
-#include "FileRWInt.h"
 
 /* Local header files */
-#include "../SFTInit.h"
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"

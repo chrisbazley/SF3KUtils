@@ -32,7 +32,6 @@
 #include "msgtrans.h"
 #include "Macros.h"
 #include "ViewsMenu.h"
-#include "StrExtra.h"
 #include "PathTail.h"
 #include "Debug.h"
 #include "DeIconise.h"

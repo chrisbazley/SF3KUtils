@@ -47,7 +47,6 @@
 #include "AbortFOp.h"
 #include "PathTail.h"
 #include "Debug.h"
-#include "StrExtra.h"
 #include "DeIconise.h"
 #include "GadgetUtil.h"
 #include "ScreenSize.h"

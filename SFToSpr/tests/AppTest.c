@@ -29,7 +29,6 @@
 #include <inttypes.h>
 
 /* RISC OS library files */
-#include "swis.h"
 #include "event.h"
 #include "toolbox.h"
 #include "saveas.h"

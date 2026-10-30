@@ -47,8 +47,6 @@
 #include "WimpExtra.h"
 #include "msgtrans.h"
 #include "Loader3.h"
-#include "SprFormats.h"
-#include "SpriteArea.h"
 #include "ScreenSize.h"
 #include "OSVDU.h"
 #include "OSFile.h"

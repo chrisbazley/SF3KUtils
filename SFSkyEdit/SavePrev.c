@@ -26,7 +26,6 @@
 
 /* RISC OS library files */
 #include "kernel.h"
-#include "swis.h"
 #include "toolbox.h"
 #include "saveas.h"
 #include "event.h"
@@ -35,7 +34,6 @@
 #include "Err.h"
 #include "Macros.h"
 #include "SprFormats.h"
-#include "Hourglass.h"
 #include "msgtrans.h"
 #include "NoBudge.h"
 #include "FilePerc.h"

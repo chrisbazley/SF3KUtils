@@ -35,7 +35,6 @@
 /* Local headers */
 #include "SFTMenu.h"
 #include "SFTIconbar.h"
-#include "SFgfxconv.h"
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"

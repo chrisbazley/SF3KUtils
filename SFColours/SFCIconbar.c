@@ -39,9 +39,6 @@
 #include "WimpExtra.h"
 #include "FileUtils.h"
 #include "Debug.h"
-#include "UserData.h"
-#include "ReaderRaw.h"
-#include "FOpenCount.h"
 #include "FileTypes.h"
 
 /* Local headers */

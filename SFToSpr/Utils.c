@@ -37,7 +37,6 @@
 #include "Err.h"
 #include "msgtrans.h"
 #include "Macros.h"
-#include "SprFormats.h"
 #include "FilePerc.h"
 #include "WimpExtra.h"
 #include "Debug.h"

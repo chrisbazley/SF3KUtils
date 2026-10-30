@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 project(SFColours C)
 
+option(PER_VIEW_SELECT "Keep a separate selection in each editing window" ON)
+
 include(FetchContent)
 
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
@@ -69,7 +71,10 @@ target_link_libraries(SFColours PUBLIC
 
 target_compile_definitions(SFColours PRIVATE
     $<$<CONFIG:Debug>:DEBUG_OUTPUT>
+    PER_VIEW_SELECT=$<BOOL:${PER_VIEW_SELECT}>
 )
+
+message(STATUS "SFColours per-view selection: ${PER_VIEW_SELECT}")
 
 string(TOUPPER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_UPPER)
 

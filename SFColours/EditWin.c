@@ -81,7 +81,9 @@
 #define UNSAVED_SUFFIX " *" /* Appended to a window title to indicate that
                                file has unsaved changes */
 
+#ifndef PER_VIEW_SELECT
 #define PER_VIEW_SELECT (1)
+#endif
 
 /* Special value for SWI Wimp_DragBox */
 #undef CancelDrag /* definition in "wimplib.h" is wrong! */
@@ -1287,7 +1289,7 @@ static void redraw_selected(Editor *const editor, int pos)
   (void)redraw_selected_cb(CONTAINER_OF(editor, EditWin, editor.obj), &pos);
 #else
   ColMapFile *const file = CONTAINER_OF(editor, ColMapFile, editor.obj);
-  (void)for_each_view(file, redraw_selected_cb, pos);
+  (void)for_each_view(file, redraw_selected_cb, &pos);
 #endif
 }
 

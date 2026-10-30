@@ -4,6 +4,7 @@ enable_testing()
 
 option(USE_OPTIONAL "Enable the _Optional qualifier" OFF)
 option(USE_FORTIFY "Enable Fortify memory-allocation checking" OFF)
+option(PER_VIEW_SELECT "Keep separate selections in SFColours and SFSkyEdit views" ON)
 option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 

@@ -88,7 +88,9 @@
 #define UNSAVED_SUFFIX " *" /* Appended to a window title to indicate that
                                file has unsaved changes */
 
+#ifndef PER_VIEW_SELECT
 #define PER_VIEW_SELECT (1)
+#endif
 
 /* Special value for SWI Wimp_DragBox */
 #undef CancelDrag /* definition in "wimplib.h" is wrong! */
@@ -2333,7 +2335,7 @@ _Optional SkyFile *SkyFile_create(_Optional Reader *const reader,
   if (success)
   {
 #if !PER_VIEW_SELECT
-    editor_init(&file->editor.obj, &file->edit_sky.obj, select_changed);
+    editor_init(&file->editor.obj, &file->edit_sky.obj, redraw_select_cb);
 #endif
 
     success = userdata_add_to_list(&file->list_node, userdata_is_safe,

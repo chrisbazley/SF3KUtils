@@ -29,7 +29,6 @@
 #include <inttypes.h>
 
 /* RISC OS library files */
-#include "swis.h"
 #include "event.h"
 #include "toolbox.h"
 #include "saveas.h"
@@ -60,7 +59,6 @@
 #include "FileRWInt.h"
 #include "WimpExtra.h"
 #include "Pal256.h"
-#include "SprFormats.h"
 #include "Hourglass.h"
 
 /* Local header files */

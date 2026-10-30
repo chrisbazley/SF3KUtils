@@ -33,7 +33,6 @@
 #include "Macros.h"
 #include "FileUtils.h"
 #include "Debug.h"
-#include "SFFormats.h"
 
 /* Local headers */
 #include "EditWin.h"

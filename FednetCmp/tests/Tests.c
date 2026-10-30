@@ -33,7 +33,6 @@
 #include "saveas.h"
 #include "gadgets.h"
 #include "kernel.h"
-#include "swis.h"
 
 /* My library files */
 #include "Macros.h"

@@ -22,9 +22,7 @@
 #include <assert.h>
 #include "stdlib.h"
 #include <string.h>
-#include <stdbool.h>
 #include <signal.h>
-#include <ctype.h>
 
 /* RISC OS library files */
 #include "kernel.h"
@@ -43,16 +41,13 @@
 #include "ViewsMenu.h"
 #include "scheduler.h"
 #include "InputFocus.h"
-#include "StrExtra.h"
 #include "Loader3.h"
 #include "Debug.h"
 #include "MessTrans.h"
-#include "OSFile.h"
 #include "DateStamp.h"
 #include "UserData.h"
 
 /* Local headers */
-#include "ParseArgs.h"
 #include "SFTIconbar.h"
 #include "Utils.h"
 #include "SFTMenu.h"

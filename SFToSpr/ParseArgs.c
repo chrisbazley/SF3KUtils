@@ -38,7 +38,6 @@
 #include "SFTIconbar.h"
 #include "ParseArgs.h"
 #include "QuickView.h"
-#include "SFgfxconv.h"
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"

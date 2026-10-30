@@ -39,11 +39,9 @@
 #include "msgtrans.h"
 #include "Macros.h"
 #include "Loader3.h"
-#include "SprFormats.h"
 #include "SFFormats.h"
 #include "Debug.h"
 #include "FileUtils.h"
-#include "StrExtra.h"
 #include "ReaderFlex.h"
 
 /* Local headers */

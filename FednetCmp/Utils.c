@@ -42,8 +42,6 @@
 #include "WriterGKey.h"
 #include "NoBudge.h"
 #include "FOpenCount.h"
-#include "ReaderFlex.h"
-#include "WriterFlex.h"
 #include "WriterRaw.h"
 #include "ReaderRaw.h"
 #include "FileUtils.h"

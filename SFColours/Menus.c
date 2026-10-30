@@ -20,8 +20,6 @@
 
 /* ISO library files */
 #include <assert.h>
-#include <stdbool.h>
-#include <limits.h>
 
 /* RISC OS library files */
 #include "kernel.h"

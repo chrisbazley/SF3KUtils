@@ -21,7 +21,6 @@
 /* ISO library files */
 #include <stddef.h>
 #include <string.h>
-#include <stdbool.h>
 #include "stdlib.h"
 #include <assert.h>
 
@@ -41,13 +40,9 @@
 #include "Debug.h"
 #include "WimpExtra.h"
 #include "FileUtils.h"
-#include "UserData.h"
-#include "ReaderRaw.h"
-#include "FOpenCount.h"
 #include "FileTypes.h"
 
 /* Local headers */
-#include "EditWin.h"
 #include "SFSIconbar.h"
 #include "Utils.h"
 #include "SkyIO.h"

@@ -32,7 +32,6 @@
 
 /* Local headers */
 #include "SkyIO.h"
-#include "SFSIconbar.h"
 #include "ParseArgs.h"
 #include "EditWin.h"
 

@@ -24,11 +24,9 @@
 #include "stdio.h"
 #include <string.h>
 #include <stdbool.h>
-#include <limits.h>
 
 /* RISC OS library files */
 #include "kernel.h"
-#include "swis.h"
 #include "wimp.h"
 #include "toolbox.h"
 #include "event.h"
@@ -63,7 +61,6 @@
 #include "Preview.h"
 #include "SFSInit.h"
 #include "OurEvents.h"
-#include "Preview.h"
 #include "PrevUMenu.h"
 #include "SavePrev.h"
 #include "ScalePrev.h"

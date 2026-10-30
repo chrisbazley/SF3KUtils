@@ -30,7 +30,6 @@
 
 /* RISC OS library files */
 #include "kernel.h"
-#include "swis.h"
 #include "wimp.h"
 #include "toolbox.h"
 #include "event.h"
@@ -52,7 +51,6 @@
 #include "Saver2.h"
 #include "Drag.h"
 #include "WimpExtra.h"
-#include "StrExtra.h"
 #include "StackViews.h"
 #include "Entity2.h"
 #include "DeIconise.h"

@@ -46,7 +46,6 @@
 #include "Saver2.h"
 #include "Drag.h"
 #include "Loader3.h"
-#include "SFFormats.h"
 #include "Entity2.h"
 #include "PalEntry.h"
 #include "ClrTrans.h"

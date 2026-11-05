@@ -1363,7 +1363,7 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
                 /* Create a sprite in which to render the sky */
                 spritearea_init(preview_data->cached_image, sprite_area_size);
 
-                SpriteHeader *const sprite = spritearea_alloc_spr(
+                SpriteHeader *const sprite = (SpriteHeader *)spritearea_alloc_spr(
                   preview_data->cached_image,
                   sizeof(SpriteHeader) + (Screen_Width * Screen_Height));
 

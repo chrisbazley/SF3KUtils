@@ -1207,16 +1207,15 @@ static void init_actionbutton_event(WimpPollBlock *poll_block)
 
 static void init_dialoguecompleted_event(WimpPollBlock *poll_block)
 {
-  SaveAsDialogueCompletedEvent const sadce = {
+  memcpy(poll_block->bytes, &(SaveAsDialogueCompletedEvent){
     .hdr =
       {
-        .size = sizeof sadce,
+        .size = sizeof(SaveAsDialogueCompletedEvent),
         .reference_number = ++fake_ref,
         .event_code = SaveAs_DialogueCompleted,
         .flags = 0,
       },
-  };
-  memcpy(poll_block->bytes, &sadce, sizeof sadce);
+  }, sizeof(SaveAsDialogueCompletedEvent));
 }
 
 static void init_quit_cancel_event(WimpPollBlock *poll_block)
@@ -1235,16 +1234,15 @@ static void init_quit_cancel_event(WimpPollBlock *poll_block)
 
 static void init_quit_quit_event(WimpPollBlock *poll_block)
 {
-  QuitQuitEvent const qqe = {
+  memcpy(poll_block->bytes, &(QuitQuitEvent){
     .hdr =
       {
-        .size = sizeof qqe,
+        .size = sizeof(QuitQuitEvent),
         .reference_number = ++fake_ref,
         .event_code = Quit_Quit,
         .flags = 0,
       },
-  };
-  memcpy(poll_block->bytes, &qqe, sizeof qqe);
+  }, sizeof(QuitQuitEvent));
 }
 
 static void dispatch_event(int const event_code, WimpPollBlock *poll_block)

@@ -475,12 +475,10 @@ static SFError tiles_to_sprites_conv(ConvertIter *const iter)
   assert(iter->pos < iter->count);
   assert(iter->count <= MapTileMax + 1);
 
-  char numstr[16];
-  char name[sizeof TILE_SPR_NAME - 1 + sizeof numstr] = TILE_SPR_NAME;
-  int nout = sprintf(numstr, "%" PRId32, iter->pos);
+  char name[sizeof(TILE_SPR_NAME "-2147483648")];
+  int nout = sprintf(name, TILE_SPR_NAME "%" PRId32, iter->pos);
   assert(nout >= 0); /* no formatting error */
   NOT_USED(nout);
-  strncat(name, numstr, sizeof(name) - strlen(name) - 1);
   DEBUGF("Sprite name is %s\n", name);
 
   write_spr_header(MapTileSprSize, name, MapTileWidth, MapTileHeight, writer);
@@ -809,12 +807,10 @@ static inline SFError planet_to_sprite(Reader *const reader, Writer *const write
   assert(i >= 0);
   assert(i <= PlanetMax);
 
-  char numstr[16];
-  char name[sizeof PLANET_SPR_NAME - 1 + sizeof numstr] = PLANET_SPR_NAME;
-  int nout = sprintf(numstr, "%" PRId32, i);
+  char name[sizeof(PLANET_SPR_NAME "-2147483648")];
+  int nout = sprintf(name, PLANET_SPR_NAME "%" PRId32, i);
   assert(nout >= 0); /* no formatting error */
   NOT_USED(nout);
-  strncat(name, numstr, sizeof(name) - strlen(name) - 1);
   DEBUGF("Sprite name is %s\n", name);
 
   write_spr_header(PlanetSprSize, name, PlanetSprWidth, PlanetHeight, writer);

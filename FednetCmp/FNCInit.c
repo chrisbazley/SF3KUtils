@@ -129,7 +129,9 @@ static int quit_msg(WimpMessage *const message, void *const handle)
 
   userdata_destroy_all();
   exit(EXIT_SUCCESS);
-  return 1; /* claim event */
+#ifdef FORTIFY
+  return 1; /* claim event if the test veneer returns */
+#endif
 }
 
 /* ----------------------------------------------------------------------- */

@@ -85,11 +85,75 @@ enum
   ComponentId_FilePath_Button   = 0x0d
 };
 
+/* Scan state transitions (ScanStatus_ prefix omitted).
+ * Each state is drawn once. Arrows show changes of state, plus the
+ * documented CopyTmp self-loop. Other unchanged states and Error/Paused
+ * control flow are omitted. Paused resumes the saved state; Error allows
+ * retry/restart at ExamineObject or skip to NextObject.
+ *
+ *                       +-----------------------------------------------+
+ *                       v                                               |
+ *   +---+--------[ExamineObject]                                        |
+ *   |   |               |                                               |
+ *   |   |               |                                               |
+ *   |   |               v                                               |
+ *   |   |          [OpenInput]--------+                                 |
+ *   |   |               |             |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               v             |                                 |
+ *   |   |      [StartScanSprites]     |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               v             |                                 |
+ *   |   |         [ScanSprites]       |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               v             |                                 |
+ *   |   +-------[PickConversion]      |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               |             |                                 |
+ *   |   |               v             |                                 |
+ *   |   |        [DecideOutput]<------+                                 |
+ *   |   |               |                                               |
+ *   |   |               +-----------------------+                       |
+ *   |   |               |                       |                       |
+ *   |   |               |                       |                       |
+ *   |   |               v                       |                       |
+ *   |   |          [MakePath]                   |                       |
+ *   |   |               |                       |                       |
+ *   |   |               |                       |                       |
+ *   |   |               v                       v                       |
+ *   |   |    +----[OpenOutput]---------->[StartConvert]---->[Convert]   |
+ *   |   |    |          ^                       |               |       |
+ *   |   |    |          |                       |               |       |
+ *   |   |    |          |                       |               |       |
+ *   |   |    |          |                       |               |       |
+ *   |   |    |          |                       v               |       |
+ *   |   |    |  [CloseTmpOutput]<---------[CloseInput]<---------+       |
+ *   |   |    |                                  |                       |
+ *   |   |    |                                  |                       |
+ *   |   |    |        +---+                     |                       |
+ *   |   |    |        |   |                     |                       |
+ *   |   |    |        |   v                     v                       |
+ *   |   |    +----->[CopyTmp]------------>[CloseOutput]                 |
+ *   |   |                                       |                       |
+ *   |   |                                       |                       |
+ *   |   |                                       v                       |
+ *   |   |                                 [SetFileType]                 |
+ *   |   |                                       |                       |
+ *   |   |                                       |                       |
+ *   |   |                                       v                       |
+ *   |   +-------------------------------->[NextObject]------------------+
+ *   |                                           |
+ *   |                                           |
+ *   |                                           v
+ *   +------------------------------------->[Finished]
+ */
 typedef enum
 {
-  ScanStatus_Error,
-  ScanStatus_Paused,
-  ScanStatus_ExamineObject,
+  ScanStatus_Error, /* from an active state on failure */
+  ScanStatus_Paused, /* from an active state; saves it for Continue */
+  ScanStatus_ExamineObject, /* initially, or from NextObject or Error */
   ScanStatus_OpenInput, /* from ExamineObject */
   ScanStatus_StartScanSprites, /* from OpenInput */
   ScanStatus_ScanSprites, /* from StartScanSprites */
@@ -104,7 +168,7 @@ typedef enum
   ScanStatus_CopyTmp, /* from CopyTmp or OpenOutput */
   ScanStatus_CloseOutput, /* from CloseInput or CopyTmp */
   ScanStatus_SetFileType, /* from CloseOutput */
-  ScanStatus_NextObject, /* from ExamineObject, PickConversion or SetFileType */
+  ScanStatus_NextObject, /* from ExamineObject, PickConversion, SetFileType or Error */
   ScanStatus_Finished, /* from NextObject or ExamineObject */
 }
 ScanStatus;
@@ -136,7 +200,7 @@ typedef struct
   int output_type;
 
   void *out_buf;
-  ScanStatus return_phase; /* for pause, error */
+  ScanStatus return_phase; /* saved state for Continue after a pause */
   /* preserved data for retry */
   unsigned int retry_num_checked;
   unsigned int retry_num_output;

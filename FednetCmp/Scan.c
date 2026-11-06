@@ -83,37 +83,39 @@ enum
 };
 
 /* Scan state transitions (ScanStatus_ prefix omitted).
- * Each state is drawn once. Batch scans start at ExamineObject; single
- * files start at Load. Load and Save can remain in the same state while
- * I/O is incomplete. Other unchanged states and Error/Paused control flow
- * are omitted. Paused resumes the saved state; Error allows retry/restart
- * at ExamineObject or skip to NextObject.
+ * Each state is drawn once; (batch) and (file) mark initial entry points.
+ * The loading states and Save can remain
+ * in the same state while I/O is incomplete. Other unchanged states and
+ * Error/Paused control flow are omitted. Paused resumes the saved state;
+ * Error allows retry/restart at ExamineObject or skip to NextObject.
  *
- *                       +-----------------------+
- *                       v                       |
- *   +---+--------[ExamineObject]                |
- *   |   |               |                       |
- *   |   |       +-----+ |                       |
- *   |   |       |     v v                       |
- *   |   |       +----[Load]-----------+         |
- *   |   |               |             |         |
- *   |   |               |             |         |
- *   |   |               |             |         |
- *   |   |               |             |         |
- *   |   |               v             |         |
- *   |   |          [MakePath]         |         |
- *   |   |               |             |         |
- *   |   |       +-----+ |             |         |
- *   |   |       |     v v             |         |
- *   |   |       +----[Save]<----------+         |
- *   |   |               |                       |
- *   |   |               |                       |
- *   |   |               v                       |
- *   |   |         [SetFileType]                 |
- *   |   |               |                       |
- *   |   |               |                       |
- *   |   |               v                       |
- *   |   +-------->[NextObject]------------------+
+ *                    (batch)
+ *                       v
+ *   +---+--------[ExamineObject]<---------------------------------+
+ *   |   |               |                 +---+                   |
+ *   |   |   +---------+ |                 |   |                   |
+ *   |   |   |         v v                 |   v                   |
+ *   |   |   +----[LoadBatchFile]    [LoadSingleFile]<--(file)     |
+ *   |   |               |                   |                     |
+ *   |   |               |                   |                     |
+ *   |   |               |                   |                     |
+ *   |   |               |                   |                     |
+ *   |   |               v                   |                     |
+ *   |   |          [MakePath]               |                     |
+ *   |   |               |                   |                     |
+ *   |   |               |                   |                     |
+ *   |   |               |                   |                     |
+ *   |   |       +-----+ |                   |                     |
+ *   |   |       |     v v                   |                     |
+ *   |   |       +----[Save]<----------------+                     |
+ *   |   |               |                                         |
+ *   |   |               |                                         |
+ *   |   |               v                                         |
+ *   |   |         [SetFileType]                                   |
+ *   |   |               |                                         |
+ *   |   |               |                                         |
+ *   |   |               v                                         |
+ *   |   +-------->[NextObject]------------------------------------+
  *   |                   |
  *   |                   |
  *   |                   v
@@ -124,9 +126,10 @@ typedef enum
   ScanStatus_Error, /* before root examination, or on failure */
   ScanStatus_Paused, /* from an active state; saves it for Continue */
   ScanStatus_ExamineObject, /* initially for a batch, or from NextObject or Error */
-  ScanStatus_Load, /* initially for a file, or from ExamineObject or Load */
-  ScanStatus_MakePath, /* from Load */
-  ScanStatus_Save, /* from Load, MakePath or Save */
+  ScanStatus_LoadSingleFile, /* initially for a file, or from LoadSingleFile */
+  ScanStatus_LoadBatchFile, /* from ExamineObject or LoadBatchFile */
+  ScanStatus_MakePath, /* from LoadBatchFile */
+  ScanStatus_Save, /* from LoadSingleFile, MakePath or Save */
   ScanStatus_SetFileType, /* from Save */
   ScanStatus_NextObject, /* from ExamineObject, SetFileType or Error */
   ScanStatus_Finished /* from ExamineObject or NextObject */
@@ -484,7 +487,7 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
         if ((is_comp && !scan_data->compress) ||
             (!is_comp && scan_data->compress))
         {
-          new_phase = ScanStatus_Load;
+          new_phase = ScanStatus_LoadBatchFile;
           skip = false;
 
           /* Remove the previous sub-path (does nothing if already undone) */
@@ -568,15 +571,13 @@ static _Optional const _kernel_oserror *scan_load_file(ScanData *const scan_data
 
   if (scan_data->file_op == NULL)
   {
-    /* Have finished decompression */
+    /* Have finished loading */
     DEBUG("Have finished loading");
     ON_ERR_RPT(slider_set_value(
                    0,
                    scan_data->window_id,
                    ComponentId_Progress_Slider,
                    100));
-    scan_data->phase = (scan_data->iterator == NULL) ?
-                       ScanStatus_Save : ScanStatus_MakePath;
   }
   else
   {
@@ -741,8 +742,20 @@ static SchedulerTime do_scan_idle(void *const handle, SchedulerTime new_time,
         e = examine_object(scan_data);
         break;
 
-      case ScanStatus_Load:
+      case ScanStatus_LoadSingleFile:
         e = scan_load_file(scan_data, time_up);
+        if (e == NULL && scan_data->file_op == NULL)
+        {
+          scan_data->phase = ScanStatus_Save;
+        }
+        break;
+
+      case ScanStatus_LoadBatchFile:
+        e = scan_load_file(scan_data, time_up);
+        if (e == NULL && scan_data->file_op == NULL)
+        {
+          scan_data->phase = ScanStatus_MakePath;
+        }
         break;
 
       case ScanStatus_MakePath:
@@ -987,7 +1000,7 @@ static bool examine_root(ScanData * const scan_data, char const *const load_root
         RPT_ERR("NoMem");
         return false;
       }
-      scan_data->phase = ScanStatus_Load;
+      scan_data->phase = ScanStatus_LoadSingleFile;
       break;
 
     default: /* assume object is accessible like a directory */
@@ -1100,7 +1113,7 @@ void Scan_create(char *const load_root, char const *const save_root,
         /* Set up the contents of the progress window */
         scan_set_title(&*scan_data);
         update_window(&*scan_data,
-                      scan_data->phase == ScanStatus_Load ?
+                      scan_data->phase == ScanStatus_LoadSingleFile ?
                            "ScanTLoad" : "ScanTOpen",
                       load_root);
         display_nout(&*scan_data);

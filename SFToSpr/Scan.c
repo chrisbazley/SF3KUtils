@@ -123,21 +123,23 @@ enum
  *   |   |               |                       |                       |
  *   |   |               |                       |                       |
  *   |   |               v                       v                       |
- *   |   |    +----[OpenOutput]---------->[StartConvert]---->[Convert]   |
- *   |   |    |          ^                       |               |       |
- *   |   |    |          |                       |               |       |
- *   |   |    |          |                       |               |       |
- *   |   |    |          |                       |               |       |
- *   |   |    |          |                       v               |       |
- *   |   |    |  [CloseTmpOutput]<---------[CloseInput]<---------+       |
- *   |   |    |                                  |                       |
- *   |   |    |                                  |                       |
- *   |   |    |        +---+                     |                       |
- *   |   |    |        |   |                     |                       |
- *   |   |    |        |   v                     v                       |
- *   |   |    +----->[CopyTmp]------------>[CloseOutput]                 |
- *   |   |                                       |                       |
- *   |   |                                       |                       |
+ *   |   |    [OpenConversionOutput]----->[StartConvert]---->[Convert]   |
+ *   |   |                                       |               |       |
+ *   |   |                                       |               |       |
+ *   |   |                                       |               |       |
+ *   |   |                                       |               |       |
+ *   |   |                                       v               |       |
+ *   |   |       [CloseTmpOutput]<---------[CloseInput]<---------+       |
+ *   |   |               |                       |                       |
+ *   |   |               |                       |                       |
+ *   |   |               v                       |                       |
+ *   |   |    [OpenReplacementOutput]            |                       |
+ *   |   |               |                       |                       |
+ *   |   |               |                       |                       |
+ *   |   |               v                       v                       |
+ *   |   |           [CopyTmp]------------>[CloseOutput]                 |
+ *   |   |             |   ^                     |                       |
+ *   |   |             +---+                     |                       |
  *   |   |                                       v                       |
  *   |   |                                 [SetFileType]                 |
  *   |   |                                       |                       |
@@ -160,12 +162,13 @@ typedef enum
   ScanStatus_PickConversion, /* from ScanSprites */
   ScanStatus_DecideOutput, /* from PickConversion or OpenInput */
   ScanStatus_MakePath, /* from DecideOutput */
-  ScanStatus_OpenOutput, /* from MakePath or CloseTmpOutput */
-  ScanStatus_StartConvert, /* from OpenOutput or DecideOutput */
+  ScanStatus_OpenConversionOutput, /* from MakePath */
+  ScanStatus_OpenReplacementOutput, /* from CloseTmpOutput */
+  ScanStatus_StartConvert, /* from OpenConversionOutput or DecideOutput */
   ScanStatus_Convert, /* from StartConvert */
   ScanStatus_CloseInput, /* from StartConvert or Convert */
   ScanStatus_CloseTmpOutput, /* from CloseInput */
-  ScanStatus_CopyTmp, /* from CopyTmp or OpenOutput */
+  ScanStatus_CopyTmp, /* from CopyTmp or OpenReplacementOutput */
   ScanStatus_CloseOutput, /* from CloseInput or CopyTmp */
   ScanStatus_SetFileType, /* from CloseOutput */
   ScanStatus_NextObject, /* from ExamineObject, PickConversion, SetFileType or Error */
@@ -968,12 +971,6 @@ static _Optional const _kernel_oserror *open_output(ScanData *const scan_data)
     }
   }
 
-  if (err == SFError_OK)
-  {
-    scan_data->state.phase = scan_data->state.replace_input ?
-                             ScanStatus_CopyTmp : ScanStatus_StartConvert;
-  }
-
   return scan_error(err, scan_data);
 }
 
@@ -1198,7 +1195,7 @@ static _Optional const _kernel_oserror *start_copy_tmp(ScanData *const scan_data
     assert(!scan_data->state.has_reader);
     reader_flex_init(&scan_data->state.reader.obj, &scan_data->state.out_buf);
     scan_data->state.has_reader = true;
-    scan_data->state.phase = ScanStatus_OpenOutput;
+    scan_data->state.phase = ScanStatus_OpenReplacementOutput;
   }
   return scan_error(err, scan_data);
 }
@@ -1300,12 +1297,24 @@ static SchedulerTime do_scan_idle(void *handle, SchedulerTime new_time,
         }
         else
         {
-          scan_data->state.phase = ScanStatus_OpenOutput;
+          scan_data->state.phase = ScanStatus_OpenConversionOutput;
         }
         break;
 
-      case ScanStatus_OpenOutput:
+      case ScanStatus_OpenConversionOutput:
         e = open_output(scan_data);
+        if (e == NULL)
+        {
+          scan_data->state.phase = ScanStatus_StartConvert;
+        }
+        break;
+
+      case ScanStatus_OpenReplacementOutput:
+        e = open_output(scan_data);
+        if (e == NULL)
+        {
+          scan_data->state.phase = ScanStatus_CopyTmp;
+        }
         break;
 
       case ScanStatus_StartConvert:

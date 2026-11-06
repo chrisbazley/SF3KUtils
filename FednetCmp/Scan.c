@@ -82,17 +82,54 @@ enum
   ComponentId_Progress_Slider   = 0x0e
 };
 
+/* Scan state transitions (ScanStatus_ prefix omitted).
+ * Each state is drawn once. Batch scans start at ExamineObject; single
+ * files start at Load. Load and Save can remain in the same state while
+ * I/O is incomplete. Other unchanged states and Error/Paused control flow
+ * are omitted. Paused resumes the saved state; Error allows retry/restart
+ * at ExamineObject or skip to NextObject.
+ *
+ *                       +-----------------------+
+ *                       v                       |
+ *   +---+--------[ExamineObject]                |
+ *   |   |               |                       |
+ *   |   |       +-----+ |                       |
+ *   |   |       |     v v                       |
+ *   |   |       +----[Load]-----------+         |
+ *   |   |               |             |         |
+ *   |   |               |             |         |
+ *   |   |               |             |         |
+ *   |   |               |             |         |
+ *   |   |               v             |         |
+ *   |   |          [MakePath]         |         |
+ *   |   |               |             |         |
+ *   |   |       +-----+ |             |         |
+ *   |   |       |     v v             |         |
+ *   |   |       +----[Save]<----------+         |
+ *   |   |               |                       |
+ *   |   |               |                       |
+ *   |   |               v                       |
+ *   |   |         [SetFileType]                 |
+ *   |   |               |                       |
+ *   |   |               |                       |
+ *   |   |               v                       |
+ *   |   +-------->[NextObject]------------------+
+ *   |                   |
+ *   |                   |
+ *   |                   v
+ *   +------------->[Finished]
+ */
 typedef enum
 {
-  ScanStatus_Error,
-  ScanStatus_Paused,
-  ScanStatus_ExamineObject,
-  ScanStatus_Load,
-  ScanStatus_MakePath,
-  ScanStatus_Save,
-  ScanStatus_SetFileType,
-  ScanStatus_NextObject,
-  ScanStatus_Finished
+  ScanStatus_Error, /* before root examination, or on failure */
+  ScanStatus_Paused, /* from an active state; saves it for Continue */
+  ScanStatus_ExamineObject, /* initially for a batch, or from NextObject or Error */
+  ScanStatus_Load, /* initially for a file, or from ExamineObject or Load */
+  ScanStatus_MakePath, /* from Load */
+  ScanStatus_Save, /* from Load, MakePath or Save */
+  ScanStatus_SetFileType, /* from Save */
+  ScanStatus_NextObject, /* from ExamineObject, SetFileType or Error */
+  ScanStatus_Finished /* from ExamineObject or NextObject */
 }
 ScanStatus;
 
@@ -124,7 +161,7 @@ typedef struct
   bool compress; /* action */
   int comp_type; /* file type to give compressed output */
 
-  ScanStatus return_phase; /* for pause, error */
+  ScanStatus return_phase; /* saved state for Continue after a pause */
   /* preserved data for retry */
   unsigned int retry_num_checked;
   unsigned int retry_num_output;

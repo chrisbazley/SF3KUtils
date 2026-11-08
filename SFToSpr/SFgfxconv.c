@@ -36,6 +36,7 @@
 #include "Debug.h"
 #include "Reader.h"
 #include "Writer.h"
+#include "strb.h"
 #include "SprFormats.h"
 
 /* Local headers */
@@ -1731,37 +1732,37 @@ SFError tiles_to_csv(Reader *const reader, Writer *const writer)
     return err;
   }
 
-  char buf[sizeof("255,255,255,255\n")];
-  int n = sprintf(buf, "%d,%d,%d,%d\n",
-                  hdr.splash_anim_1[0],
-                  hdr.splash_anim_1[1],
-                  hdr.splash_anim_1[2],
-                  hdr.splash_anim_1[3]);
-  assert(n >= 0);
-  assert((unsigned)n < sizeof(buf));
-  NOT_USED(n);
-  writer_fwrite(buf, strlen(buf), 1, writer);
+  STRB_DECL_FIXED(line, sizeof("255,255,255,255\n") - 1);
+  if (strb_printf(line, "%d,%d,%d,%d\n",
+                      hdr.splash_anim_1[0],
+                      hdr.splash_anim_1[1],
+                      hdr.splash_anim_1[2],
+                      hdr.splash_anim_1[3]))
+  {
+    abort();
+  }
+  writer_fwrite(strb_cptr(line), strb_len(line), 1, writer);
 
-  n = sprintf(buf, "%d,%d,%d,%d\n",
-              hdr.splash_anim_2[0],
-              hdr.splash_anim_2[1],
-              hdr.splash_anim_2[2],
-              hdr.splash_anim_2[3]);
-  assert(n >= 0);
-  assert((unsigned)n < sizeof(buf));
-  NOT_USED(n);
-  writer_fwrite(buf, strlen(buf), 1, writer);
+  if (strb_printf(line, "%d,%d,%d,%d\n",
+                  hdr.splash_anim_2[0],
+                  hdr.splash_anim_2[1],
+                  hdr.splash_anim_2[2],
+                  hdr.splash_anim_2[3]))
+  {
+    abort();
+  }
+  writer_fwrite(strb_cptr(line), strb_len(line), 1, writer);
 
-  n = sprintf(buf, "%d,%d,%d,%d\n",
-              hdr.splash_2_triggers[0],
-              hdr.splash_2_triggers[1],
-              hdr.splash_2_triggers[2],
-              hdr.splash_2_triggers[3]);
-  assert(n >= 0);
-  assert((unsigned)n < sizeof(buf));
-  NOT_USED(n);
+  if (strb_printf(line, "%d,%d,%d,%d\n",
+                  hdr.splash_2_triggers[0],
+                  hdr.splash_2_triggers[1],
+                  hdr.splash_2_triggers[2],
+                  hdr.splash_2_triggers[3]))
+  {
+    abort();
+  }
 
-  writer_fwrite(buf, strlen(buf), 1, writer);
+  writer_fwrite(strb_cptr(line), strb_len(line), 1, writer);
 
   return err;
 }
@@ -1969,14 +1970,14 @@ SFError planets_to_csv(Reader *const reader, Writer *const writer)
 
   for (int32_t planet = 0; planet <= hdr.last_image_num && !writer_ferror(writer); planet++)
   {
-    char buf[sizeof("-2147483648,-2147483648\n")];
-    int const n = sprintf(buf, "%d,%d\n",
-            hdr.paint_coords[planet].x_offset,
-            hdr.paint_coords[planet].y_offset);
-    assert(n >= 0);
-    assert((unsigned)n < sizeof(buf));
-    NOT_USED(n);
-    writer_fwrite(buf, strlen(buf), 1, writer);
+    STRB_DECL_FIXED(line, sizeof("-2147483648,-2147483648\n") - 1);
+    if (strb_printf(line, "%d,%d\n",
+                    hdr.paint_coords[planet].x_offset,
+                    hdr.paint_coords[planet].y_offset))
+    {
+      abort();
+    }
+    writer_fwrite(strb_cptr(line), strb_len(line), 1, writer);
   }
 
   return err;
@@ -2173,14 +2174,14 @@ SFError sky_to_csv(Reader *const reader, Writer *const writer)
     return err;
   }
 
-  char buf[sizeof("-2147483648,-2147483648\n")];
-  const int n = sprintf(buf, "%d,%d\n",
+  STRB_DECL_FIXED(line, sizeof("-2147483648,-2147483648\n") - 1);
+  if (strb_printf(line, "%d,%d\n",
                         hdr.render_offset,
-                        hdr.min_stars_height);
-  assert(n >= 0);
-  assert((unsigned)n < sizeof(buf));
-  NOT_USED(n);
-  writer_fwrite(buf, strlen(buf), 1, writer);
+                        hdr.min_stars_height))
+  {
+    abort();
+  }
+  writer_fwrite(strb_cptr(line), strb_len(line), 1, writer);
 
   return err;
 }

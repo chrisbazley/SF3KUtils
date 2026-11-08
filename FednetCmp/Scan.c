@@ -56,7 +56,7 @@
 #include "StackViews.h"
 #include "FOpenCount.h"
 #include "OSFile.h"
-#include "StringBuff.h"
+#include "strb.h"
 #include "UserData.h"
 #include "EventExtra.h"
 
@@ -170,7 +170,10 @@ typedef struct
   unsigned int retry_num_output;
   _Optional FILE *_Optional *file_op;
   char return_action[MaxActionLen + 1];
-  StringBuffer load_path, save_path;
+  strbstate_t load_state, save_state;
+  /* The compound literal initialises nil; construct the handles afterwards. */
+  union { char nil; strb_t *buf; } load_path, save_path;
+  size_t save_root_len;
   size_t make_path_offset; /* avoids creating directories that should already exist */
 } ScanData;
 
@@ -404,54 +407,6 @@ static void display_nout(const ScanData *const scan_data)
 
 /* ----------------------------------------------------------------------- */
 
-static _Optional const _kernel_oserror *append_to_string_buffer(
-                               StringBuffer *const sb,
-                               DirIterator *const it,
-                               size_t (*get_string)(const DirIterator *it,
-                                                    _Optional char *buffer,
-                                                    size_t buff_size))
-{
-  _Optional const _kernel_oserror *e = NULL;
-  bool retry;
-  size_t buff_size = 0;
-
-  assert(sb != NULL);
-  assert(it != NULL);
-  assert(get_string);
-
-  do
-  {
-    _Optional char * const buffer = stringbuffer_prepare_append(sb, &buff_size);
-    retry = false;
-    if (buffer == NULL)
-    {
-      e = msgs_error(DUMMY_ERRNO, "NoMem");
-    }
-    else
-    {
-      const size_t nchars = get_string(it, &*buffer, buff_size);
-
-      /* Check for truncation of the string */
-      if (nchars >= buff_size)
-      {
-        /* String was truncated: try again with a larger buffer */
-        retry = true;
-        buff_size = nchars + 1;
-      }
-      else
-      {
-        /* No truncation: set the new string length and setup undo state */
-        stringbuffer_finish_append(sb, nchars);
-      }
-    }
-  }
-  while (retry);
-
-  return e;
-}
-
-/* ----------------------------------------------------------------------- */
-
 static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data)
 {
   assert(scan_data != NULL);
@@ -465,11 +420,10 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
   }
   DirIterator *const iterator = &*scan_data->iterator;
 
-  stringbuffer_truncate(&scan_data->load_path, 0);
+  strb_empty(scan_data->load_path.buf);
 
-  _Optional const _kernel_oserror *e = append_to_string_buffer(&scan_data->load_path,
-                              iterator,
-                              diriterator_get_object_path_name);
+  _Optional const _kernel_oserror *e = diriterator_get_object_path_name_sb(
+    iterator, scan_data->load_path.buf);
 
   ScanStatus new_phase = ScanStatus_NextObject;
   if (e == NULL)
@@ -491,10 +445,8 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
           skip = false;
 
           /* Remove the previous sub-path (does nothing if already undone) */
-          stringbuffer_undo(&scan_data->save_path);
-          e = append_to_string_buffer(&scan_data->save_path,
-                                      iterator,
-                                      diriterator_get_object_sub_path_name);
+          strb_delto(scan_data->save_path.buf, scan_data->save_root_len);
+          e = diriterator_get_object_sub_path_name_sb(iterator, scan_data->save_path.buf);
         }
 
         if (!e)
@@ -507,7 +459,7 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
       case ObjectType_Directory: /* Object is directory - go down a level */
       {
         update_window(scan_data, "ScanTOpen",
-                      stringbuffer_get_pointer(&scan_data->load_path));
+                      strb_ptr(scan_data->load_path.buf));
         skip = false;
         break;
       }
@@ -517,7 +469,7 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
     {
       /* File of no interest */
       update_window(scan_data, "ScanTIgnore",
-                    stringbuffer_get_pointer(&scan_data->load_path));
+                    strb_ptr(scan_data->load_path.buf));
     }
   }
 
@@ -535,7 +487,7 @@ static _Optional const _kernel_oserror *scan_load_file(ScanData *const scan_data
   assert(scan_data != NULL);
   assert(time_up != NULL);
 
-  char * const path = stringbuffer_get_pointer(&scan_data->load_path);
+  char * const path = strb_ptr(scan_data->load_path.buf);
 
   if (scan_data->file_op == NULL)
   {
@@ -607,7 +559,7 @@ static _Optional const _kernel_oserror *scan_save_file(ScanData *const scan_data
   assert(scan_data != NULL);
   assert(time_up != NULL);
 
-  char * const path = stringbuffer_get_pointer(&scan_data->save_path);
+  char * const path = strb_ptr(scan_data->save_path.buf);
 
   if (scan_data->file_op == NULL)
   {
@@ -716,8 +668,8 @@ static void scan_finished(ScanData *const scan_data)
     if (scan_data->buffer != NULL)
       flex_free(&scan_data->buffer);
 
-    stringbuffer_destroy(&scan_data->load_path);
-    stringbuffer_destroy(&scan_data->save_path);
+    strb_free(scan_data->load_path.buf);
+    strb_free(scan_data->save_path.buf);
     free(scan_data);
   }
 }
@@ -759,7 +711,7 @@ static SchedulerTime do_scan_idle(void *const handle, SchedulerTime new_time,
         break;
 
       case ScanStatus_MakePath:
-        e = make_path(stringbuffer_get_pointer(&scan_data->save_path),
+        e = make_path(strb_ptr(scan_data->save_path.buf),
                       scan_data->make_path_offset);
         if (e != NULL)
         {
@@ -776,7 +728,7 @@ static SchedulerTime do_scan_idle(void *const handle, SchedulerTime new_time,
         break;
 
       case ScanStatus_SetFileType:
-        e = set_file_type(stringbuffer_get_pointer(&scan_data->save_path),
+        e = set_file_type(strb_cptr(scan_data->save_path.buf),
                           scan_data->compress ? scan_data->comp_type : FileType_Data);
         if (e == NULL)
         {
@@ -995,7 +947,7 @@ static bool examine_root(ScanData * const scan_data, char const *const load_root
       return false;
 
     case ObjectType_File:
-      if (!stringbuffer_append(&scan_data->load_path, load_root, SIZE_MAX))
+      if (strb_puts(scan_data->load_path.buf, load_root))
       {
         RPT_ERR("NoMem");
         return false;
@@ -1004,14 +956,13 @@ static bool examine_root(ScanData * const scan_data, char const *const load_root
       break;
 
     default: /* assume object is accessible like a directory */
-      /* Second append is a deliberate no-op to reset the undo state for the
-         save path string buffer. */
-      if (!stringbuffer_append(&scan_data->save_path, ".", SIZE_MAX) ||
-          !stringbuffer_append(&scan_data->save_path, NULL, 0))
+      if (strb_puts(scan_data->save_path.buf, "."))
       {
         RPT_ERR("NoMem");
         return false;
       }
+      scan_data->save_root_len = strb_tell(scan_data->save_path.buf);
+
       if (E(diriterator_make(&scan_data->iterator,
                              DirIterator_RecurseIntoDirectories,
                              load_root, NULL)))
@@ -1076,6 +1027,8 @@ void Scan_create(char *const load_root, char const *const save_root,
     .file_op = NULL,
     .return_action[0] = '\0',
   };
+  scan_data->load_path.buf = strb_make(&scan_data->load_state, 0);
+  scan_data->save_path.buf = strb_make(&scan_data->save_state, 0);
 
   /* We want to create the root output directory and all of its descendants
      but not any of its ancestors.
@@ -1083,9 +1036,6 @@ void Scan_create(char *const load_root, char const *const save_root,
         makes "RAM::0.$.Landscapes" and any descendants */
   _Optional char const * const last_sep = strrchr(save_root, '.');
   scan_data->make_path_offset = (last_sep == NULL) ? 0 : last_sep - save_root + 1;
-
-  stringbuffer_init(&scan_data->load_path);
-  stringbuffer_init(&scan_data->save_path);
 
   if (!E(toolbox_create_object(0, "Scan", &scan_data->window_id)))
   {
@@ -1099,7 +1049,7 @@ void Scan_create(char *const load_root, char const *const save_root,
           break;
         }
 
-        if (!stringbuffer_append(&scan_data->save_path, save_root, SIZE_MAX))
+        if (strb_puts(scan_data->save_path.buf, save_root))
         {
           RPT_ERR("NoMem");
           break;
@@ -1141,7 +1091,7 @@ void Scan_create(char *const load_root, char const *const save_root,
   }
 
   diriterator_destroy(scan_data->iterator);
-  stringbuffer_destroy(&scan_data->load_path);
-  stringbuffer_destroy(&scan_data->save_path);
+  strb_free(scan_data->load_path.buf);
+  strb_free(scan_data->save_path.buf);
   free(scan_data);
 }

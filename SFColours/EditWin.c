@@ -53,6 +53,7 @@
 #include "Entity2.h"
 #include "Drag.h"
 #include "UserData.h"
+#include "strb.h"
 #include "DeIconise.h"
 #include "Hourglass.h"
 #include "EventExtra.h"
@@ -444,26 +445,25 @@ static bool set_title(ColMapFile *const file)
     sprintf(view_count_str, VIEWS_SUFFIX, view_count);
   }
 
-  StringBuffer title_buffer;
-  stringbuffer_init(&title_buffer);
+  STRB_DECL_ALLOC(title_buffer, 0);
   bool success = false;
 
-  if (!stringbuffer_append_all(&title_buffer, path) ||
+  if (strb_puts(title_buffer, path) ||
       (file->changed_since_save &&
-       !stringbuffer_append_all(&title_buffer, UNSAVED_SUFFIX)) ||
-      !stringbuffer_append_all(&title_buffer, view_count_str))
+       strb_puts(title_buffer, UNSAVED_SUFFIX)) ||
+      strb_puts(title_buffer, view_count_str))
   {
     RPT_ERR("NoMem");
   }
   else
   {
-    char * const title = stringbuffer_get_pointer(&title_buffer);
+    char * const title = strb_ptr(title_buffer);
     if (for_each_view(file, set_title_cb, title) == NULL)
     {
       success = true;
     }
   }
-  stringbuffer_destroy(&title_buffer);
+  strb_free(title_buffer);
   return success;
 }
 
@@ -2151,21 +2151,19 @@ void EditWin_show_parent_dir(EditWin const *const edit_win)
   if (last_dot != NULL)
   {
     const size_t path_len = last_dot - path;
-    StringBuffer command_buffer;
-
-    stringbuffer_init(&command_buffer);
-    if (!stringbuffer_append(&command_buffer, "Filer_OpenDir ", SIZE_MAX) ||
-        !stringbuffer_append(&command_buffer, path, path_len))
+    STRB_DECL_ALLOC(command_buffer, 0);
+    if (strb_puts(command_buffer, "Filer_OpenDir ") ||
+        strb_nputs(command_buffer, path, path_len))
     {
       RPT_ERR("NoMem");
     }
     else
     {
-      if (_kernel_oscli(stringbuffer_get_pointer(&command_buffer)) ==
+      if (_kernel_oscli(strb_cptr(command_buffer)) ==
           _kernel_ERROR)
         ON_ERR_RPT(_kernel_last_oserror());
     }
-    stringbuffer_destroy(&command_buffer);
+    strb_free(command_buffer);
   }
 }
 

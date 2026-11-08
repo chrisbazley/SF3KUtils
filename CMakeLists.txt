@@ -65,3 +65,13 @@ if(WARNINGS_AS_ERRORS AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         endif()
     endforeach()
 endif()
+
+# Apply the existing fault-injection allocator to strb's character storage too.
+if(USE_FORTIFY)
+    target_link_libraries(strb PRIVATE Fortify)
+    if(MSVC)
+        target_compile_options(strb PRIVATE /FIfortify.h)
+    else()
+        target_compile_options(strb PRIVATE -include fortify.h)
+    endif()
+endif()

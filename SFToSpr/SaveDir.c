@@ -43,7 +43,6 @@
 #include "Scan.h"
 #include "SaveDir.h"
 #include "SFTSaveBox.h"
-#include "StringBuff.h"
 
 #ifdef USE_OPTIONAL
 #include "Optional.h"
@@ -171,7 +170,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
     const bool data = (savedir_data->reset_direction == ComponentId_ExtractData_Radio ||
                        savedir_data->reset_direction == ComponentId_SF3000ToSprite_Radio);
 
-    Scan_create(stringbuffer_get_pointer(&savedir_data->super.obj.super.file_name),
+    Scan_create(userdata_get_file_name(&savedir_data->super.obj.super),
                 &*buf, images, data);
   }
   while (0);

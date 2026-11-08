@@ -5,6 +5,9 @@ option(PER_VIEW_SELECT "Keep a separate selection in each editing window" ON)
 
 include(FetchContent)
 
+FetchContent_Declare(strb GIT_REPOSITORY https://github.com/chrisbazley/strb_t.git
+    GIT_TAG d049b77abd5a26a4870db9565c3f190d28f9946b)
+
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
 FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG main)
 FetchContent_Declare(CBDebug GIT_REPOSITORY https://github.com/chrisbazley/CBDebugLib.git GIT_TAG main)
@@ -12,7 +15,7 @@ FetchContent_Declare(CBPseudo GIT_REPOSITORY https://github.com/chrisbazley/CBPs
 FetchContent_Declare(OptionalAcornC GIT_REPOSITORY https://github.com/chrisbazley/OptionalAcornC.git GIT_TAG main)
 FetchContent_Declare(SF3K GIT_REPOSITORY https://github.com/chrisbazley/SF3KLib.git GIT_TAG main)
 
-FetchContent_MakeAvailable(CBUtil CB CBDebug CBPseudo OptionalAcornC SF3K)
+FetchContent_MakeAvailable(strb CBUtil CB CBDebug CBPseudo OptionalAcornC SF3K)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
@@ -62,6 +65,7 @@ file(GLOB PRIVATE_HEADERS "*.h")
 add_library(SFColours ${SOURCES} ${PRIVATE_HEADERS})
 
 target_link_libraries(SFColours PUBLIC
+    strb
     CB
     CBDebug
     CBPseudo

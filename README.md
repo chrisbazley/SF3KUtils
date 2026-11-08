@@ -13,3 +13,8 @@ For native builds, define the preprocessor macro `PER_VIEW_SELECT` to `0`
 or `1`; it defaults to `1` when omitted. CI compiles both modes with GCC
 and the _Optional checker and runs the host core test suites. The RISC OS
 application tests are compiled on hosts but require RISC OS to run.
+
+The experimental string-buffer migration also requires
+[strb_t](https://github.com/chrisbazley/strb_t). CMake fetches a pinned revision;
+RISC OS Make builds need its header and dynamic-allocation library as `C:o.strb`
+or `C:debug.strb`.

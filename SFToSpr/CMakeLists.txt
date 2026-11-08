@@ -4,10 +4,10 @@ project(SFToSpr C)
 include(FetchContent)
 
 FetchContent_Declare(strb GIT_REPOSITORY https://github.com/chrisbazley/strb_t.git
-    GIT_TAG 00291cd9fce181a62e99c1d4ea619681aecdb07d)
+    GIT_TAG af5e658f98240bcb64f35dfa964cb55945f1d703)
 
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
-FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG 60c224287dc5921382f4335bfb8f083809678521)
+FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG a10e0a9ee8dac6fa683745559ba0eb1bc5745b37)
 FetchContent_Declare(CBDebug GIT_REPOSITORY https://github.com/chrisbazley/CBDebugLib.git GIT_TAG main)
 FetchContent_Declare(CBPseudo GIT_REPOSITORY https://github.com/chrisbazley/CBPseudoLib.git GIT_TAG main)
 FetchContent_Declare(OptionalAcornC GIT_REPOSITORY https://github.com/chrisbazley/OptionalAcornC.git GIT_TAG main)

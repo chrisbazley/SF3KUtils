@@ -210,9 +210,7 @@ typedef struct
   unsigned int retry_num_output;
   int retry_position;
   char return_action[MaxActionLen + 1];
-  strbstate_t load_state, save_state;
-  /* The compound literal initialises nil; construct the handles afterwards. */
-  union { char nil; strb_t *buf; } load_path, save_path;
+  strbstate_t load_path, save_path;
   size_t save_root_len;
   char const *real_save_path;
   size_t make_path_offset; /* avoids creating directories that should already exist */
@@ -338,8 +336,8 @@ static void scan_finished(ScanData *const scan_data)
       flex_free(&scan_data->state.out_buf);
     }
 
-    strb_free(scan_data->state.load_path.buf);
-    strb_free(scan_data->state.save_path.buf);
+    strb_free(strb_from(&scan_data->state.load_path));
+    strb_free(strb_from(&scan_data->state.save_path));
 
     free(scan_data);
   }
@@ -581,10 +579,10 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
 
   DirIterator *const iterator = &*scan_data->state.iterator;
 
-  strb_empty(scan_data->state.load_path.buf);
+  strb_empty(strb_from(&scan_data->state.load_path));
 
   _Optional const _kernel_oserror *e = diriterator_get_object_path_name_sb(
-    iterator, scan_data->state.load_path.buf);
+    iterator, strb_from(&scan_data->state.load_path));
 
   ScanStatus new_phase = ScanStatus_NextObject;
   if (e == NULL)
@@ -629,8 +627,8 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
         if (!skip)
         {
           /* Remove the previous sub-path (does nothing if already undone) */
-          strb_delto(scan_data->state.save_path.buf, scan_data->state.save_root_len);
-          e = diriterator_get_object_sub_path_name_sb(iterator, scan_data->state.save_path.buf);
+          strb_delto(strb_from(&scan_data->state.save_path), scan_data->state.save_root_len);
+          e = diriterator_get_object_sub_path_name_sb(iterator, strb_from(&scan_data->state.save_path));
         }
 
         if (!e)
@@ -650,12 +648,12 @@ static _Optional const _kernel_oserror *examine_object(ScanData *const scan_data
     {
       /* File of no interest */
       update_window(scan_data, "ScanTIgnore",
-                    strb_ptr(scan_data->state.load_path.buf));
+                    strb_ptr(strb_from(&scan_data->state.load_path)));
     }
     else
     {
       update_window(scan_data, "ScanTOpen",
-                    strb_ptr(scan_data->state.load_path.buf));
+                    strb_ptr(strb_from(&scan_data->state.load_path)));
     }
   }
 
@@ -692,8 +690,8 @@ static _Optional const _kernel_oserror *scan_error(SFError err, ScanData *const 
     }
   }
 
-  return conv_error(err, strb_cptr(scan_data->state.load_path.buf),
-                         strb_cptr(scan_data->state.save_path.buf));
+  return conv_error(err, strb_cptr(strb_fromc(&scan_data->state.load_path)),
+                         strb_cptr(strb_fromc(&scan_data->state.save_path)));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -703,7 +701,7 @@ static _Optional const _kernel_oserror *open_input(ScanData *const scan_data)
   assert(scan_data != NULL);
   assert(!scan_data->state.in);
   scan_data->state.in = fopen_inc(
-    strb_cptr(scan_data->state.load_path.buf), "rb");
+    strb_cptr(strb_fromc(&scan_data->state.load_path)), "rb");
 
   SFError err = SFError_OK;
   if (!scan_data->state.in)
@@ -878,7 +876,7 @@ static _Optional const _kernel_oserror *open_output(ScanData *const scan_data)
   assert(!scan_data->state.out);
 
   SFError err = SFError_OK;
-  scan_data->state.out = fopen_inc(strb_cptr(scan_data->state.save_path.buf), "wb");
+  scan_data->state.out = fopen_inc(strb_cptr(strb_fromc(&scan_data->state.save_path)), "wb");
 
   if (!scan_data->state.out)
   {
@@ -933,7 +931,7 @@ static _Optional const _kernel_oserror *start_convert(ScanData *const scan_data)
 {
   assert(scan_data != NULL);
   update_window(scan_data, "ScanTConvert",
-                strb_ptr(scan_data->state.load_path.buf));
+                strb_ptr(strb_from(&scan_data->state.load_path)));
 
   SFError err = SFError_OK;
 
@@ -1242,7 +1240,7 @@ static SchedulerTime do_scan_idle(void *handle, SchedulerTime new_time,
         break;
 
       case ScanStatus_MakePath:
-        e = make_path(strb_ptr(scan_data->state.save_path.buf),
+        e = make_path(strb_ptr(strb_from(&scan_data->state.save_path)),
                       scan_data->state.make_path_offset);
         if (e != NULL)
         {
@@ -1295,7 +1293,7 @@ static SchedulerTime do_scan_idle(void *handle, SchedulerTime new_time,
         break;
 
       case ScanStatus_SetFileType:
-        e = set_file_type(strb_cptr(scan_data->state.save_path.buf),
+        e = set_file_type(strb_cptr(strb_fromc(&scan_data->state.save_path)),
                           scan_data->state.output_type);
         if (e == NULL)
         {
@@ -1563,8 +1561,8 @@ void Scan_create(char *const load_root, const char *const save_root,
     .real_save_path = "",
     .replace_input = !stricmp(load_root, save_root),
   };
-  scan_data->state.load_path.buf = strb_make(&scan_data->state.load_state, 0);
-  scan_data->state.save_path.buf = strb_make(&scan_data->state.save_state, 0);
+  strb_make(&scan_data->state.load_path, 0);
+  strb_make(&scan_data->state.save_path, 0);
 
   /* We want to create the root output directory and all of its descendants
      but not any of its ancestors.
@@ -1584,14 +1582,14 @@ void Scan_create(char *const load_root, const char *const save_root,
         {
           break;
         }
-        if (strb_puts(scan_data->state.save_path.buf, save_root) ||
-            strb_puts(scan_data->state.save_path.buf, "."))
+        if (strb_puts(strb_from(&scan_data->state.save_path), save_root) ||
+            strb_puts(strb_from(&scan_data->state.save_path), "."))
         {
           RPT_ERR("NoMem");
           break;
         }
 
-        scan_data->state.save_root_len = strb_tell(scan_data->state.save_path.buf);
+        scan_data->state.save_root_len = strb_tell(strb_from(&scan_data->state.save_path));
 
         if (E(diriterator_make(&scan_data->state.iterator,
                                 DirIterator_RecurseIntoDirectories,
@@ -1629,7 +1627,7 @@ void Scan_create(char *const load_root, const char *const save_root,
   }
 
   diriterator_destroy(scan_data->state.iterator);
-  strb_free(scan_data->state.load_path.buf);
-  strb_free(scan_data->state.save_path.buf);
+  strb_free(strb_from(&scan_data->state.load_path));
+  strb_free(strb_from(&scan_data->state.save_path));
   free(scan_data);
 }

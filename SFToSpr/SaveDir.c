@@ -19,6 +19,8 @@
  */
 
 /* ANSI library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include <assert.h>
 #include "stdlib.h"
 #include <stdbool.h>
@@ -140,7 +142,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
                                 &savedir_data->reset_direction)))
       break;
 
-    if (E(canonicalise_sb(buf, NULL, NULL, sastfe->filename)))
+    if (E(os_fscontrol_canonicalise_sb(buf, NULL, NULL, sastfe->filename)))
       break;
 
     /* For the moment we just create the root directory */

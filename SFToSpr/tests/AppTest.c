@@ -20,6 +20,8 @@
 #undef NDEBUG
 
 /* ANSI library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -45,7 +47,6 @@
 #include "GKeyDecomp.h"
 #include "SFFormats.h"
 #include "OSFile.h"
-#include "OSFSCntrl.h"
 #include "PseudoWimp.h"
 #include "PseudoTbox.h"
 #include "PseudoEvnt.h"
@@ -1099,7 +1100,7 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 static bool path_is_in_userdata(char *filename)
 {
   STRB_DECL_ALLOC(buffer, 0);
-  assert_no_error(canonicalise_sb(buffer, NULL, NULL, filename));
+  assert_no_error(os_fscontrol_canonicalise_sb(buffer, NULL, NULL, filename));
 
   _Optional UserData *window = userdata_find_by_file_name(strb_cptr(buffer));
   strb_free(buffer);

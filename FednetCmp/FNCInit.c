@@ -19,6 +19,8 @@
  */
 
 /* ANSI library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include <assert.h>
 #include "stdlib.h"
 #include <string.h>
@@ -155,7 +157,7 @@ static int data_open_msg(WimpMessage *const message, void *const handle)
                            NULL)))
   {
     STRB_DECL_ALLOC(canonical_file_path, 0);
-    if (!E(canonicalise_sb(canonical_file_path,
+    if (!E(os_fscontrol_canonicalise_sb(canonical_file_path,
                         NULL,
                         NULL,
                         message->data.data_open.path_name)))

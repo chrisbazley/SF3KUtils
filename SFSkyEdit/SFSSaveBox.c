@@ -19,6 +19,8 @@
  */
 
 /* ISO library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include "stdlib.h"
 #include <assert.h>
 
@@ -158,7 +160,7 @@ static int save_completed(int const event_code, ToolboxEvent *const event,
     void *client_handle;
     STRB_DECL_ALLOC(buf, 0);
     if (!E(toolbox_get_client_handle(0, id_block->ancestor_id, &client_handle)) &&
-        !E(canonicalise_sb(buf, NULL, NULL, sasc->filename)))
+        !E(os_fscontrol_canonicalise_sb(buf, NULL, NULL, sasc->filename)))
     {
       /* Mark data as saved */
       EditWin_file_saved(client_handle, strb_ptr(buf));

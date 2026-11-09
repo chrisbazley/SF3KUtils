@@ -19,6 +19,8 @@
  */
 
 /* ANSI library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include "stdlib.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -311,7 +313,7 @@ static int dataload_message(WimpMessage *const message, void *const handle)
   {
     /* Canonicalise the file path to be loaded */
     STRB_DECL_ALLOC(canonical_path, 0);
-    if (!E(canonicalise_sb(canonical_path, NULL, NULL,
+    if (!E(os_fscontrol_canonicalise_sb(canonical_path, NULL, NULL,
                         message->data.data_load.leaf_name)))
     {
       /* If there is already a save box for data loaded from this file path then

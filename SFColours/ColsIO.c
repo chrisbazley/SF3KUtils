@@ -19,6 +19,8 @@
  */
 
 /* ISO library files */
+#include "strb.h"
+#include "OSFSCntrl.h"
 #include "stdlib.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -1537,7 +1539,7 @@ void IO_load_file(int const file_type, char const *const load_path)
   {
     RPT_ERR("BadFileType");
   }
-  else if (!E(canonicalise_sb(canonical_path, NULL, NULL, load_path)))
+  else if (!E(os_fscontrol_canonicalise_sb(canonical_path, NULL, NULL, load_path)))
   {
     /* Check for whether this file is already being edited */
     _Optional ColMapFile *const file = ColMapFile_find_by_file_name(strb_cptr(canonical_path));

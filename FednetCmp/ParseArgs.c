@@ -135,13 +135,10 @@ void parse_arguments(int argc, char *argv[])
         else
         {
           /* Start a multi-tasking decompression operation */
-          _Optional char *canonical_path = NULL;
-          EF(canonicalise(&canonical_path, NULL, NULL, argv[i]));
-          if (canonical_path)
-          {
-            Scan_create(&*canonical_path, &*canonical_path, false, 0);
-            free(canonical_path);
-          }
+          STRB_DECL_ALLOC(canonical_path, 0);
+          EF(canonicalise_sb(canonical_path, NULL, NULL, argv[i]));
+          Scan_create(strb_ptr(canonical_path), strb_cptr(canonical_path), false, 0);
+          strb_free(canonical_path);
         }
       }
     }

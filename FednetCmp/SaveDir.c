@@ -171,7 +171,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveDir *savedir_data = handle;
   unsigned int flags = 0;
-  _Optional char *buf = NULL;
+  STRB_DECL_ALLOC(buf, 0);
 
   assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
@@ -198,8 +198,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
                                  NULL)))
       break;
 
-    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)) ||
-        !buf)
+    if (E(canonicalise_sb(buf, NULL, NULL, sastfe->filename)))
       break;
 
     /* For the moment we just create the root directory */
@@ -229,13 +228,13 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
       sscanf(&*bracket, "(&%x)", &hex_type);
     }
     Scan_create(userdata_get_file_name(&savedir_data->super.obj.super),
-                &*buf,
+                strb_cptr(buf),
                 savedir_data->reset_direction == ComponentId_Compress_Radio,
                 hex_type);
   }
   while (0);
 
-  free(buf);
+  strb_free(buf);
   saveas_file_save_completed(flags, id_block->self_id, sastfe->filename);
 
   /* Hide the dialogue box if saving was successful. ROOL's version of SaveAs

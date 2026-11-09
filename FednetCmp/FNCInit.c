@@ -154,16 +154,15 @@ static int data_open_msg(WimpMessage *const message, void *const handle)
                            0,
                            NULL)))
   {
-    _Optional char *canonical_file_path = NULL;
-    if (!E(canonicalise(&canonical_file_path,
+    STRB_DECL_ALLOC(canonical_file_path, 0);
+    if (!E(canonicalise_sb(canonical_file_path,
                         NULL,
                         NULL,
-                        message->data.data_open.path_name)) &&
-        canonical_file_path)
+                        message->data.data_open.path_name)))
     {
-      Scan_create(&*canonical_file_path, &*canonical_file_path, false, 0);
-      free(canonical_file_path);
+      Scan_create(strb_ptr(canonical_file_path), strb_cptr(canonical_file_path), false, 0);
     }
+    strb_free(canonical_file_path);
   }
 
   return 1; /* claim message */

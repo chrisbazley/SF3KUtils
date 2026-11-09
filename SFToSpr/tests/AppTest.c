@@ -1098,12 +1098,11 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional char *buffer = NULL;
-  assert_no_error(canonicalise(&buffer, NULL, NULL, filename));
-  assert(buffer != NULL);
+  STRB_DECL_ALLOC(buffer, 0);
+  assert_no_error(canonicalise_sb(buffer, NULL, NULL, filename));
 
-  _Optional UserData *window = userdata_find_by_file_name(&*buffer);
-  free(&*buffer);
+  _Optional UserData *window = userdata_find_by_file_name(strb_cptr(buffer));
+  strb_free(buffer);
   return window != NULL;
 }
 

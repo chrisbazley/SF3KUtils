@@ -1273,22 +1273,21 @@ void IO_load_file(int const file_type, char const *const load_path)
 {
   assert(load_path != NULL);
   DEBUGF("Request to load file '%s' of type &%X\n", load_path, file_type);
-  _Optional char *canonical_path = NULL;
+  STRB_DECL_ALLOC(canonical_path, 0);
 
   /* Check whether this file type is supported */
   if (!in_file_types(file_type, import_file_types))
   {
     RPT_ERR("BadFileType");
   }
-  else if (!E(canonicalise(&canonical_path, NULL, NULL, load_path)) &&
-           canonical_path)
+  else if (!E(canonicalise_sb(canonical_path, NULL, NULL, load_path)))
   {
     /* Check for whether this file is already being edited */
-    _Optional SkyFile *const file = SkyFile_find_by_file_name(&*canonical_path);
+    _Optional SkyFile *const file = SkyFile_find_by_file_name(strb_cptr(canonical_path));
     if (file == NULL)
     {
       bool is_safe = true;
-      (void)loader3_load_file(&*canonical_path, file_type,
+      (void)loader3_load_file(strb_cptr(canonical_path), file_type,
                               read_file, load_fail, &is_safe);
     }
     else
@@ -1297,8 +1296,8 @@ void IO_load_file(int const file_type, char const *const load_path)
       DEBUGF("This file is already being edited (%p)\n", (void *)file);
       SkyFile_show(&*file);
     }
-    free(canonical_path);
   }
+  strb_free(canonical_path);
 }
 
 /* ----------------------------------------------------------------------- */

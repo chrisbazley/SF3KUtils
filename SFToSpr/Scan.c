@@ -38,6 +38,7 @@
 
 /* My library files */
 #include "SFFormats.h"
+#include "TboxExtra.h"
 #include "Err.h"
 #include "msgtrans.h"
 #include "ViewsMenu.h"
@@ -514,13 +515,8 @@ static void update_window(const ScanData *const scan_data, const char *action, c
   assert(file_path != NULL);
 
   char current_action[MaxActionLen + 1];
-  ON_ERR_RPT(button_get_value(
-      0,
-      scan_data->state.window_id,
-      ComponentId_Activity_Button,
-      current_action,
-      sizeof(current_action),
-      NULL));
+  ON_ERR_RPT(button_get_value_sb(0, scan_data->state.window_id,
+    ComponentId_Activity_Button, STRB_TMP_USE(current_action)));
 
   char * const new_action = msgs_lookup(action);
   if (strcmp(current_action, new_action) != 0)
@@ -1450,13 +1446,8 @@ static int actionbutton_selected(const int event_code, ToolboxEvent *const event
         else
         {
           /* Pause the operation */
-          ON_ERR_RPT(button_get_value(
-                     0,
-                     scan_data->state.window_id,
-                     ComponentId_Activity_Button,
-                     scan_data->state.return_action,
-                     sizeof(scan_data->state.return_action),
-                     NULL));
+          ON_ERR_RPT(button_get_value_sb(0, scan_data->state.window_id,
+            ComponentId_Activity_Button, STRB_TMP_USE(scan_data->state.return_action)));
 
           display_continue(scan_data);
 

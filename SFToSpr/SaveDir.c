@@ -124,7 +124,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
   SaveAsSaveToFileEvent * const sastfe = (SaveAsSaveToFileEvent *)event;
   SaveDir *savedir_data = handle;
   unsigned int flags = 0;
-  _Optional char *buf = NULL;
+  STRB_DECL_ALLOC(buf, 0);
 
   assert(event_code == SaveAs_SaveToFile);
   NOT_USED(event_code);
@@ -140,7 +140,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
                                 &savedir_data->reset_direction)))
       break;
 
-    if (E(canonicalise(&buf, NULL, NULL, sastfe->filename)) || !buf)
+    if (E(canonicalise_sb(buf, NULL, NULL, sastfe->filename)))
       break;
 
     /* For the moment we just create the root directory */
@@ -171,11 +171,11 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
                        savedir_data->reset_direction == ComponentId_SF3000ToSprite_Radio);
 
     Scan_create(userdata_get_file_name(&savedir_data->super.obj.super),
-                &*buf, images, data);
+                strb_cptr(buf), images, data);
   }
   while (0);
 
-  free(buf);
+  strb_free(buf);
   saveas_file_save_completed(flags, id_block->self_id, sastfe->filename);
   return 1; /* claim event */
 }

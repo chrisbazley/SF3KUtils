@@ -145,13 +145,13 @@ static int save_completed(int const event_code, ToolboxEvent *const event,
       !TEST_BITS(sasc->hdr.flags, SaveAs_SelectionSaved))
   {
     void *client_handle;
-    _Optional char *buf = NULL;
+    STRB_DECL_ALLOC(buf, 0);
     if (!E(toolbox_get_client_handle(0, id_block->ancestor_id, &client_handle)) &&
-        !E(canonicalise(&buf, NULL, NULL, sasc->filename)))
+        !E(canonicalise_sb(buf, NULL, NULL, sasc->filename)))
     {
       /* Mark data as saved */
-      EditWin_file_saved(client_handle, buf);
-      free(buf);
+      EditWin_file_saved(client_handle, strb_ptr(buf));
+      strb_free(buf);
     }
   }
 

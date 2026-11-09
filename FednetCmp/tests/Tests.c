@@ -309,12 +309,11 @@ static void init_id_block(IdBlock *block, ObjectId id, ComponentId component)
 
 static bool path_is_in_userdata(char *filename)
 {
-  _Optional char *path = NULL;
+  STRB_DECL_ALLOC(path, 0);
 
-  assert_no_error(canonicalise(&path, NULL, NULL, filename));
-  assert(path);
-  _Optional UserData *savebox = userdata_find_by_file_name(&*path);
-  free(path);
+  assert_no_error(canonicalise_sb(path, NULL, NULL, filename));
+  _Optional UserData *savebox = userdata_find_by_file_name(strb_cptr(path));
+  strb_free(path);
   return savebox != NULL;
 }
 

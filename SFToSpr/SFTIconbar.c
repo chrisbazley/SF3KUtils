@@ -310,15 +310,14 @@ static int dataload_message(WimpMessage *const message, void *const handle)
       message->data.data_load.file_type == FileType_Application)
   {
     /* Canonicalise the file path to be loaded */
-    _Optional char *canonical_path = NULL;
-    if (!E(canonicalise(&canonical_path, NULL, NULL,
-                        message->data.data_load.leaf_name)) &&
-        canonical_path)
+    STRB_DECL_ALLOC(canonical_path, 0);
+    if (!E(canonicalise_sb(canonical_path, NULL, NULL,
+                        message->data.data_load.leaf_name)))
     {
       /* If there is already a save box for data loaded from this file path then
          just show that */
       _Optional UserData *const item =
-          userdata_find_by_file_name(&*canonical_path);
+          userdata_find_by_file_name(strb_cptr(canonical_path));
 
       _Optional const SFTSaveBox *const existing_dbox =
           item ? CONTAINER_OF(item, SFTSaveBox, super) : NULL;
@@ -332,13 +331,13 @@ static int dataload_message(WimpMessage *const message, void *const handle)
           if (!E(wimp_get_pointer_info(&pointerinfo)))
           {
             success = new_savebox(
-              SaveDir_create(&*canonical_path, pointerinfo.x, savebox_deleted));
+              SaveDir_create(strb_cptr(canonical_path), pointerinfo.x, savebox_deleted));
           }
         }
         else
         {
           static bool is_safe = true;
-          success = loader3_load_file(&*canonical_path,
+          success = loader3_load_file(strb_cptr(canonical_path),
                                       message->data.data_load.file_type,
                                       read_file, load_failed, &is_safe);
         }
@@ -350,8 +349,8 @@ static int dataload_message(WimpMessage *const message, void *const handle)
         SFTSaveBox_show(&*existing_dbox);
         success = true;
       }
-      free(canonical_path);
     }
+    strb_free(canonical_path);
   }
   else
   {

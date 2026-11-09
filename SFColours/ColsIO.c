@@ -1556,7 +1556,7 @@ void IO_load_file(int const file_type, char const *const load_path)
       ColMapFile_show(&*file);
     }
   }
-  strb_free(canonical_path);
+  strb_destroy(canonical_path);
 }
 
 /* ----------------------------------------------------------------------- */

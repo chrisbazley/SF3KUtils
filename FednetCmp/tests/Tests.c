@@ -314,7 +314,7 @@ static bool path_is_in_userdata(char *filename)
 
   assert_no_error(os_fscontrol_canonicalise_sb(path, NULL, NULL, filename));
   _Optional UserData *savebox = userdata_find_by_file_name(strb_cptr(path));
-  strb_free(path);
+  strb_destroy(path);
   return savebox != NULL;
 }
 

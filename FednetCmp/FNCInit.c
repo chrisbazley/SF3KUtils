@@ -164,7 +164,7 @@ static int data_open_msg(WimpMessage *const message, void *const handle)
     {
       Scan_create(strb_ptr(canonical_file_path), strb_cptr(canonical_file_path), false, 0);
     }
-    strb_free(canonical_file_path);
+    strb_destroy(canonical_file_path);
   }
 
   return 1; /* claim message */

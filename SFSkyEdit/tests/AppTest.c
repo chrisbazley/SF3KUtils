@@ -606,7 +606,7 @@ static bool path_is_in_userdata(char *filename)
   assert_no_error(os_fscontrol_canonicalise_sb(buffer, NULL, NULL, filename));
 
   _Optional UserData *window = userdata_find_by_file_name(strb_cptr(buffer));
-  strb_free(buffer);
+  strb_destroy(buffer);
   return window != NULL;
 }
 

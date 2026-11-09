@@ -194,7 +194,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 
 static void free_file_name(void)
 {
-  strb_free(ss_file_name);
+  strb_destroy(ss_file_name);
 }
 
 /* ----------------------------------------------------------------------- */

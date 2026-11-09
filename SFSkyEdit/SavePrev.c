@@ -31,6 +31,8 @@
 #include "event.h"
 
 /* My library files */
+#include "TboxExtra.h"
+#include "strb.h"
 #include "Err.h"
 #include "Macros.h"
 #include "SprFormats.h"
@@ -58,7 +60,7 @@ enum
 
 ObjectId SavePrev_sharedid = NULL_ObjectId;
 
-static _Optional char *ss_file_name = NULL;
+static _Optional strb_t *ss_file_name = NULL;
 
 /* ----------------------------------------------------------------------- */
 /*                         Private functions                               */
@@ -74,7 +76,7 @@ static int about_to_be_shown(int const event_code, ToolboxEvent *const event,
 
   /* Set the suggested file path */
   if (ss_file_name != NULL)
-    ON_ERR_RPT(saveas_set_file_name(0, id_block->self_id, &*ss_file_name));
+    ON_ERR_RPT(saveas_set_file_name(0, id_block->self_id, strb_cptr(&*ss_file_name)));
 
   /* Set the estimated (actual) file size */
   void *client_handle;
@@ -192,7 +194,7 @@ static int fill_buffer(int const event_code, ToolboxEvent *const event,
 
 static void free_file_name(void)
 {
-  free(ss_file_name);
+  strb_free(ss_file_name);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -220,7 +222,6 @@ void SavePrev_initialise(ObjectId const id)
       fill_buffer
     }
   };
-  int len;
 
   /* Register Toolbox event handlers */
   for (size_t i = 0; i < ARRAY_SIZE(tbox_handlers); i++)
@@ -235,14 +236,13 @@ void SavePrev_initialise(ObjectId const id)
 
   /* Read default leafname */
   atexit(free_file_name);
-  EF(saveas_get_file_name(0, id, NULL, 0, &len));
-  ss_file_name = malloc(len);
+  ss_file_name = strb_alloc(0);
   if (ss_file_name == NULL)
   {
     err_complain_fatal(DUMMY_ERRNO, msgs_lookup("NoMem"));
   }
   else
   {
-    EF(saveas_get_file_name(0, id, &*ss_file_name, len, NULL));
+    EF(saveas_get_file_name_sb(0, id, &*ss_file_name));
   }
 }

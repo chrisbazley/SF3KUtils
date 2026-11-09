@@ -140,7 +140,7 @@ void parse_arguments(int argc, char *argv[])
           STRB_DECL_ALLOC(canonical_path, 0);
           EF(os_fscontrol_canonicalise_sb(canonical_path, NULL, NULL, argv[i]));
           Scan_create(strb_ptr(canonical_path), strb_cptr(canonical_path), false, 0);
-          strb_free(canonical_path);
+          strb_destroy(canonical_path);
         }
       }
     }

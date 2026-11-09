@@ -177,7 +177,7 @@ static int save_to_file(const int event_code, ToolboxEvent *const event,
   }
   while (0);
 
-  strb_free(buf);
+  strb_destroy(buf);
   saveas_file_save_completed(flags, id_block->self_id, sastfe->filename);
   return 1; /* claim event */
 }

@@ -463,7 +463,7 @@ static bool set_title(ColMapFile *const file)
       success = true;
     }
   }
-  strb_free(title_buffer);
+  strb_destroy(title_buffer);
   return success;
 }
 
@@ -2163,7 +2163,7 @@ void EditWin_show_parent_dir(EditWin const *const edit_win)
           _kernel_ERROR)
         ON_ERR_RPT(_kernel_last_oserror());
     }
-    strb_free(command_buffer);
+    strb_destroy(command_buffer);
   }
 }
 

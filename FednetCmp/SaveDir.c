@@ -236,7 +236,7 @@ static int save_to_file(int const event_code, ToolboxEvent *const event,
   }
   while (0);
 
-  strb_free(buf);
+  strb_destroy(buf);
   saveas_file_save_completed(flags, id_block->self_id, sastfe->filename);
 
   /* Hide the dialogue box if saving was successful. ROOL's version of SaveAs

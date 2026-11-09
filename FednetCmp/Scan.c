@@ -662,8 +662,8 @@ static void scan_finished(ScanData *const scan_data)
     if (scan_data->buffer != NULL)
       flex_free(&scan_data->buffer);
 
-    strb_free(&scan_data->load_path);
-    strb_free(&scan_data->save_path);
+    strb_destroy(&scan_data->load_path);
+    strb_destroy(&scan_data->save_path);
     free(scan_data);
   }
 }
@@ -1078,7 +1078,7 @@ void Scan_create(char *const load_root, char const *const save_root,
   }
 
   diriterator_destroy(scan_data->iterator);
-  strb_free(&scan_data->load_path);
-  strb_free(&scan_data->save_path);
+  strb_destroy(&scan_data->load_path);
+  strb_destroy(&scan_data->save_path);
   free(scan_data);
 }

@@ -164,7 +164,7 @@ static int save_completed(int const event_code, ToolboxEvent *const event,
     {
       /* Mark data as saved */
       EditWin_file_saved(client_handle, strb_ptr(buf));
-      strb_free(buf);
+      strb_destroy(buf);
     }
   }
 

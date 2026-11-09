@@ -352,7 +352,7 @@ static int dataload_message(WimpMessage *const message, void *const handle)
         success = true;
       }
     }
-    strb_free(canonical_path);
+    strb_destroy(canonical_path);
   }
   else
   {

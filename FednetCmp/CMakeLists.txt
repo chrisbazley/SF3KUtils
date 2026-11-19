@@ -4,14 +4,14 @@ project(FednetCmp C)
 include(FetchContent)
 
 FetchContent_Declare(strb GIT_REPOSITORY https://github.com/chrisbazley/strb_t.git
-    GIT_TAG 3b1c87fae18a4e22dde780def9e7e245b98d3569)
+    GIT_TAG fbc331ddc4a53b666e771787711a8e7afb24a3cf)
 
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
 FetchContent_Declare(CBOS GIT_REPOSITORY https://github.com/chrisbazley/CBOSLib.git
-    GIT_TAG 419f65f255f762306ac6e3a8149daa5afb154051)
-FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG 8e171106466806c639f42022afded59467310215)
+    GIT_TAG 174943e76b91198f2789cd1cb9bafe5dfe3b361a)
+FetchContent_Declare(CB GIT_REPOSITORY https://github.com/chrisbazley/CBLibrary.git GIT_TAG 35aec81e18a0cda776055de5fbab35948cf06bf7)
 FetchContent_Declare(CBDebug GIT_REPOSITORY https://github.com/chrisbazley/CBDebugLib.git GIT_TAG main)
-FetchContent_Declare(CBPseudo GIT_REPOSITORY https://github.com/chrisbazley/CBPseudoLib.git GIT_TAG 9218417c09745b50ca49ea5bc9653a5e5c2097ee)
+FetchContent_Declare(CBPseudo GIT_REPOSITORY https://github.com/chrisbazley/CBPseudoLib.git GIT_TAG 00b1e0d4fe7430c827659b4260accfe16aab9b52)
 FetchContent_Declare(OptionalAcornC GIT_REPOSITORY https://github.com/chrisbazley/OptionalAcornC.git GIT_TAG main)
 FetchContent_Declare(SF3K GIT_REPOSITORY https://github.com/chrisbazley/SF3KLib.git GIT_TAG main)
 

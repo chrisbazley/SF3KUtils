@@ -22,7 +22,7 @@ set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
 
 if(MSVC)
     # MSVC equivalent of -Wall -Wextra is /W4
-    add_compile_options(/W4 /wd4200 /wd4996 /wd4130)
+    add_compile_options(/W4 /wd4200 /wd4996 /wd4130 /wd4815)
 else()
     # For GCC and Clang
     add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)

@@ -82,7 +82,10 @@ typedef struct
   } super;
   int        wimp_handle;
   void      *planets_data; /* flex block */
-  void      *sprites; /* flex block */
+  union {
+    char nil;
+    void *ptr;
+  } sprites; /* flex block */
   PlanetSpritesContext context;
   _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
@@ -221,7 +224,7 @@ static bool write_planets(Writer *const writer, void *const handle,
   }
 
   Reader reader;
-  reader_flex_init(&reader, &savefile_data->sprites);
+  reader_flex_init(&reader, &savefile_data->sprites.ptr);
 
   SFError err = sprites_to_planets(&reader, &gkwriter, &savefile_data->context);
   long int const out_bytes = writer_destroy(&gkwriter);
@@ -384,10 +387,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
 
-  if (savefile_data->sprites)
-  {
-    flex_free(&savefile_data->sprites);
-  }
+  flex_free(&savefile_data->sprites.ptr);
 
   if (savefile_data->planets_data)
   {
@@ -433,7 +433,6 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
 
   *savefile_data = (SavePlanets){
     .planets_data = (void *)NULL,
-    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
@@ -515,7 +514,7 @@ _Optional SFTSaveBox *SavePlanets_create(char const *const save_path, int const 
             break;
           }
 
-          if (!flex_reanchor(&savefile_data->sprites, sprites))
+          if (!flex_reanchor(&savefile_data->sprites.ptr, sprites))
           {
             assert("flex_reanchor failed!" == NULL);
             break;

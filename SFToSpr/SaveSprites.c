@@ -75,7 +75,10 @@ typedef struct
     char nil;
     SFTSaveBox obj;
   } super;
-  void      *input_buffer; /* flex_block */
+  union {
+    char nil;
+    void *ptr;
+  } input_buffer; /* flex_block */
   void      *output_buffer; /* flex block */
   int        reset_radio;
   int        input_file_type;
@@ -100,7 +103,7 @@ static void destroy_savebox(SFTSaveBox *savebox)
   if (savefile_data->output_buffer != NULL)
     flex_free(&savefile_data->output_buffer);
 
-  flex_free(&savefile_data->input_buffer);
+  flex_free(&savefile_data->input_buffer.ptr);
 
   /* Notify the creator of this dialogue box that it was deleted */
   if (savefile_data->deleted_cb)
@@ -119,7 +122,7 @@ static int get_size(SaveSprites *const savefile_data, ConverterFn *const fn)
   assert(fn);
 
   Reader reader;
-  reader_flex_init(&reader, &savefile_data->input_buffer);
+  reader_flex_init(&reader, &savefile_data->input_buffer.ptr);
 
   Reader gkreader;
   bool success = reader_gkey_init_from(&gkreader, FednetHistoryLog2, &reader);
@@ -281,7 +284,7 @@ static bool write_sprite_or_csv(Writer *const writer, void *const handle,
   }
 
   Reader reader;
-  reader_flex_init(&reader, &savefile_data->input_buffer);
+  reader_flex_init(&reader, &savefile_data->input_buffer.ptr);
 
   SFError err = SFError_NoMem;
   Reader gkreader;
@@ -450,7 +453,6 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
   }
 
   *savefile_data = (SaveSprites){
-    .input_buffer = (void *)NULL,
     .output_buffer = (void *)NULL,
     .input_file_type = input_file_type,
     .deleted_cb = deleted_cb,
@@ -491,7 +493,7 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
                                            &*savefile_data)))
         break;
 
-      if (!flex_reanchor(&savefile_data->input_buffer, buffer))
+      if (!flex_reanchor(&savefile_data->input_buffer.ptr, buffer))
       {
         assert("flex_reanchor failed!" == NULL);
         break;
@@ -499,7 +501,7 @@ _Optional SFTSaveBox *SaveSprites_create(char const *save_path, int x, bool data
 
       if (!change_output(&*savefile_data, savefile_data->reset_radio))
       {
-        if (!flex_reanchor(buffer, &savefile_data->input_buffer))
+        if (!flex_reanchor(buffer, &savefile_data->input_buffer.ptr))
           assert("flex_reanchor failed!" == NULL);
         break;
       }

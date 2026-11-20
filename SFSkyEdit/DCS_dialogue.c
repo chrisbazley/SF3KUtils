@@ -134,7 +134,7 @@ void DCS_initialise(ObjectId id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      (void *)NULL));
+                                      &dbox_id));
   }
 }
 

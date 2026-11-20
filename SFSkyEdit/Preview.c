@@ -166,10 +166,16 @@ struct PreviewData
   bool          toolbars;
   bool          no_scale;
   bool          plot_err;
-  void         *cached_image; /* flex anchor */
+  union {
+    char nil;
+    void *ptr;
+  } cached_image; /* flex anchor */
   void         *export; /* flex anchor */
   SkyFile      *file;
-  void         *stars;    /* flex anchor */
+  union {
+    char nil;
+    void *ptr;
+  } stars;    /* flex anchor */
 };
 
 static bool translate_cols = true;
@@ -296,10 +302,10 @@ void render_scene(const PreviewData *const preview_data)
   nobudge_register(PreExpandHeap);
 
   /* Render sky to image cache at current height */
-  assert(preview_data->cached_image != NULL);
+  assert(preview_data->cached_image.ptr != NULL);
   SpriteHeader *const first_spr =
-    (SpriteHeader *)((char *)preview_data->cached_image +
-    ((SpriteAreaHeader *)preview_data->cached_image)->first);
+    (SpriteHeader *)((char *)preview_data->cached_image.ptr +
+    ((SpriteAreaHeader *)preview_data->cached_image.ptr)->first);
 
   void *const screen = (char *)first_spr + first_spr->image;
 
@@ -311,7 +317,7 @@ void render_scene(const PreviewData *const preview_data)
   SFSky const *const sky = (SFSky *)preview_data->export;
   int star_tint = preview_data->render_height - sky->min_stars_height;
   DEBUGF("Stars tint (based on height) is %d\n", star_tint);
-  const StarData *star = preview_data->stars;
+  const StarData *star = preview_data->stars.ptr;
   assert(star != NULL);
 
   if (star_tint >= 0)
@@ -723,7 +729,7 @@ static int redraw_window(int const event_code, WimpPollBlock *const event,
 
         simple_redraw = handle_redraw_err(
           &preview_data->plot_err,
-          os_sprite_op_plot_scaled_sprite(preview_data->cached_image,
+          os_sprite_op_plot_scaled_sprite(preview_data->cached_image.ptr,
             "cache", botleft_x, botleft_y, SPRITE_ACTION_OVERWRITE,
             scale, colours));
       }
@@ -1215,7 +1221,7 @@ static int misc_tb_event(int const event_code, ToolboxEvent *const event,
     {
       /* Generate a different set of pseudo-random stars */
       nobudge_register(PreExpandHeap);
-      generate_stars(preview_data->stars);
+      generate_stars(preview_data->stars.ptr);
       nobudge_deregister();
 
       render_scene(preview_data);
@@ -1285,9 +1291,7 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
   }
 
   *preview_data = (PreviewData){
-    .cached_image = (void *)NULL,
     .export = (void *)NULL,
-    .stars = (void *)NULL,
     .no_scale = false,
     .have_caret = false,
     .plot_err = false,
@@ -1311,14 +1315,14 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
       {
         /* Allocate memory for a sprite in which to render the sky
            and for stars data */
-        if (!flex_alloc(&preview_data->stars,
+        if (!flex_alloc(&preview_data->stars.ptr,
                         sizeof(StarData) * NStars))
         {
           RPT_ERR("NoMem");
         }
         else
         {
-          if (!flex_alloc(&preview_data->cached_image, sprite_area_size))
+          if (!flex_alloc(&preview_data->cached_image.ptr, sprite_area_size))
           {
             RPT_ERR("NoMem");
           }
@@ -1361,10 +1365,10 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
                 nobudge_register(PreExpandHeap); /* protect cached_image & stars */
 
                 /* Create a sprite in which to render the sky */
-                spritearea_init(preview_data->cached_image, sprite_area_size);
+                spritearea_init(preview_data->cached_image.ptr, sprite_area_size);
 
                 _Optional SpriteHeader *const sprite = spritearea_alloc_spr(
-                  preview_data->cached_image,
+                  preview_data->cached_image.ptr,
                   sizeof(SpriteHeader) + (Screen_Width * Screen_Height));
 
                 if (sprite == NULL)
@@ -1382,7 +1386,7 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
                 sprite->type = Screen_Mode;
 
                 /* Generate a set of pseudo-random stars */
-                generate_stars(preview_data->stars);
+                generate_stars(preview_data->stars.ptr);
 
                 nobudge_deregister();
 
@@ -1402,9 +1406,9 @@ _Optional PreviewData *Preview_create(SkyFile *const file, char const *const tit
                  handlers */
               final_tool_bars(&*preview_data);
             }
-            flex_free(&preview_data->cached_image);
+            flex_free(&preview_data->cached_image.ptr);
           }
-          flex_free(&preview_data->stars);
+          flex_free(&preview_data->stars.ptr);
         }
         (void)event_deregister_message_handler(-1, message_handler,
             &*preview_data);
@@ -1456,16 +1460,10 @@ void Preview_destroy(_Optional PreviewData *const preview_data)
                                               &*preview_data));
 
   /* Free sprite area used for quick rendering */
-  if (preview_data->cached_image)
-  {
-    flex_free(&preview_data->cached_image);
-  }
+  flex_free(&preview_data->cached_image.ptr);
 
   /* Free array of random stars */
-  if (preview_data->stars)
-  {
-    flex_free(&preview_data->stars);
-  }
+  flex_free(&preview_data->stars.ptr);
 
   /* Free file being previewed */
   if (preview_data->export)
@@ -1602,5 +1600,5 @@ int Preview_get_scale(const PreviewData *const preview_data)
 flex_ptr Preview_get_anchor(PreviewData *const preview_data)
 {
   assert(preview_data != NULL);
-  return &preview_data->cached_image;
+  return &preview_data->cached_image.ptr;
 }

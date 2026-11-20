@@ -192,7 +192,7 @@ void SaveFile_initialise(ObjectId id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      (void *)NULL));
+                                      &savebox_sharedid));
   }
   savebox_sharedid = id;
 }

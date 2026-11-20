@@ -107,5 +107,5 @@ void Picker_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Pal256_ColourSelected,
                                     selhandler,
-                                    (void *)NULL));
+                                    &Picker_sharedid));
 }

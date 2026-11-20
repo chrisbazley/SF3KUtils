@@ -229,7 +229,7 @@ void SavePrev_initialise(ObjectId const id)
     EF(event_register_toolbox_handler(id,
                                       tbox_handlers[i].event_code,
                                       tbox_handlers[i].handler,
-                                      (void *)NULL));
+                                      &SavePrev_sharedid));
   }
 
   SavePrev_sharedid = id;

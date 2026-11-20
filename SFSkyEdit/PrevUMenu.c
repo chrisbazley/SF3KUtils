@@ -77,7 +77,7 @@ void PrevUMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     about_to_be_shown,
-                                    (void *)NULL));
+                                    &PrevUMenu_sharedid));
   PrevUMenu_sharedid = id;
 }
 

@@ -184,9 +184,12 @@ static int effect_menu_about_to_be_shown(int const event_code, ToolboxEvent *con
 
 void RootMenu_initialise(ObjectId id)
 {
+  static ObjectId root_menu_id;
+  root_menu_id = id;
+
   /* Register Toolbox event handlers */
   EF(event_register_toolbox_handler(id, Menu_AboutToBeShown,
-    root_menu_about_to_be_shown, (void *)NULL));
+    root_menu_about_to_be_shown, &root_menu_id));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -195,7 +198,7 @@ void EditMenu_initialise(ObjectId id)
 {
   /* Register Toolbox event handlers */
   EF(event_register_toolbox_handler(id, Menu_AboutToBeShown,
-    edit_menu_about_to_be_shown, (void *)NULL));
+    edit_menu_about_to_be_shown, &EditMenu_sharedid));
 
   EditMenu_sharedid = id;
 }
@@ -235,7 +238,7 @@ void EffectMenu_initialise(ObjectId id)
   {
     /* Register toolbox event handlers */
     EF(event_register_toolbox_handler(id, tb_handlers[i].event_code,
-      tb_handlers[i].handler, (void *)NULL));
+      tb_handlers[i].handler, &EffectMenu_sharedid));
   }
 
   EffectMenu_sharedid = id;

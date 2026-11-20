@@ -77,7 +77,10 @@ typedef struct
   } super;
   int        wimp_handle;
   void      *sky_data; /* flex block */
-  void      *sprites; /* flex block */
+  union {
+    char nil;
+    void *ptr;
+  } sprites; /* flex block */
   SkySpritesContext context;
   _Optional SFTSaveBoxDeletedFn *deleted_cb;
 } SaveSky;
@@ -178,7 +181,7 @@ static bool write_sky(Writer *const writer, void *const handle,
   }
 
   Reader reader;
-  reader_flex_init(&reader, &savefile_data->sprites);
+  reader_flex_init(&reader, &savefile_data->sprites.ptr);
 
   SFError err = sprites_to_sky(&reader, &gkwriter, &savefile_data->context);
   long int const out_bytes = writer_destroy(&gkwriter);
@@ -339,10 +342,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
 
-  if (savefile_data->sprites)
-  {
-    flex_free(&savefile_data->sprites);
-  }
+  flex_free(&savefile_data->sprites.ptr);
 
   if (savefile_data->sky_data)
   {
@@ -387,7 +387,6 @@ static void destroy_savebox(SFTSaveBox *const savebox)
 
   *savefile_data = (SaveSky){
     .sky_data = (void *)NULL,
-    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
@@ -458,7 +457,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
             break;
           }
 
-          if (!flex_reanchor(&savefile_data->sprites, sprites))
+          if (!flex_reanchor(&savefile_data->sprites.ptr, sprites))
           {
             assert("flex_reanchor failed!" == NULL);
             break;

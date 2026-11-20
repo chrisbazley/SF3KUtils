@@ -79,7 +79,10 @@ typedef struct
   } super;
   int        wimp_handle;
   void      *tiles_data; /* flex block */
-  void      *sprites; /* flex block */
+  union {
+    char nil;
+    void *ptr;
+  } sprites; /* flex block */
   MapTileSpritesContext context;
   _Optional SFTSaveBoxDeletedFn *deleted_cb;
 }
@@ -272,7 +275,7 @@ static bool write_map_tiles(Writer *const writer, void *const handle,
   }
 
   Reader reader;
-  reader_flex_init(&reader, &savefile_data->sprites);
+  reader_flex_init(&reader, &savefile_data->sprites.ptr);
   SFError err = sprites_to_tiles(&reader, &gkwriter, &savefile_data->context);
   reader_destroy(&reader);
 
@@ -471,10 +474,7 @@ static void destroy_savebox(SFTSaveBox *const savebox)
   assert(savefile_data != NULL);
   SFTSaveBox_finalise(savebox);
 
-  if (savefile_data->sprites)
-  {
-    flex_free(&savefile_data->sprites);
-  }
+  flex_free(&savefile_data->sprites.ptr);
 
   if (savefile_data->tiles_data)
   {
@@ -519,7 +519,6 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
 
   *savefile_data = (SaveMapTiles){
     .tiles_data = (void *)NULL,
-    .sprites = (void *)NULL,
     .context = *context,
     .deleted_cb = deleted_cb,
   };
@@ -610,7 +609,7 @@ _Optional SFTSaveBox *SaveMapTiles_create(char const *const save_path, int const
             break;
           }
 
-          if (!flex_reanchor(&savefile_data->sprites, sprites))
+          if (!flex_reanchor(&savefile_data->sprites.ptr, sprites))
           {
             assert("flex_reanchor failed!" == NULL);
             break;

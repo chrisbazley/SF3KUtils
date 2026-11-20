@@ -6,7 +6,7 @@ option(PER_VIEW_SELECT "Keep a separate selection in each editing window" ON)
 include(FetchContent)
 
 FetchContent_Declare(strb GIT_REPOSITORY https://github.com/chrisbazley/strb_t.git
-    GIT_TAG fbc331ddc4a53b666e771787711a8e7afb24a3cf)
+    GIT_TAG main)
 
 FetchContent_Declare(CBUtil GIT_REPOSITORY https://github.com/chrisbazley/CBUtilLib.git GIT_TAG main)
 FetchContent_Declare(CBOS GIT_REPOSITORY https://github.com/chrisbazley/CBOSLib.git
@@ -24,7 +24,7 @@ set(CMAKE_XCODE_ATTRIBUTE_RUN_CLANG_STATIC_ANALYZER "YES")
 
 if(MSVC)
     # MSVC equivalent of -Wall -Wextra is /W4
-    add_compile_options(/W4 /wd4200 /wd4996 /wd4130)
+    add_compile_options(/W4 /wd4200 /wd4996 /wd4130 /wd4815)
 else()
     # For GCC and Clang
     add_compile_options(-Wall -Wextra -Wsign-compare -pedantic)

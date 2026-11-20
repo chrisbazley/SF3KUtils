@@ -223,6 +223,6 @@ void Iconbar_initialise(ObjectId id)
   {
     EF(event_register_message_handler(msg_handlers[i].msg_no,
                                       msg_handlers[i].handler,
-                                      (void *)NULL));
+                                      &Iconbar_id));
   }
 }

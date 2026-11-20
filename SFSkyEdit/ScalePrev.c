@@ -116,7 +116,7 @@ void ScalePrev_initialise(ObjectId id)
   for (size_t i = 0; i < ARRAY_SIZE(tbox_handlers); i++)
   {
     EF(event_register_toolbox_handler(id, tbox_handlers[i].event_code,
-                                      tbox_handlers[i].handler, (void *)NULL));
+                                      tbox_handlers[i].handler, &ScalePrev_sharedid));
   }
 
   ScalePrev_sharedid = id;

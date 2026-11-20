@@ -165,10 +165,13 @@ static int effect_menu_show_handler(int const event_code, ToolboxEvent *const ev
 
 void RootMenu_initialise(ObjectId id)
 {
+  static ObjectId root_menu_id;
+  root_menu_id = id;
+
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     root_menu_show_handler,
-                                    (void *)NULL));
+                                    &root_menu_id));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -180,7 +183,7 @@ void EditMenu_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     Menu_AboutToBeShown,
                                     edit_menu_show_handler,
-                                    (void *)NULL));
+                                    &EditMenu_sharedid));
 }
 
 /* ----------------------------------------------------------------------- */

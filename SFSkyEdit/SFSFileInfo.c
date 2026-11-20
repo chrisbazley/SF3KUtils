@@ -85,7 +85,7 @@ void FileInfo_initialise(ObjectId id)
   EF(event_register_toolbox_handler(id,
                                     FileInfo_AboutToBeShown,
                                     about_to_be_shown,
-                                    (void *)NULL));
+                                    &fileinfo_sharedid));
 
   fileinfo_sharedid = id;
 }
